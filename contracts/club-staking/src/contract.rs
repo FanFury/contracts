@@ -31,6 +31,8 @@ const INCREASE_STAKE: bool = true;
 const DECREASE_STAKE: bool = false;
 const IMMEDIATE_WITHDRAWAL: bool = true;
 const NO_IMMEDIATE_WITHDRAWAL: bool = false;
+const QUERY_PAIR_POOL: bool = true;
+const DONT_QUERY_PAIR_POOL: bool = false;
 
 // Reward to club owner for buying - 0 tokens
 const CLUB_BUYING_REWARD_AMOUNT: u128 = 0u128;
@@ -107,7 +109,7 @@ pub fn execute(
         } => {
             let config = CONFIG.load(deps.storage)?;
             let price = config.club_price;
-            buy_a_club(deps, env, info, buyer, seller, club_name, price)
+            buy_a_club(deps, env, info, buyer, seller, club_name, price, QUERY_PAIR_POOL)
         }
         ExecuteMsg::ReleaseClub { owner, club_name } => {
             release_club(deps, env, info, owner, club_name)
@@ -337,6 +339,7 @@ fn buy_a_club(
     seller_opt: Option<String>,
     club_name: String,
     price: Uint128,
+    is_query_needed: bool,
 ) -> Result<Response, ContractError> {
     println!("seller_opt = {:?}", seller_opt);
     let seller;
@@ -359,20 +362,24 @@ fn buy_a_club(
         }));
     }
 
-    let required_ust_fees = query_platform_fees(
-        deps.as_ref(),
-        to_binary(&ExecuteMsg::BuyAClub {
-            buyer: buyer.clone(),
-            club_name: club_name.clone(),
-            seller: seller_opt,
-        })?,
-    )?;
+	let mut required_ust_fees = Uint128::zero();
     let mut fees = Uint128::zero();
-    for fund in info.funds {
-        if fund.denom == "uusd" {
-            fees = fees.checked_add(fund.amount).unwrap();
-        }
-    }
+    if is_query_needed {
+		required_ust_fees = query_platform_fees(
+			deps.as_ref(),
+			to_binary(&ExecuteMsg::BuyAClub {
+				buyer: buyer.clone(),
+				club_name: club_name.clone(),
+				seller: seller_opt,
+			})?,
+		)?;
+		for fund in info.funds {
+			if fund.denom == "uusd" {
+				fees = fees.checked_add(fund.amount).unwrap();
+			}
+		}
+	}
+
     if fees != required_ust_fees {
         return Err(ContractError::InsufficientFees {
             required: required_ust_fees,
@@ -1585,6 +1592,7 @@ mod tests {
             Some(String::default()),
             "CLUB001".to_string(),
             Uint128::from(1000000u128),
+            DONT_QUERY_PAIR_POOL,
         );
 
         let queryRes = query_club_ownership_details(&mut deps.storage, "CLUB001".to_string());
@@ -1640,6 +1648,7 @@ mod tests {
             Some(String::default()),
             "CLUB001".to_string(),
             Uint128::from(1000000u128),
+            DONT_QUERY_PAIR_POOL,
         );
         println!("result = {:?}", result);
         let queryRes = query_club_ownership_details(&mut deps.storage, "CLUB001".to_string());
@@ -1717,6 +1726,7 @@ mod tests {
             Some(String::default()),
             "CLUB001".to_string(),
             Uint128::from(1000000u128),
+            DONT_QUERY_PAIR_POOL,
         );
 
         let owner2_info = mock_info("Owner002", &[coin(1000, "uusd")]);
@@ -1728,6 +1738,7 @@ mod tests {
             Some(String::default()),
             "CLUB001".to_string(),
             Uint128::from(1000000u128),
+            DONT_QUERY_PAIR_POOL,
         );
 
         let queryRes = query_club_ownership_details(&mut deps.storage, "CLUB001".to_string());
@@ -1773,7 +1784,8 @@ mod tests {
 
         let owner1Info = mock_info("Owner001", &[coin(1000, "stake")]);
         buy_a_club(deps.as_mut(), mock_env(), mintingContractInfo.clone(), "Owner001".to_string(), "".to_string(), "CLUB001".to_string(),
-            Uint128::from(1000u128));
+            Uint128::from(1000u128), 
+            DONT_QUERY_PAIR_POOL);
 
         release_club(deps.as_mut(), mock_env(), owner1Info.clone(), "Owner001".to_string(), "CLUB001".to_string());
 
@@ -1825,6 +1837,7 @@ mod tests {
             "".to_string(),
             "CLUB001".to_string(),
             Uint128::from(1000000u128),
+            DONT_QUERY_PAIR_POOL
         );
 
         release_club(
@@ -1918,6 +1931,7 @@ mod tests {
             Some(String::default()),
             "CLUB001".to_string(),
             Uint128::from(1000000u128),
+            DONT_QUERY_PAIR_POOL
         );
         println!("{:?}", resp);
         resp = release_club(
@@ -1976,6 +1990,7 @@ mod tests {
             Some("Owner001".to_string()),
             "CLUB001".to_string(),
             Uint128::from(1000000u128),
+            DONT_QUERY_PAIR_POOL
         );
         println!("{:?}", resp);
         let queryResAfterSellingByPrevOwner =
@@ -2031,6 +2046,7 @@ mod tests {
             Some(String::default()),
             "CLUB001".to_string(),
             Uint128::from(1000000u128),
+            DONT_QUERY_PAIR_POOL
         );
 
         release_club(
@@ -2126,6 +2142,7 @@ mod tests {
             Some("Owner001".to_string()),
             "CLUB001".to_string(),
             Uint128::from(1000000u128),
+            DONT_QUERY_PAIR_POOL
         );
 
         let queryResAfterSellingByPrevOwner =
@@ -2226,6 +2243,7 @@ mod tests {
             Some(String::default()),
             "CLUB001".to_string(),
             Uint128::from(1000000u128),
+            DONT_QUERY_PAIR_POOL
         );
 
         let stakerInfo = mock_info("Staker0001", &[coin(10, "stake")]);
@@ -2307,6 +2325,7 @@ mod tests {
             Some(String::default()),
             "CLUB001".to_string(),
             Uint128::from(1000000u128),
+            DONT_QUERY_PAIR_POOL
         );
 
         let stakerInfo = mock_info("Staker0001", &[coin(10, "stake")]);
@@ -2410,6 +2429,7 @@ mod tests {
             Some(String::default()),
             "CLUB001".to_string(),
             Uint128::from(1000000u128),
+            DONT_QUERY_PAIR_POOL
         );
 
         let stakerInfo = mock_info("Staker0001", &[coin(10, "stake")]);
@@ -2519,6 +2539,7 @@ mod tests {
             Some(String::default()),
             "CLUB001".to_string(),
             Uint128::from(1000000u128),
+            DONT_QUERY_PAIR_POOL
         );
 
         let stakerInfo = mock_info("Staker0001", &[coin(10, "stake")]);
@@ -2676,6 +2697,7 @@ mod tests {
             Some(String::default()),
             "CLUB001".to_string(),
             Uint128::from(1000000u128),
+            DONT_QUERY_PAIR_POOL
         );
 
         let stakerInfo = mock_info("Staker0001", &[coin(10, "stake")]);
@@ -2827,6 +2849,7 @@ mod tests {
             Some(String::default()),
             "CLUB001".to_string(),
             Uint128::from(1000000u128),
+            DONT_QUERY_PAIR_POOL
         );
         println!("buy_a_club result = {:?}", result);
         let stakerInfo = mock_info("Staker0001", &[coin(10, "uusd")]);
@@ -2940,6 +2963,7 @@ mod tests {
             Some(String::default()),
             "CLUB001".to_string(),
             Uint128::from(1000000u128),
+            DONT_QUERY_PAIR_POOL
         );
         let owner2Info = mock_info("Owner002", &[coin(1000, "stake")]);
         buy_a_club(
@@ -2950,6 +2974,7 @@ mod tests {
             Some(String::default()),
             "CLUB002".to_string(),
             Uint128::from(1000000u128),
+            DONT_QUERY_PAIR_POOL
         );
         let owner3Info = mock_info("Owner003", &[coin(1000, "stake")]);
         buy_a_club(
@@ -2960,6 +2985,7 @@ mod tests {
             Some(String::default()),
             "CLUB003".to_string(),
             Uint128::from(1000000u128),
+            DONT_QUERY_PAIR_POOL
         );
 
         let staker1Info = mock_info("Staker0001", &[coin(10, "stake")]);
