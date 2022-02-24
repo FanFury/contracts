@@ -1782,7 +1782,8 @@ mod tests {
 
         let owner1Info = mock_info("Owner001", &[coin(1000, "stake")]);
         buy_a_club(deps.as_mut(), mock_env(), mintingContractInfo.clone(), "Owner001".to_string(), "".to_string(), "CLUB001".to_string(),
-            Uint128::from(1000u128));
+            Uint128::from(1000u128),
+            DONT_QUERY_PAIR_POOL);
 
         release_club(deps.as_mut(), mock_env(), owner1Info.clone(), "Owner001".to_string(), "CLUB001".to_string());
 
@@ -1834,6 +1835,7 @@ mod tests {
             "".to_string(),
             "CLUB001".to_string(),
             Uint128::from(1000000u128),
+            DONT_QUERY_PAIR_POOL
         );
 
         release_club(
