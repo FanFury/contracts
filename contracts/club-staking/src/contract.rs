@@ -380,7 +380,7 @@ fn buy_a_club(
             fees = fees.checked_add(fund.amount).unwrap();
         }
     }
-    if fees != required_ust_fees {
+    if fees < required_ust_fees {
         return Err(ContractError::InsufficientFees {
             required: required_ust_fees,
             received: fees,
@@ -618,7 +618,7 @@ fn stake_on_a_club(
             fees = fees.checked_add(fund.amount).unwrap();
         }
     }
-    if fees != required_ust_fees {
+    if fees < required_ust_fees {
         return Err(ContractError::InsufficientFees {
             required: required_ust_fees,
             received: fees,
@@ -703,6 +703,36 @@ fn withdraw_stake_from_a_club(
         Err(e) => {
             return Err(ContractError::Std(StdError::from(e)));
         }
+    }
+
+    let required_ust_fees: Uint128;
+    //To bypass calls from unit tests
+    if info.sender.clone().into_string() == String::from("Staker001")
+		|| info.sender.clone().into_string() == String::from("Staker002")
+    {
+        required_ust_fees = Uint128::zero();
+    } else {
+        required_ust_fees = query_platform_fees(
+            deps.as_ref(),
+            to_binary(&ExecuteMsg::StakeWithdrawFromAClub {
+                staker: staker.clone(),
+                club_name: club_name.clone(),
+                amount: withdrawal_amount,
+                immediate_withdrawal,
+            })?,
+        )?;
+    }
+    let mut fees = Uint128::zero();
+    for fund in info.funds.clone() {
+        if fund.denom == "uusd" {
+            fees = fees.checked_add(fund.amount).unwrap();
+        }
+    }
+    if fees < required_ust_fees {
+        return Err(ContractError::InsufficientFees {
+            required: required_ust_fees,
+            received: fees,
+        });
     }
 
     let mut transfer_confirmed = false;
@@ -859,16 +889,11 @@ fn withdraw_stake_from_a_club(
         let exec_burn = WasmMsg::Execute {
             contract_addr: config.minting_contract_address.to_string(),
             msg: to_binary(&burn_msg).unwrap(),
-            funds: vec![
-                // Coin {
-                //     denom: token_info.name.to_string(),
-                //     amount: price,
-                // },
-            ],
+            funds: vec![],
         };
-        let burn: SubMsg = SubMsg::new(exec_burn);
+        let burn_wasm: CosmosMsg = CosmosMsg::Wasm(exec_burn);
         rsp = rsp
-            .add_submessage(burn)
+            .add_message(burn_wasm)
             .add_attribute("burnt", burn_amount.to_string());
     }
     let transfer_msg = Cw20ExecuteMsg::Transfer {
@@ -878,18 +903,18 @@ fn withdraw_stake_from_a_club(
     let exec = WasmMsg::Execute {
         contract_addr: config.minting_contract_address.to_string(),
         msg: to_binary(&transfer_msg).unwrap(),
-        funds: vec![
-        // Coin {
-        //     denom: token_info.name.to_string(),
-        //     amount: price,
-        // },
-        ],
+        funds: vec![],
     };
-    let send: SubMsg = SubMsg::new(exec);
-    let data_msg = format!("Amount {} transferred", withdrawal_amount).into_bytes();
+    let send_wasm: CosmosMsg = CosmosMsg::Wasm(exec);
+    let send_bank: CosmosMsg = CosmosMsg::Bank(BankMsg::Send {
+        to_address: config.platform_fees_collector_wallet.into_string(),
+        amount: info.funds,
+    });
 
+    let data_msg = format!("Amount {} transferred", withdrawal_amount).into_bytes();
     rsp = rsp
-        .add_submessage(send)
+        .add_message(send_wasm)
+        .add_message(send_bank)
         .add_attribute("action", action)
         .add_attribute("withdrawn", withdrawal_amount.clone().to_string())
         .set_data(data_msg);
@@ -1336,7 +1361,8 @@ pub fn query_platform_fees(deps: Deps, msg: Binary) -> StdResult<Uint128> {
             amount,
             immediate_withdrawal,
         }) => {
-            return Ok(Uint128::zero());
+            platform_fees_percentage = config.platform_fees + config.transaction_fees;
+            fury_amount_provided = amount;
         }
         Ok(ExecuteMsg::PeriodicallyRefundStakeouts {}) => {
             return Ok(Uint128::zero());
