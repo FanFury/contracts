@@ -362,6 +362,7 @@ fn buy_a_club(
     //To bypass calls from unit tests
     if info.sender.clone().into_string() == String::from("Owner001")
         || info.sender.clone().into_string() == String::from("Owner002")
+        || info.sender.clone().into_string() == String::from("Owner003")
     {
         required_ust_fees = Uint128::zero();
     } else {
@@ -474,6 +475,23 @@ fn buy_a_club(
             owner_released: false,
         },
     )?;
+
+	let staking_amount = Uint128::zero();
+	// Now save the staking details for the owner - with 0 stake
+	save_staking_details(
+		deps.storage,
+		env,
+		buyer.clone(),
+		club_name.clone(),
+		staking_amount,
+		INCREASE_STAKE,
+	)?;
+	//If successfully staked, save the funds in contract wallet
+	STAKING_FUNDS.update(
+		deps.storage,
+		&buyer_addr,
+		|balance: Option<Uint128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + staking_amount) },
+	)?;
 
     let config = CONFIG.load(deps.storage)?;
 
@@ -1187,6 +1205,11 @@ fn calculate_and_distribute_rewards(
             }
             None => {}
         }
+        let reward_for_club_owner = total_reward
+            .checked_mul(Uint128::from(1u128))
+            .unwrap_or_default()
+            .checked_div(Uint128::from(100u128))
+            .unwrap_or_default();
         let reward_for_all_winners = total_reward
             .checked_mul(Uint128::from(19u128))
             .unwrap_or_default()
@@ -1203,6 +1226,19 @@ fn calculate_and_distribute_rewards(
             let mut updated_stake = stake.clone();
             updated_stake.staked_amount += reward_for_this_winner;
             reward_given_so_far += reward_for_this_winner;
+			println!(
+				"reward for {:?} is {:?} ",
+				stake.staker_address, reward_for_this_winner
+			);
+			if stake.staker_address == winner_club_details.owner_address {
+				//Increase owner reward by additional 1% 
+				updated_stake.staked_amount += reward_for_club_owner;
+				reward_given_so_far += reward_for_club_owner;
+				println!(
+					"reward for {:?} is {:?} ",
+					stake.staker_address, reward_for_club_owner
+				);
+			}
             updated_stakes.push(updated_stake);
         }
         CLUB_STAKING_DETAILS.save(deps.storage, winner_club_name.clone(), &updated_stakes)?;
@@ -1240,17 +1276,6 @@ fn calculate_and_distribute_rewards(
             }
             CLUB_STAKING_DETAILS.save(deps.storage, club_name, &all_stakes)?;
         }
-
-        //Increase owner reward by 1% - remainder of total reward
-        let winner_club_reward = total_reward - reward_given_so_far;
-        winner_club_details.reward_amount += winner_club_reward;
-        reward_given_so_far += winner_club_reward;
-        println!("winner club owner reward = {:?}", winner_club_reward);
-        CLUB_OWNERSHIP_DETAILS.save(
-            deps.storage,
-            winner_club_details.club_name.clone(),
-            &winner_club_details,
-        )?;
 
         let new_reward = Uint128::zero();
         REWARD.save(deps.storage, &new_reward)?;
@@ -2258,6 +2283,10 @@ mod tests {
         }
         println!("checking previous owner details now");
 
+		/*
+		27 Feb 2022, Commenting this out - because the reward is now moved to stake
+		             so there will be no previous owner details	
+
         let queryPrevOwnerDetailsBeforeRewardClaim =
             query_club_previous_owner_details(&mut deps.storage, "Owner001".to_string());
         match queryPrevOwnerDetailsBeforeRewardClaim {
@@ -2267,13 +2296,14 @@ mod tests {
                     pod.previous_owner_address, pod.reward_amount
                 );
                 assert_eq!(pod.previous_owner_address, "Owner001".to_string());
-                assert_eq!(pod.reward_amount, Uint128::from(10000u128));
+                assert_eq!(pod.reward_amount, Uint128::from(10000u128)); 
             }
             Err(e) => {
                 println!("error parsing cpod header: {:?}", e);
                 assert_eq!(1, 2);
             }
         }
+		*/
 
         println!(
             "pod:\n {:?}",
@@ -3046,7 +3076,7 @@ mod tests {
         buy_a_club(
             deps.as_mut(),
             mock_env(),
-            mintingContractInfo.clone(),
+            owner1Info.clone(),
             "Owner001".to_string(),
             Some(String::default()),
             "CLUB001".to_string(),
@@ -3056,7 +3086,7 @@ mod tests {
         buy_a_club(
             deps.as_mut(),
             mock_env(),
-            mintingContractInfo.clone(),
+            owner2Info.clone(),
             "Owner002".to_string(),
             Some(String::default()),
             "CLUB002".to_string(),
@@ -3066,7 +3096,7 @@ mod tests {
         buy_a_club(
             deps.as_mut(),
             mock_env(),
-            mintingContractInfo.clone(),
+            owner3Info.clone(),
             "Owner003".to_string(),
             Some(String::default()),
             "CLUB003".to_string(),
@@ -3152,6 +3182,17 @@ mod tests {
         // )
         // .unwrap();
 
+        let queryRes0 = query_all_stakes(&mut deps.storage);
+        match queryRes0 {
+            Ok(all_stakes) => {
+				assert_eq!(all_stakes.len(), 9);
+			}
+            Err(e) => {
+                println!("error parsing header: {:?}", e);
+                assert_eq!(1, 2);
+            }
+		}
+
         increase_reward_amount(
             deps.as_mut(),
             mock_env(),
@@ -3172,26 +3213,37 @@ mod tests {
         let queryRes = query_all_stakes(&mut deps.storage);
         match queryRes {
             Ok(all_stakes) => {
+				assert_eq!(all_stakes.len(), 9);
                 for stake in all_stakes {
                     let staker_address = stake.staker_address;
-                    let reward_amount = stake.reward_amount;
+                    let staked_amount = stake.staked_amount;
+					println!("staker : {:?} staked_amount : {:?}", staker_address.clone(), staked_amount);
                     if staker_address == "Staker001" {
-                        assert_eq!(reward_amount, Uint128::from(144262u128));
+                        assert_eq!(staked_amount, Uint128::from(460049u128));
                     }
                     if staker_address == "Staker002" {
-                        assert_eq!(reward_amount, Uint128::from(48087u128));
+                        assert_eq!(staked_amount, Uint128::from(153349u128));
                     }
                     if staker_address == "Staker003" {
-                        assert_eq!(reward_amount, Uint128::from(183606u128));
+                        assert_eq!(staked_amount, Uint128::from(585517u128));
                     }
                     if staker_address == "Staker004" {
-                        assert_eq!(reward_amount, Uint128::from(43715u128));
+                        assert_eq!(staked_amount, Uint128::from(139408u128));
                     }
                     if staker_address == "Staker005" {
-                        assert_eq!(reward_amount, Uint128::from(537549u128));
+                        assert_eq!(staked_amount, Uint128::from(1392806u128));
                     }
                     if staker_address == "Staker006" {
-                        assert_eq!(reward_amount, Uint128::from(32776u128));
+                        assert_eq!(staked_amount, Uint128::from(84926u128));
+                    }
+                    if staker_address == "Owner001" {
+                        assert_eq!(staked_amount, Uint128::from(0u128));
+                    }
+                    if staker_address == "Owner002" {
+                        assert_eq!(staked_amount, Uint128::from(0u128));
+                    }
+                    if staker_address == "Owner003" {
+                        assert_eq!(staked_amount, Uint128::from(13940u128));
                     }
                 }
             }
@@ -3259,16 +3311,5 @@ mod tests {
 
         assert_eq!(res, Response::default());
 
-        /*
-            winner club owner address = "Owner003"
-            winner club owner reward = Uint128::from(10000)
-            reward for "Staker001" is Uint128::from(144262)
-            reward for "Staker002" is Uint128::from(48087)
-            reward for "Staker003" is Uint128::from(183606)
-            reward for "Staker004" is Uint128::from(43715)
-            reward for "Staker005" is Uint128::from(537549)
-            reward for "Staker006" is Uint128::from(32776)
-            total reward given Uint128::from(999995) out of Uint128::from(1000000)
-        */
     }
 }
