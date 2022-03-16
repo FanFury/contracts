@@ -112,11 +112,11 @@ pub fn execute(
         } => {
             stake_on_a_club(deps, env, info, staker, club_name, amount, auto_stake)
         }
-        ExecuteMsg::AssignStakeToAClub {
-            stakeList,
+        ExecuteMsg::AssignStakesToAClub {
+            stake_list,
             club_name
         } => {
-            assign_stakes_to_a_club(deps, env, info, stakeList, club_name)
+            assign_stakes_to_a_club(deps, env, info, stake_list, club_name)
         }
         ExecuteMsg::BuyAClub {
             buyer,
@@ -441,19 +441,19 @@ fn buy_a_club(
 
     if !(ownership_details.is_none()) {
         for owner in ownership_details {
-			let mut current_time = env.block.time;
-			let mut release_start_time = owner.start_timestamp;
-			let mut release_locking_duration = owner.locking_period;
-			println!(
-				"release_start_time = {:?} locking_duration = {:?} current time = {:?}",
-				release_start_time, release_locking_duration, current_time
-			);
+            let mut current_time = env.block.time;
+            let mut release_start_time = owner.start_timestamp;
+            let mut release_locking_duration = owner.locking_period;
+            println!(
+                "release_start_time = {:?} locking_duration = {:?} current time = {:?}",
+                release_start_time, release_locking_duration, current_time
+            );
             if owner.owner_released == false {
                 return Err(ContractError::Std(StdError::GenericErr {
                     msg: String::from("Owner has not released the club"),
                 }));
             } else if current_time > release_start_time.plus_seconds(release_locking_duration) {
-				println!("Release time for the club has expired");
+                println!("Release time for the club has expired");
                 return Err(ContractError::Std(StdError::GenericErr {
                     msg: String::from("Release time for the club has expired"),
                 }));
@@ -525,16 +525,16 @@ fn buy_a_club(
         }
     }
     if !user_stake_exists {
-		// Now save the staking details for the owner - with 0 stake
-		save_staking_details(
-			deps.storage,
-			env,
-			buyer.clone(),
-			club_name.clone(),
-			Uint128::zero(),
-			auto_stake,
-			INCREASE_STAKE,
-		)?;
+        // Now save the staking details for the owner - with 0 stake
+        save_staking_details(
+            deps.storage,
+            env,
+            buyer.clone(),
+            club_name.clone(),
+            Uint128::zero(),
+            auto_stake,
+            INCREASE_STAKE,
+        )?;
     }
 
     let transfer_msg = Cw20ExecuteMsg::TransferFrom {
@@ -617,19 +617,19 @@ fn assign_a_club(
 
     if !(ownership_details.is_none()) {
         for owner in ownership_details {
-			let mut current_time = env.block.time;
-			let mut release_start_time = owner.start_timestamp;
-			let mut release_locking_duration = owner.locking_period;
-			println!(
-				"release_start_time = {:?} locking_duration = {:?} current time = {:?}",
-				release_start_time, release_locking_duration, current_time
-			);
+            let mut current_time = env.block.time;
+            let mut release_start_time = owner.start_timestamp;
+            let mut release_locking_duration = owner.locking_period;
+            println!(
+                "release_start_time = {:?} locking_duration = {:?} current time = {:?}",
+                release_start_time, release_locking_duration, current_time
+            );
             if owner.owner_released == false {
                 return Err(ContractError::Std(StdError::GenericErr {
                     msg: String::from("Owner has not released the club"),
                 }));
             } else if current_time > release_start_time.plus_seconds(release_locking_duration) {
-				println!("Release time for the club has expired");
+                println!("Release time for the club has expired");
                 return Err(ContractError::Std(StdError::GenericErr {
                     msg: String::from("Release time for the club has expired"),
                 }));
@@ -701,16 +701,16 @@ fn assign_a_club(
         }
     }
     if !user_stake_exists {
-		// Now save the staking details for the owner - with 0 stake
-		save_staking_details(
-			deps.storage,
-			env,
-			buyer.clone(),
-			club_name.clone(),
-			Uint128::zero(),
-			auto_stake,
-			INCREASE_STAKE,
-		)?;
+        // Now save the staking details for the owner - with 0 stake
+        save_staking_details(
+            deps.storage,
+            env,
+            buyer.clone(),
+            club_name.clone(),
+            Uint128::zero(),
+            auto_stake,
+            INCREASE_STAKE,
+        )?;
     }
 
     return Ok(Response::default());
@@ -758,20 +758,20 @@ fn release_club(
                 msg: String::from("Releaser is not the owner for the club"),
             }));
         } else {
-			// Update the ownership details
-			CLUB_OWNERSHIP_DETAILS.save(
-				deps.storage,
-				club_name.clone(),
-				&ClubOwnershipDetails {
-					club_name: owner.club_name,
-					start_timestamp: env.block.time,
-					locking_period: owner.locking_period,
-					owner_address: owner.owner_address,
-					price_paid: owner.price_paid,
-					reward_amount: owner.reward_amount,
-					owner_released: true,
-				},
-			)?;
+            // Update the ownership details
+            CLUB_OWNERSHIP_DETAILS.save(
+                deps.storage,
+                club_name.clone(),
+                &ClubOwnershipDetails {
+                    club_name: owner.club_name,
+                    start_timestamp: env.block.time,
+                    locking_period: owner.locking_period,
+                    owner_address: owner.owner_address,
+                    price_paid: owner.price_paid,
+                    reward_amount: owner.reward_amount,
+                    owner_released: true,
+                },
+            )?;
         }
     }
     return Ok(Response::default());
@@ -881,7 +881,7 @@ fn assign_stakes_to_a_club(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    stakeList: Vec<ClubStakingDetails>,
+    stake_list: Vec<ClubStakingDetails>,
     club_name: String,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
@@ -890,71 +890,71 @@ fn assign_stakes_to_a_club(
     }
     let contract_address =  env.clone().contract.address.into_string();
 
-	for stake in stakeList.clone() {
-		if stake.club_name != club_name {
+    for stake in stake_list.clone() {
+        if stake.club_name != club_name {
             return Err(ContractError::Std(StdError::GenericErr {
                 msg: String::from("Passed club names do not match"),
             }));
-		}
-	}
+        }
+    }
 
-	//check if the club_name is available for staking
-	let ownership_details;
-	let ownership_details_result = CLUB_OWNERSHIP_DETAILS.may_load(deps.storage, club_name.clone());
-	match ownership_details_result {
-		Ok(od) => {
-			ownership_details = od;
-		}
-		Err(e) => {
-			return Err(ContractError::Std(StdError::GenericErr {
-				msg: String::from("Cannot find the club"),
-			}));
-		}
-	}
-	if !(ownership_details.is_some()) {
-		return Err(ContractError::Std(StdError::GenericErr {
-			msg: String::from("The club is not available for staking"),
-		}));
-	}
+    //check if the club_name is available for staking
+    let ownership_details;
+    let ownership_details_result = CLUB_OWNERSHIP_DETAILS.may_load(deps.storage, club_name.clone());
+    match ownership_details_result {
+        Ok(od) => {
+            ownership_details = od;
+        }
+        Err(e) => {
+            return Err(ContractError::Std(StdError::GenericErr {
+                msg: String::from("Cannot find the club"),
+            }));
+        }
+    }
+    if !(ownership_details.is_some()) {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: String::from("The club is not available for staking"),
+        }));
+    }
 
-	let mut total_amount = Uint128::zero();
-	for stake in stakeList {
-		let mut staker = stake.staker_address.clone();
-		let mut amount = stake.staked_amount;
-		let mut auto_stake = stake.auto_stake;
-		total_amount += amount;
+    let mut total_amount = Uint128::zero();
+    for stake in stake_list {
+        let mut staker = stake.staker_address.clone();
+        let mut amount = stake.staked_amount;
+        let mut auto_stake = stake.auto_stake;
+        total_amount += amount;
 
-		// Now save the staking details
-		save_staking_details(
-			deps.storage,
-			env.clone(),
-			staker.clone(),
-			club_name.clone(),
-			amount,
-			auto_stake,
-			INCREASE_STAKE,
-		)?;
-	}
+        // Now save the staking details
+        save_staking_details(
+            deps.storage,
+            env.clone(),
+            staker.clone(),
+            club_name.clone(),
+            amount,
+            auto_stake,
+            INCREASE_STAKE,
+        )?;
+    }
 
-	let transfer_msg = Cw20ExecuteMsg::TransferFrom {
-		owner: info.sender.into_string(),
-		recipient: contract_address,
-		amount: total_amount,
-	};
-	let exec = WasmMsg::Execute {
-		contract_addr: config.minting_contract_address.to_string(),
-		msg: to_binary(&transfer_msg).unwrap(),
-		funds: vec![],
-	};
+    let transfer_msg = Cw20ExecuteMsg::TransferFrom {
+        owner: info.sender.into_string(),
+        recipient: contract_address,
+        amount: total_amount,
+    };
+    let exec = WasmMsg::Execute {
+        contract_addr: config.minting_contract_address.to_string(),
+        msg: to_binary(&transfer_msg).unwrap(),
+        funds: vec![],
+    };
 
-	let send_wasm: CosmosMsg = CosmosMsg::Wasm(exec);
-	let data_msg = format!("Assign Stakes To Club {} received", total_amount).into_bytes();
-	return Ok(Response::new()
-		.add_message(send_wasm)
-		.add_attribute("action", "assign_stakes_to_a_club")
-		.add_attribute("club_name", club_name)
-		.add_attribute("total_stake", total_amount.to_string())
-		.set_data(data_msg));
+    let send_wasm: CosmosMsg = CosmosMsg::Wasm(exec);
+    let data_msg = format!("Assign Stakes To Club {} received", total_amount).into_bytes();
+    return Ok(Response::new()
+        .add_message(send_wasm)
+        .add_attribute("action", "assign_stakes_to_a_club")
+        .add_attribute("club_name", club_name)
+        .add_attribute("total_stake", total_amount.to_string())
+        .set_data(data_msg));
 }
 
 fn withdraw_stake_from_a_club(
@@ -1801,6 +1801,14 @@ pub fn query_platform_fees(deps: Deps, msg: Binary) -> StdResult<Uint128> {
             platform_fees_percentage = config.platform_fees + config.transaction_fees;
             fury_amount_provided = config.club_price;
         }
+        Ok(ExecuteMsg::AssignAClub {
+            buyer: _,
+            seller: _,
+            club_name: _,
+            auto_stake: _,
+        }) => {
+            return Ok(Uint128::zero());
+        }
         Ok(ExecuteMsg::StakeOnAClub {
             staker: _,
             club_name: _,
@@ -1809,6 +1817,12 @@ pub fn query_platform_fees(deps: Deps, msg: Binary) -> StdResult<Uint128> {
         }) => {
             platform_fees_percentage = config.platform_fees + config.transaction_fees + config.control_fees;
             fury_amount_provided = amount;
+        }
+        Ok(ExecuteMsg::AssignStakesToAClub {
+            stake_list: _,
+            club_name: _,
+        }) => {
+            return Ok(Uint128::zero());
         }
         Ok(ExecuteMsg::ReleaseClub { owner: _, club_name: _ }) => {
             return Ok(Uint128::zero());
@@ -2338,7 +2352,7 @@ mod tests {
         let owner1_info = mock_info("Owner001", &[coin(1000, "stake")]);
         let owner2_info = mock_info("Owner002", &[coin(1000, "stake")]);
 
-		println!("Now assigning the club to Owner001");
+        println!("Now assigning the club to Owner001");
         assign_a_club(
             deps.as_mut(),
             mock_env(),
@@ -2362,7 +2376,7 @@ mod tests {
             }
         }
 
-		println!("Now releasing the club from Owner001");
+        println!("Now releasing the club from Owner001");
         release_club(deps.as_mut(), mock_env(), owner1_info.clone(), "Owner001".to_string(), "CLUB001".to_string());
 
         let queryRes1 = query_club_ownership_details(&mut deps.storage, "CLUB001".to_string());
@@ -2378,7 +2392,7 @@ mod tests {
             }
         }
 
-		println!("Now assigning the club to Owner002");
+        println!("Now assigning the club to Owner002");
         assign_a_club(
             deps.as_mut(),
             mock_env(),
@@ -2389,7 +2403,7 @@ mod tests {
             SET_AUTO_STAKE,
         );
 
-		println!("Now releasing the club from Owner002");
+        println!("Now releasing the club from Owner002");
         release_club(deps.as_mut(), mock_env(), owner2_info.clone(), "Owner002".to_string(), "CLUB001".to_string());
 
         let queryRes2 = query_club_ownership_details(&mut deps.storage, "CLUB001".to_string());
@@ -2407,7 +2421,7 @@ mod tests {
             }
         }
 
-		println!("Now trying to assign the club to Owner003 - should fail");
+        println!("Now trying to assign the club to Owner003 - should fail");
         assign_a_club(
             deps.as_mut(),
             mock_env(),
@@ -2465,7 +2479,7 @@ mod tests {
 
         let owner1_info = mock_info("Owner001", &[coin(1000, "stake")]);
 
-		println!("Now assigning the club to Owner001");
+        println!("Now assigning the club to Owner001");
         assign_a_club(
             deps.as_mut(),
             mock_env(),
@@ -2489,28 +2503,28 @@ mod tests {
             }
         }
 
-		let mut stakeList: Vec<ClubStakingDetails> = Vec::new();
-		for i in 1 .. 7 {
-			let staker: String = "Staker00".to_string() + &i.to_string();
-			println!("staker is {}", staker);
-			stakeList.push(ClubStakingDetails {
-				// TODO duration and timestamp fields no longer needed - should be removed
-				staker_address: staker,
-				staking_start_timestamp: now,
-				staked_amount: Uint128::from(330000u128),
-				staking_duration: CLUB_STAKING_DURATION,
-				club_name: "CLUB001".to_string(),
-				reward_amount: Uint128::from(CLUB_STAKING_REWARD_AMOUNT),
-				auto_stake: SET_AUTO_STAKE,
-			});
-		};
+        let mut stake_list: Vec<ClubStakingDetails> = Vec::new();
+        for i in 1 .. 7 {
+            let staker: String = "Staker00".to_string() + &i.to_string();
+            println!("staker is {}", staker);
+            stake_list.push(ClubStakingDetails {
+                // TODO duration and timestamp fields no longer needed - should be removed
+                staker_address: staker,
+                staking_start_timestamp: now,
+                staked_amount: Uint128::from(330000u128),
+                staking_duration: CLUB_STAKING_DURATION,
+                club_name: "CLUB001".to_string(),
+                reward_amount: Uint128::from(CLUB_STAKING_REWARD_AMOUNT),
+                auto_stake: SET_AUTO_STAKE,
+            });
+        };
 
         let staker6Info = mock_info("Staker006", &[coin(10, "stake")]);
-        assign_stake_to_a_club(
+        assign_stakes_to_a_club(
             deps.as_mut(),
             mock_env(),
             adminInfo.clone(),
-            stakeList,
+            stake_list,
             "CLUB001".to_string(),
         );
 
