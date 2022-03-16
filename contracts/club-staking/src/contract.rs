@@ -277,8 +277,8 @@ fn claim_owner_rewards(
                     club_name.clone(),
                     &ClubOwnershipDetails {
                         club_name: owner_detail.club_name,
-                        owner_release_start_timestamp: owner_detail.owner_release_start_timestamp,
-                        owner_release_locking_duration: owner_detail.owner_release_locking_duration,
+                        start_timestamp: owner_detail.start_timestamp,
+                        locking_period: owner_detail.locking_period,
                         owner_address: owner_detail.owner_address,
                         price_paid: owner_detail.price_paid,
                         reward_amount: Uint128::zero(),
@@ -428,8 +428,8 @@ fn buy_a_club(
     if !(ownership_details.is_none()) {
         for owner in ownership_details {
 			let mut current_time = env.block.time;
-			let mut release_start_time = owner.owner_release_start_timestamp;
-			let mut release_locking_duration = owner.owner_release_locking_duration;
+			let mut release_start_time = owner.start_timestamp;
+			let mut release_locking_duration = owner.locking_period;
 			println!(
 				"release_start_time = {:?} locking_duration = {:?} current time = {:?}",
 				release_start_time, release_locking_duration, current_time
@@ -487,8 +487,8 @@ fn buy_a_club(
         club_name.clone(),
         &ClubOwnershipDetails {
             club_name: club_name.clone(),
-            owner_release_start_timestamp: env.block.time,
-            owner_release_locking_duration: config.owner_release_locking_duration,
+            start_timestamp: env.block.time,
+            locking_period: config.owner_release_locking_duration,
             owner_address: buyer_addr.to_string(),
             price_paid: price,
             reward_amount: Uint128::from(CLUB_BUYING_REWARD_AMOUNT),
@@ -604,8 +604,8 @@ fn assign_a_club(
     if !(ownership_details.is_none()) {
         for owner in ownership_details {
 			let mut current_time = env.block.time;
-			let mut release_start_time = owner.owner_release_start_timestamp;
-			let mut release_locking_duration = owner.owner_release_locking_duration;
+			let mut release_start_time = owner.start_timestamp;
+			let mut release_locking_duration = owner.locking_period;
 			println!(
 				"release_start_time = {:?} locking_duration = {:?} current time = {:?}",
 				release_start_time, release_locking_duration, current_time
@@ -663,8 +663,8 @@ fn assign_a_club(
         club_name.clone(),
         &ClubOwnershipDetails {
             club_name: club_name.clone(),
-            owner_release_start_timestamp: env.block.time,
-            owner_release_locking_duration: config.owner_release_locking_duration,
+            start_timestamp: env.block.time,
+            locking_period: config.owner_release_locking_duration,
             owner_address: buyer_addr.to_string(),
             price_paid: Uint128::zero(),
             reward_amount: Uint128::from(CLUB_BUYING_REWARD_AMOUNT),
@@ -750,8 +750,8 @@ fn release_club(
 				club_name.clone(),
 				&ClubOwnershipDetails {
 					club_name: owner.club_name,
-					owner_release_start_timestamp: env.block.time,
-					owner_release_locking_duration: owner.owner_release_locking_duration,
+					start_timestamp: env.block.time,
+					locking_period: owner.locking_period,
 					owner_address: owner.owner_address,
 					price_paid: owner.price_paid,
 					reward_amount: owner.reward_amount,
@@ -2304,7 +2304,7 @@ mod tests {
                 assert_eq!(cod.owner_address, "Owner002".to_string());
                 assert_eq!(cod.price_paid, Uint128::from(0u128));
                 assert_eq!(cod.owner_released, true);
-                cod.owner_release_start_timestamp = now.minus_seconds(22 * 24 * 60 * 60);
+                cod.start_timestamp = now.minus_seconds(22 * 24 * 60 * 60);
                 CLUB_OWNERSHIP_DETAILS.save(&mut deps.storage, "CLUB001".to_string(), &cod);
             }
             Err(e) => {
@@ -2330,7 +2330,7 @@ mod tests {
                 assert_eq!(cod.owner_address, "Owner002".to_string());
                 assert_eq!(cod.price_paid, Uint128::from(0u128));
                 assert_eq!(cod.owner_released, true);
-                assert_eq!(cod.owner_release_start_timestamp, now.minus_seconds(22 * 24 * 60 * 60));
+                assert_eq!(cod.start_timestamp, now.minus_seconds(22 * 24 * 60 * 60));
             }
             Err(e) => {
                 println!("error parsing header: {:?}", e);
@@ -2397,7 +2397,7 @@ mod tests {
             Ok(mut cod) => {
                 assert_eq!(cod.owner_address, "Owner001".to_string());
                 assert_eq!(cod.price_paid, Uint128::from(1000000u128));
-                cod.owner_release_start_timestamp = now.minus_seconds(22 * 24 * 60 * 60);
+                cod.start_timestamp = now.minus_seconds(22 * 24 * 60 * 60);
                 CLUB_OWNERSHIP_DETAILS.save(&mut deps.storage, "CLUB001".to_string(), &cod);
             }
             Err(e) => {
@@ -2512,7 +2512,7 @@ mod tests {
             Ok(mut cod) => {
                 assert_eq!(cod.owner_address, "Owner001".to_string());
                 assert_eq!(cod.price_paid, Uint128::from(1000000u128));
-                cod.owner_release_start_timestamp = now.minus_seconds(22 * 24 * 60 * 60);
+                cod.start_timestamp = now.minus_seconds(22 * 24 * 60 * 60);
                 CLUB_OWNERSHIP_DETAILS.save(&mut deps.storage, "CLUB001".to_string(), &cod);
             }
             Err(e) => {
