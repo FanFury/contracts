@@ -29,7 +29,7 @@ const IMMEDIATE_WITHDRAWAL: bool = true;
 const NO_IMMEDIATE_WITHDRAWAL: bool = false;
 const DONT_CHANGE_AUTO_STAKE_SETTING: bool = false;
 const SET_AUTO_STAKE: bool = true;
-
+const MAX_UFURY_COUNT: i128 = 420000000000000;
 // Reward to club owner for buying - 0 tokens
 const CLUB_BUYING_REWARD_AMOUNT: u128 = 0u128;
 
@@ -2018,8 +2018,8 @@ fn query_all_bonds(storage: &dyn Storage) -> StdResult<Vec<ClubBondingDetails>> 
     return Ok(all_bonds);
 }
 
-fn get_clubs_ranking_by_stakes(storage: &dyn Storage) -> StdResult<(Vec<(String, i128, Uint128)>,u64)> {
-    let mut max_incremental_stake_value = 0i128;
+fn get_clubs_ranking_by_stakes(storage: &dyn Storage) -> StdResult<(Vec<(String, String, Uint128)>,u64)> {
+    let mut max_incremental_stake_value = 0i128 - MAX_UFURY_COUNT;
     let mut max_total_stake_value = Uint128::zero();
     let mut matching_winners = 0u64;
     
@@ -2049,13 +2049,13 @@ fn get_clubs_ranking_by_stakes(storage: &dyn Storage) -> StdResult<(Vec<(String,
 
         if max_incremental_stake_value > difference_amount {
             // smaller difference
-            all_stakes.push((club_name.clone(), difference_amount, staked_amount));
+            all_stakes.push((club_name.clone(), difference_amount.to_string(), staked_amount));
         } else {
             // equal difference
             if max_incremental_stake_value == difference_amount {
                 if max_total_stake_value > staked_amount {
                     // smaller total
-                    all_stakes.push((club_name.clone(), difference_amount, staked_amount))
+                    all_stakes.push((club_name.clone(), difference_amount.to_string(), staked_amount))
                 } else {
                     if max_total_stake_value == staked_amount {
                         // equal total
@@ -2064,12 +2064,16 @@ fn get_clubs_ranking_by_stakes(storage: &dyn Storage) -> StdResult<(Vec<(String,
                         // greater total
                         matching_winners = 1u64;
                     }
-                    all_stakes.insert(0, (club_name.clone(), difference_amount, staked_amount));
+                    all_stakes.insert(0, (club_name.clone(), difference_amount.to_string(), staked_amount));
+                    max_incremental_stake_value = difference_amount;
+                    max_total_stake_value = staked_amount
                 }
             } else {
                 // greater difference
                 matching_winners = 1u64;
-                all_stakes.insert(0, (club_name.clone(), difference_amount, staked_amount));
+                all_stakes.insert(0, (club_name.clone(), difference_amount.to_string(), staked_amount));
+                max_incremental_stake_value = difference_amount;
+                max_total_stake_value = staked_amount
             }
         }
 /*
@@ -2085,7 +2089,7 @@ fn get_clubs_ranking_by_stakes(storage: &dyn Storage) -> StdResult<(Vec<(String,
 }
 
 fn get_and_modify_clubs_ranking_by_stakes(storage: &mut dyn Storage) -> StdResult<(Vec<(String, i128, Uint128)>,u64)> {
-    let mut max_incremental_stake_value = 0i128;
+    let mut max_incremental_stake_value = 0i128 - MAX_UFURY_COUNT;
     let mut max_total_stake_value = Uint128::zero();
     let mut matching_winners = 0u64;
     
@@ -2131,11 +2135,15 @@ fn get_and_modify_clubs_ranking_by_stakes(storage: &mut dyn Storage) -> StdResul
                         matching_winners = 1u64;
                     }
                     all_stakes.insert(0, (club_name.clone(), difference_amount, staked_amount));
+                    max_incremental_stake_value = difference_amount;
+                    max_total_stake_value = staked_amount
                 }
             } else {
                 // greater difference
                 matching_winners = 1u64;
-                all_stakes.insert(0,  (club_name.clone(), difference_amount, staked_amount));
+                all_stakes.insert(0, (club_name.clone(), difference_amount, staked_amount));
+                max_incremental_stake_value = difference_amount;
+                max_total_stake_value = staked_amount
             }
         }
         CLUB_STAKING_SNAPSHOT.save(
