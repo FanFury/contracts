@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{Addr, Timestamp, Uint128};
 use cw_storage_plus::{Item, Map};
+use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
@@ -137,3 +138,11 @@ pub const CLUB_REWARD_NEXT_TIMESTAMP: Item<Timestamp> = Item::new("club_reward_n
 pub const CLUB_STAKING_SNAPSHOT: Map<String, Uint128> =
     Map::new("club_staking_snapshot");
 
+
+// #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]
+// #[serde(rename_all = "snake_case")]
+// pub struct MapSubtree{
+//     pub map_subtree: HashMap<String, Vec<(ClubStakingDetails)>>
+// }
+// Map of Map - Uint128 to hold the total of all nodes of MapSubtree
+pub const MMAP_STAKING_DETAILS: Map<String, (Uint128, HashMap<String, Vec<(ClubStakingDetails)>>)> = Map::new("temp");

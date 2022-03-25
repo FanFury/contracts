@@ -9,6 +9,7 @@ use cw2::set_contract_version;
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 
 use cw_storage_plus::{Map};
+use std::collections::HashMap;
 
 
 use crate::error::ContractError;
@@ -16,7 +17,7 @@ use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, ReceivedMsg, ProxyQueryMs
 use crate::state::{
     ClubBondingDetails, ClubOwnershipDetails, ClubPreviousOwnerDetails, ClubStakingDetails, Config, 
     CLUB_BONDING_DETAILS, CLUB_OWNERSHIP_DETAILS, CLUB_PREVIOUS_OWNER_DETAILS,
-    CLUB_REWARD_NEXT_TIMESTAMP, CLUB_STAKING_DETAILS, CONFIG, REWARD, CLUB_STAKING_SNAPSHOT,
+    CLUB_REWARD_NEXT_TIMESTAMP, CLUB_STAKING_DETAILS, CONFIG, REWARD, CLUB_STAKING_SNAPSHOT, MMAP_STAKING_DETAILS,
 };
 
 // version info for migration info
@@ -787,6 +788,21 @@ fn stake_on_a_club(
     amount: Uint128,
     auto_stake: bool,
 ) -> Result<Response, ContractError> {
+    let mmap_all_staking_details = MMAP_STAKING_DETAILS.may_load(deps.storage, club_name.clone())?;
+    let mmap_club_stake_total;
+    let mmap_club_staker_details;
+    match mmap_all_staking_details {
+        Ok(masdfc) => {
+            mmap_club_stake_total = masdfc.0;
+            mmap_club_staker_details = masdfc.1;
+            println!("{}: {}", masdfc, mmap_club_staker_details.len()) }
+        Err(e) => { return Err(ContractError::Std(StdError::from(e))) }
+    }
+    match mmap_club_staker_details.get(staker.clone())? {
+        Some(stakes) => println!("{}: {}", staker, stakes.len()),
+        None => println!("{} is absent.", staker)
+    }
+
     let config = CONFIG.load(deps.storage)?;
 
     let staker_addr = deps.api.addr_validate(&staker)?;
