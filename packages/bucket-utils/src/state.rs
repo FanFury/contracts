@@ -1,5 +1,6 @@
 use cosmwasm_std::{Addr, CosmosMsg, DepsMut, QuerierWrapper, Response, to_binary, Uint128, WasmMsg};
 use schemars::JsonSchema;
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 
 use bucket_contract::ContractError;
 use bucket_contract::msg::{ExecuteMsg, QueryMsg};
@@ -8,7 +9,7 @@ use bucket_contract::state::PoolTeamDetails;
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]
 #[serde(rename_all = "snake_case")]
 pub struct Bucket {
-    pub bucket_address: Addr,
+    pub bucket_address: String,
 }
 
 impl Bucket {
@@ -28,10 +29,10 @@ impl Bucket {
     }
     pub fn load(&self, querier: &QuerierWrapper) -> Result<Vec<PoolTeamDetails>, ContractError> {
         let data: Vec<PoolTeamDetails> = querier.query_wasm_smart(self.bucket_address.clone(), &QueryMsg::GetVector {})?;
-        return Ok(data)
+        return Ok(data);
     }
     pub fn check_if_exits(&self, querier: &QuerierWrapper, data: PoolTeamDetails) -> Result<bool, ContractError> {
         let data: bool = querier.query_wasm_smart(self.bucket_address.clone(), &QueryMsg::CheckIfExist { data })?;
-        return Ok(data)
+        return Ok(data);
     }
 }

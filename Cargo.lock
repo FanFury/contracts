@@ -631,6 +631,7 @@ name = "gaming-pool"
 version = "0.9.1"
 dependencies = [
  "astroport",
+ "bucket-utils",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cw-storage-plus 0.9.1",

@@ -3,6 +3,7 @@ use schemars::JsonSchema;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use serde::ser::SerializeStruct;
 
+use bucket_utils::state::Bucket;
 use cw20::AllowanceResponse;
 use cw_storage_plus::{Item, Map};
 
@@ -181,7 +182,7 @@ pub const POOL_DETAILS: Map<String, PoolDetails> =
 // Here each new team_detail will be saved to a contract bucket
 // The Address of the corresponding bucket will be saved in the Map
 // Bucket Utils will supply the method for interaction with the bucket
-pub const POOL_TEAM_DETAILS: Map<String, String> = Map::new("pool_team_details");
+pub const POOL_TEAM_DETAILS: Map<String, Bucket> = Map::new("pool_team_details");
 
 
 /// Map of pools and its gamers. the key is pool id and the
