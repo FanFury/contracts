@@ -175,83 +175,17 @@ pub const POOL_TYPE_DETAILS: Map<String, PoolTypeDetails> =
 pub const POOL_DETAILS: Map<String, PoolDetails> =
     Map::new("pool_details");
 
-// /// Map of pools and its gamers. the key is pool id and the
-// /// PoolBettingDetails will contain information about the betters and amount betted
-// pub const POOL_TEAM_DETAILS: Map<String, Vec<PoolTeamDetails>> =
-//     Map::new("pool_team_details");
-//
+/// Map of pools and its gamers. the key is pool id and the
+/// PoolBettingDetails will contain information about the betters and amount betted
+// This Pool will Now Work with the Bucket Contract to Generate a Pseudo Vector
+// Here each new team_detail will be saved to a contract bucket
+// The Address of the corresponding bucket will be saved in the Map
+// Bucket Utils will supply the method for interaction with the bucket
+pub const POOL_TEAM_DETAILS: Map<String, String> = Map::new("pool_team_details");
 
-
-// The idea here to create a struct that can hold the map and then we implement secondary methods
-// over this struct to get behaviour and properties of a Vector, but avoide the inremental gas fee
-#[derive(Clone, JsonSchema, Debug)]
-#[serde(rename_all = "snake_case")]
-pub struct PoolTeamDetailsMap<'a> {
-    pub map: Map<'a, String, PoolTeamDetails>,
-
-}
-
-impl<T: de::DeserializeOwned> de::DeserializeOwned for PoolTeamDetailsMap<'_> {}
-
-impl PoolTeamDetailsMap<'_> {
-    fn turn_to_vector(&self, deps: DepsMut) -> Result<Vec<PoolTeamDetails>, ContractError> {
-        let mut vector_to_return = Vec::new();
-        for item in self.map.keys(deps.storage, None, None, Order::Ascending).into_iter() {
-            let current_teamdetail = self.map.load(deps.storage, String::from_utf8(item)?)?;
-            vector_to_return.push(current_teamdetail);
-        }
-        return Ok(vector_to_return);
-    }
-    fn add_to_map(&self, deps: DepsMut, env: Env, details: PoolTeamDetails) -> Result<Response, ContractError> {
-        let new_key = self.generate_key(&env)?;
-        self.map.save(deps.storage, new_key, &details)?;
-        return Ok(Response::new())
-    }
-    fn generate_key(&self, env: &Env) -> String {
-        // Todo find a more random function since multiple items saved at once would lead to override
-        return format!("{}_{}_{}", env.contract.address, env.block.time.seconds(), env.block.height);
-    }
-}
-
-impl Default for PoolTeamDetailsMap<'_> {
-    fn default() -> Self {
-        Self::new("temp_key")
-    }
-}
-
-impl<'a> PoolTeamDetailsMap<'a> {
-    fn new(
-        new_key: &'a str,
-    ) -> Self {
-        Self {
-            map: Map::new(new_key),
-        }
-    }
-}
-
-impl Serialize for PoolTeamDetailsMap<'_> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-    {
-        let mut state = serializer.serialize_struct("PoolTeamDetailsMap", 1)?;
-        state.serialize_field("map", &self.map)?;
-        state.end()
-    }
-}
-
-impl<'de> Deserialize<'de> for PoolTeamDetailsMap<'de> {
-    fn deserialize<D>(deserializer: D) -> Result<PoolTeamDetailsMap<'de>, D::Error>
-        where
-            D: Deserializer<'de>,
-    {
-        deserializer.deserialize_struct("PoolTeamDetailsMap")
-    }
-}
 
 /// Map of pools and its gamers. the key is pool id and the
 /// PoolBettingDetails will contain information about the betters and amount betted
-pub const POOL_TEAM_DETAILS: Map<String, PoolTeamDetailsMap> = Map::new("pool_team_details");
 
 
 pub const CONTRACT_POOL_COUNT: Map<&Addr, Uint128> = Map::new("contract_pool_count");
