@@ -894,6 +894,9 @@ pub fn game_pool_reward_distribute(
             pool_type: pool_type.clone(),
             current_teams_count: pool_details.current_teams_count,
             rewards_distributed: REWARDS_DISTRIBUTED,
+            pool_refund_status: true,
+            // TODO REVIEW THIS
+            pool_reward_status: false,
         },
     )?;
 
@@ -980,7 +983,8 @@ pub fn game_pool_reward_distribute(
     // Get all teams for this pool
     let mut reward_given_so_far = Uint128::zero();
     let mut all_teams: Vec<PoolTeamDetails> = Vec::new();
-    let ptd = POOL_TEAM_DETAILS.may_load(deps.storage, pool_id.clone())?;
+    // TODO REVIEW THIS
+    let ptd = POOL_TEAM_DETAILS.may_load(deps.storage, (&pool_id.clone(), info.sender.as_ref()))?;
     match ptd {
         Some(ptd) => {
             all_teams = ptd;
@@ -1010,7 +1014,7 @@ pub fn game_pool_reward_distribute(
         }
         updated_teams.push(updated_team);
     }
-    POOL_TEAM_DETAILS.save(deps.storage, pool_id.clone(), &updated_teams)?;
+    POOL_TEAM_DETAILS.save(deps.storage, (&pool_id.clone(), info.sender.as_ref()), &updated_teams)?;
 
     // Transfer rake_amount to all the rake wallets. Can also be only one rake wallet
     for wallet in pool_type_details.rake_list {
