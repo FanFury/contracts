@@ -138,6 +138,7 @@ pub fn execute(
             pool_id,
             game_winners,
         } => game_pool_reward_distribute(deps, env, info, pool_id, game_winners),
+        // TODO Review this implementation
         ExecuteMsg::SaveTeamDetails {
             gamer,
             pool_id,
@@ -152,6 +153,7 @@ pub fn execute(
             team_rank,
         } => save_team_details(
             deps.storage,
+            info.sender,
             env,
             gamer,
             pool_id,

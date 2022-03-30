@@ -1,10 +1,9 @@
+use cosmwasm_std::{Addr, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Addr, Uint128};
-use cw_storage_plus::{Item, Map};
-
 use cw20::AllowanceResponse;
+use cw_storage_plus::{Item, Map};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
@@ -92,6 +91,10 @@ pub struct PoolDetails {
 
     /// Whether rewards are distributed for this pool
     pub rewards_distributed: bool,
+
+    pub pool_refund_status: bool,
+
+    pub pool_reward_status: bool,
 }
 
 
@@ -140,8 +143,10 @@ pub struct GameResult {
     pub gamer_address: String,
     pub game_id: String,
     pub team_id: String,
-    pub reward_amount: Uint128, // UST
-    pub refund_amount: Uint128, //  UST
+    pub reward_amount: Uint128,
+    // UST
+    pub refund_amount: Uint128,
+    //  UST
     pub team_rank: u64,
     pub team_points: u64,
 }
@@ -173,7 +178,7 @@ pub const POOL_DETAILS: Map<String, PoolDetails> =
 
 /// Map of pools and its gamers. the key is pool id and the
 /// PoolBettingDetails will contain information about the betters and amount betted
-pub const POOL_TEAM_DETAILS: Map<String, Vec<PoolTeamDetails>> =
+pub const POOL_TEAM_DETAILS: Map<(&str, &str), Vec<PoolTeamDetails>> =
     Map::new("pool_team_details");
 
 pub const CONTRACT_POOL_COUNT: Map<&Addr, Uint128> = Map::new("contract_pool_count");

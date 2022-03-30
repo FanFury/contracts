@@ -1,13 +1,14 @@
 #![allow(non_snake_case)]
+
 #[cfg(test)]
 mod tests {
     use cosmwasm_std::{coin, Uint128};
+    use cosmwasm_std::Addr;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-    use cosmwasm_std::{Addr};
+
     use crate::contract::{CLAIMED_REWARD, GAME_CANCELLED, GAME_COMPLETED, GAME_POOL_OPEN, INITIAL_REFUND_AMOUNT, instantiate};
     use crate::execute::{cancel_game, claim_refund, claim_reward, create_pool, game_pool_bid_submit, game_pool_reward_distribute, lock_game, save_team_details, set_platform_fee_wallets, set_pool_type_params};
-
-    use crate::msg::{InstantiateMsg};
+    use crate::msg::InstantiateMsg;
     use crate::query::{get_team_count_for_user_in_pool_type, query_game_details, query_pool_details, query_team_details};
     use crate::state::{GameResult, PLATFORM_WALLET_PERCENTAGES, POOL_TEAM_DETAILS, WalletPercentage};
 
@@ -146,6 +147,7 @@ mod tests {
 
         let rsp_save_team = save_team_details(
             &mut deps.storage,
+            adminInfo.sender,
             mock_env(),
             "Gamer001".to_string(),
             poolId.to_string(),
@@ -1192,24 +1194,24 @@ mod tests {
         let cancelInfo = mock_info("cancelInfo", &[]);
         let cancel_rsp = cancel_game(deps.as_mut(), mock_env(), adminInfo.clone());
 
-/*
-		23 Mar 2022, commenting this out because call to proxy cannot be made 
-		it succeeds till calculating refund amount = 444262
+        /*
+                23 Mar 2022, commenting this out because call to proxy cannot be made
+                it succeeds till calculating refund amount = 444262
 
-        let claim_refund_rsp = claim_refund(deps.as_mut(), owner1_info.clone(), "Gamer002".to_string(), mock_env());
-        match claim_refund_rsp {
-            Ok(claim_refund_rsp) => {
-                let amt = claim_refund_rsp.attributes[0].value.clone();
-                let expamt = Uint128::from(144262u128) + platform_fee;
-                let expamtStr = expamt.to_string();
-                assert_eq!(amt, expamtStr);
-            }
-            Err(e) => {
-                println!("error parsing header: {:?}", e);
-                assert_eq!(5, 6);
-            }
-        }
-*/
+                let claim_refund_rsp = claim_refund(deps.as_mut(), owner1_info.clone(), "Gamer002".to_string(), mock_env());
+                match claim_refund_rsp {
+                    Ok(claim_refund_rsp) => {
+                        let amt = claim_refund_rsp.attributes[0].value.clone();
+                        let expamt = Uint128::from(144262u128) + platform_fee;
+                        let expamtStr = expamt.to_string();
+                        assert_eq!(amt, expamtStr);
+                    }
+                    Err(e) => {
+                        println!("error parsing header: {:?}", e);
+                        assert_eq!(5, 6);
+                    }
+                }
+        */
     }
 
     #[test]
@@ -1637,27 +1639,27 @@ mod tests {
             assert_eq!(team[2].reward_amount, Uint128::from(300u128));
         }
 
-/*
-		23 Mar 2022, commenting this out because call to proxy cannot be made 
-		it succeeds till calculating reward amount = 1000
+        /*
+                23 Mar 2022, commenting this out because call to proxy cannot be made
+                it succeeds till calculating reward amount = 1000
 
-        let claim_reward_rsp =
-            claim_reward(deps.as_mut(), owner1_info.clone(), "Gamer002".to_string(), mock_env());
-        match claim_reward_rsp {
-            Ok(claim_reward_rsp) => {
-                //Since max allowed team for gamer under this pooltype is 2 so it will not allow 3rd team creation under this pooltype.
-                //assert_eq!(pool_detail_1.current_teams_count, 3u32);
-                assert_eq!(
-                    claim_reward_rsp.attributes[0].value.clone(),
-                    "1000".to_string()
-                );
-            }
-            Err(e) => {
-                println!("error parsing header: {:?}", e);
-                assert_eq!(6, 7);
-            }
-        }
-*/
+                let claim_reward_rsp =
+                    claim_reward(deps.as_mut(), owner1_info.clone(), "Gamer002".to_string(), mock_env());
+                match claim_reward_rsp {
+                    Ok(claim_reward_rsp) => {
+                        //Since max allowed team for gamer under this pooltype is 2 so it will not allow 3rd team creation under this pooltype.
+                        //assert_eq!(pool_detail_1.current_teams_count, 3u32);
+                        assert_eq!(
+                            claim_reward_rsp.attributes[0].value.clone(),
+                            "1000".to_string()
+                        );
+                    }
+                    Err(e) => {
+                        println!("error parsing header: {:?}", e);
+                        assert_eq!(6, 7);
+                    }
+                }
+        */
 
         query_game_status_res = query_game_details(&mut deps.storage);
         match query_game_status_res {
@@ -1675,12 +1677,12 @@ mod tests {
             assert_eq!(team[0].reward_amount, Uint128::from(500u128)); // TODO This reward should be 0 after full functionality working.
             assert_eq!(team[1].reward_amount, Uint128::from(200u128)); // TODO This reward should be 0 after full functionality working.
             assert_eq!(team[2].reward_amount, Uint128::from(300u128)); // TODO This reward should be 0 after full functionality working.
-/*
-			23 Mar 2022, commenting this out because call to proxy cannot be made 
-            assert_eq!(team[0].claimed_reward, CLAIMED_REWARD);
-            assert_eq!(team[1].claimed_reward, CLAIMED_REWARD);
-            assert_eq!(team[2].claimed_reward, CLAIMED_REWARD);
-*/
+            /*
+                        23 Mar 2022, commenting this out because call to proxy cannot be made
+                        assert_eq!(team[0].claimed_reward, CLAIMED_REWARD);
+                        assert_eq!(team[1].claimed_reward, CLAIMED_REWARD);
+                        assert_eq!(team[2].claimed_reward, CLAIMED_REWARD);
+            */
         }
     }
 
@@ -1889,27 +1891,27 @@ mod tests {
             assert_eq!(team[2].reward_amount, Uint128::from(300u128));
         }
 
-/*
-		23 Mar 2022, commenting this out because call to proxy cannot be made 
-		it succeeds till calculating reward amount = 600
+        /*
+                23 Mar 2022, commenting this out because call to proxy cannot be made
+                it succeeds till calculating reward amount = 600
 
-        let claim_reward_rsp =
-            claim_reward(deps.as_mut(), owner1_info.clone(), "Gamer002".to_string(), mock_env());
-        match claim_reward_rsp {
-            Ok(claim_reward_rsp) => {
-                //Since max allowed team for gamer under this pooltype is 2 so it will not allow 3rd team creation under this pooltype.
-                //assert_eq!(pool_detail_1.current_teams_count, 3u32);
-                assert_eq!(
-                    claim_reward_rsp.attributes[0].value.clone(),
-                    "600".to_string()
-                );
-            }
-            Err(e) => {
-                println!("error parsing header: {:?}", e);
-                assert_eq!(6, 7);
-            }
-        }
-*/
+                let claim_reward_rsp =
+                    claim_reward(deps.as_mut(), owner1_info.clone(), "Gamer002".to_string(), mock_env());
+                match claim_reward_rsp {
+                    Ok(claim_reward_rsp) => {
+                        //Since max allowed team for gamer under this pooltype is 2 so it will not allow 3rd team creation under this pooltype.
+                        //assert_eq!(pool_detail_1.current_teams_count, 3u32);
+                        assert_eq!(
+                            claim_reward_rsp.attributes[0].value.clone(),
+                            "600".to_string()
+                        );
+                    }
+                    Err(e) => {
+                        println!("error parsing header: {:?}", e);
+                        assert_eq!(6, 7);
+                    }
+                }
+        */
         query_game_status_res = query_game_details(&mut deps.storage);
         match query_game_status_res {
             Ok(query_game_status_res) => {
@@ -1926,33 +1928,33 @@ mod tests {
             assert_eq!(team[0].reward_amount, Uint128::from(100u128)); // TODO This reward should be 0 after full functionality working.
             assert_eq!(team[1].reward_amount, Uint128::from(200u128)); // TODO This reward should be 0 after full functionality working.
             assert_eq!(team[2].reward_amount, Uint128::from(300u128)); // TODO This reward should be 0 after full functionality working.
-/*
-			23 Mar 2022, commenting this out because call to proxy cannot be made 
-            assert_eq!(team[0].claimed_reward, CLAIMED_REWARD);
-            assert_eq!(team[1].claimed_reward, CLAIMED_REWARD);
-            assert_eq!(team[2].claimed_reward, CLAIMED_REWARD);
-*/
+            /*
+                        23 Mar 2022, commenting this out because call to proxy cannot be made
+                        assert_eq!(team[0].claimed_reward, CLAIMED_REWARD);
+                        assert_eq!(team[1].claimed_reward, CLAIMED_REWARD);
+                        assert_eq!(team[2].claimed_reward, CLAIMED_REWARD);
+            */
         }
 
-/*
-			23 Mar 2022, commenting this out because call to proxy cannot be made 
-        let claim_reward_rsp_2 =
-            claim_reward(deps.as_mut(), owner1_info.clone(), "Gamer002".to_string(), mock_env());
-        match claim_reward_rsp_2 {
-            Ok(claim_reward_rsp_2) => {
-                // IT should not come here
-                assert_eq!(1, 2);
-            }
-            Err(e) => {
-                let outstr = format!("error parsing header: {:?}", e);
-                println!("{:?}", outstr);
-                assert_eq!(
-                    outstr,
-                    "error parsing header: Std(GenericErr { msg: \"No reward for this user\" })"
-                );
-            }
-        }
-*/
+        /*
+                    23 Mar 2022, commenting this out because call to proxy cannot be made
+                let claim_reward_rsp_2 =
+                    claim_reward(deps.as_mut(), owner1_info.clone(), "Gamer002".to_string(), mock_env());
+                match claim_reward_rsp_2 {
+                    Ok(claim_reward_rsp_2) => {
+                        // IT should not come here
+                        assert_eq!(1, 2);
+                    }
+                    Err(e) => {
+                        let outstr = format!("error parsing header: {:?}", e);
+                        println!("{:?}", outstr);
+                        assert_eq!(
+                            outstr,
+                            "error parsing header: Std(GenericErr { msg: \"No reward for this user\" })"
+                        );
+                    }
+                }
+        */
     }
 
     #[test]
@@ -2139,7 +2141,7 @@ mod tests {
             }
         }
         let team_details = POOL_TEAM_DETAILS.load(&mut deps.storage, pool_id_1.clone());
-		let mut teams = Vec::new();
+        let mut teams = Vec::new();
         match team_details {
             Ok(some_teams) => {
                 teams = some_teams;
@@ -2147,12 +2149,12 @@ mod tests {
             Err(e) => {}
         }
 
-		let mut count = 0;
+        let mut count = 0;
         for team in teams {
-			count += 1;
-			println!("team = {:?}", team);
+            count += 1;
+            println!("team = {:?}", team);
         }
-		assert_eq!(count,3);
+        assert_eq!(count, 3);
     }
 
     #[test]

@@ -2,10 +2,7 @@ use std::ops::Add;
 
 use astroport::asset::{Asset, AssetInfo};
 use astroport::pair::ExecuteMsg as AstroPortExecute;
-use cosmwasm_std::{BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, from_binary,
-                   MessageInfo, Order, Response, StdError, StdResult,
-                   Storage, SubMsg, to_binary, Uint128, WasmMsg};
-use cosmwasm_std::*;
+use cosmwasm_std::{Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, from_binary, MessageInfo, Order, Response, StdError, StdResult, Storage, SubMsg, to_binary, Uint128, WasmMsg};
 
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 
@@ -164,7 +161,7 @@ pub fn cancel_game(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Respon
         .map(|k| String::from_utf8(k).unwrap())
         .collect();
     for pool_id in all_pools {
-        let pool;
+        let mut pool;
         let pd = POOL_DETAILS.may_load(deps.storage, pool_id.clone())?;
         match pd {
             Some(pd) => {
@@ -189,33 +186,34 @@ pub fn cancel_game(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Respon
             }
         };
         let refund_amount = pool_type.pool_fee;
-
+        pool.pool_refund_status = true; // We skip the iteration and update the status
+        POOL_DETAILS.save(deps.storage, pool_id.clone(), &pool)?;
         // Get the existing teams for this pool
         // let mut teams = Vec::new();
-        let all_teams = POOL_TEAM_DETAILS.may_load(deps.storage, pool_id.clone())?;
-        match all_teams {
-            Some(some_teams) => {
-                let teams = some_teams;
-                let mut updated_teams: Vec<PoolTeamDetails> = Vec::new();
-                for team in teams {
-                    // No transfer to be done to the gamers. Just update their refund amounts.
-                    // They have to come and collect their refund
-                    // In case of refund due to lock_game min_team_count not met for the pool_type
-                    let mut updated_team = team.clone();
-                    if updated_team.refund_amount == Uint128::zero() {
-                        updated_team.refund_amount = refund_amount;
-                        updated_team.claimed_refund = UNCLAIMED_REFUND;
-                        println!(
-                            "refund for {:?} is {:?}",
-                            team.team_id, updated_team.refund_amount
-                        );
-                    }
-                    updated_teams.push(updated_team);
-                }
-                POOL_TEAM_DETAILS.save(deps.storage, pool_id.clone(), &updated_teams)?;
-            }
-            None => {}
-        }
+        // let all_teams = POOL_TEAM_DETAILS.may_load(deps.storage, pool_id.clone())?;
+        // match all_teams {
+        //     Some(some_teams) => {
+        //         let teams = some_teams;
+        //         let mut updated_teams: Vec<PoolTeamDetails> = Vec::new();
+        //         for team in teams {
+        //             // No transfer to be done to the gamers. Just update their refund amounts.
+        //             // They have to come and collect their refund
+        //             // In case of refund due to lock_game min_team_count not met for the pool_type
+        //             let mut updated_team = team.clone();
+        //             if updated_team.refund_amount == Uint128::zero() {
+        //                 updated_team.refund_amount = refund_amount;
+        //                 updated_team.claimed_refund = UNCLAIMED_REFUND;
+        //                 println!(
+        //                     "refund for {:?} is {:?}",
+        //                     team.team_id, updated_team.refund_amount
+        //                 );
+        //             }
+        //             updated_teams.push(updated_team);
+        //         }
+        //         POOL_TEAM_DETAILS.save(deps.storage, pool_id.clone(), &updated_teams)?;
+        //     }
+        //     None => {}
+        // }
     }
     return Ok(Response::new()
         .add_attribute("game_id", game_id.clone())
@@ -264,8 +262,9 @@ pub fn lock_game(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response
         .map(|k| String::from_utf8(k).unwrap())
         .collect();
     for pool_id in all_pools {
-        let pool;
+        let mut pool;
         let pd = POOL_DETAILS.may_load(deps.storage, pool_id.clone())?;
+
         match pd {
             Some(pd) => {
                 pool = pd;
@@ -291,31 +290,33 @@ pub fn lock_game(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response
         if pool.current_teams_count >= pool_type.min_teams_for_pool {
             continue;
         }
-        let refund_amount = pool_type.pool_fee;
-
+        // let refund_amount = pool_type.pool_fee; //  Commented since we dont use this value anymore
+        pool.pool_refund_status = true; // We skip the iteration and update the status
+        POOL_DETAILS.save(deps.storage, pool_id.clone(), &pool)?;
+        // COMMENTED CODE
         // Get the existing teams for this pool
         // let mut teams = Vec::new();
-        let all_teams = POOL_TEAM_DETAILS.may_load(deps.storage, pool_id.clone())?;
-        match all_teams {
-            Some(some_teams) => {
-                let teams = some_teams;
-                let mut updated_teams: Vec<PoolTeamDetails> = Vec::new();
-                for team in teams {
-                    // No transfer to be done to the gamers. Just update their refund amounts.
-                    // They have to come and collect their refund
-                    let mut updated_team = team.clone();
-                    updated_team.refund_amount = refund_amount;
-                    updated_team.claimed_refund = UNCLAIMED_REFUND;
-                    println!(
-                        "refund for {:?} is {:?}",
-                        team.team_id, updated_team.refund_amount
-                    );
-                    updated_teams.push(updated_team);
-                }
-                POOL_TEAM_DETAILS.save(deps.storage, pool_id.clone(), &updated_teams)?;
-            }
-            None => {}
-        }
+        // let all_teams = POOL_TEAM_DETAILS.may_load(deps.storage, pool_id.clone())?;
+        // match all_teams {
+        //     Some(some_teams) => {
+        //         let teams = some_teams;
+        //         let mut updated_teams: Vec<PoolTeamDetails> = Vec::new();
+        //         for team in teams {
+        //             // No transfer to be done to the gamers. Just update their refund amounts.
+        //             // They have to come and collect their refund
+        //             let mut updated_team = team.clone();
+        //             updated_team.refund_amount = refund_amount;
+        //             updated_team.claimed_refund = UNCLAIMED_REFUND;
+        //             println!(
+        //                 "refund for {:?} is {:?}",
+        //                 team.team_id, updated_team.refund_amount
+        //             );
+        //             updated_teams.push(updated_team);
+        //         }
+        //         POOL_TEAM_DETAILS.save(deps.storage, pool_id.clone(), &updated_teams)?;
+        //     }
+        //     None => {}
+        // }
     }
     return Ok(Response::new()
         .add_attribute("game_id", game_id.clone())
@@ -385,6 +386,8 @@ pub fn create_pool(
             pool_type: pool_type.clone(),
             current_teams_count: 0u32,
             rewards_distributed: REWARDS_NOT_DISTRIBUTED,
+            pool_refund_status: false,
+            pool_reward_status: false,
         },
     )?;
     return Ok(Response::new().add_attribute("pool_id", pool_id_str.clone()));
@@ -418,6 +421,7 @@ pub fn game_pool_bid_submit(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     // Calculate
+    let platform_fee = config.platform_fee; //  Should be in %
     let game_id = config.clone().game_id;
     let mut messages = Vec::new(); //  Use this to append any execute messaages in the funciton
     let gd = GAME_DETAILS.may_load(deps.storage, game_id.clone())?;
@@ -450,21 +454,48 @@ pub fn game_pool_bid_submit(
             }));
         }
     }
-    // match testing {
-    //     true => {
-    //         required_platform_fee_ust = Uint128::zero();
-    //         transaction_fee = Uint128::zero();
-    //     }
-    //     false => {
-    //         let fee_details = query_platform_fees(
-    //             ptd.unwrap().pool_fee,
-    //             platform_fee,
-    //             config.transaction_fee,
-    //         )?;
-    //         required_platform_fee_ust = fee_details.platform_fee;
-    //         transaction_fee = fee_details.transaction_fee;
-    //     }
-    // }
+    let required_platform_fee_ust;
+    let transaction_fee;
+    match testing {
+        true => {
+            required_platform_fee_ust = Uint128::zero();
+            transaction_fee = Uint128::zero();
+        }
+        false => {
+            let fee_details = query_platform_fees(
+                ptd.unwrap().pool_fee,
+                platform_fee,
+                config.transaction_fee,
+            )?;
+            required_platform_fee_ust = fee_details.platform_fee;
+            transaction_fee = fee_details.transaction_fee;
+        }
+    }
+
+    if !testing {
+        let mut asset: Asset = Asset {
+            info: AssetInfo::NativeToken { denom: info.funds[0].denom.clone() },
+            amount: info.funds[0].amount,
+        };
+        if info.funds.clone().len() != 1 {
+            return Err(ContractError::InvalidNumberOfCoinsSent {});
+        }
+        let fund = info.funds.clone();
+
+        if fund[0].denom == "uusd" {
+            if fund[0].amount < required_platform_fee_ust.add(transaction_fee) {
+                asset = Asset {
+                    info: AssetInfo::NativeToken { denom: fund[0].denom.clone() },
+                    amount: fund[0].amount,
+                };
+                println!("Asset {}", asset);
+            }
+        } else {
+            return Err(ContractError::InsufficientFeesUst {});
+        }
+        println!("Asset {}", asset);
+    }
+
 
     let mut pool_fee: Uint128 = pool_type_details.pool_fee;
     if !testing {
@@ -490,7 +521,9 @@ pub fn game_pool_bid_submit(
         }));
     }
     let mut user_team_count = 0;
-    let ptd = POOL_TEAM_DETAILS.may_load(deps.storage, pool_id.clone())?;
+    // TODO REVIEW THIS IMPLEMENTATION
+    // Here we load the details based on the user placing the bid
+    let ptd = POOL_TEAM_DETAILS.may_load(deps.storage, (&pool_id.clone(), info.sender.as_ref()))?;
     match ptd {
         Some(std) => {
             let all_teams = std;
@@ -525,11 +558,14 @@ pub fn game_pool_bid_submit(
                 game_id: pool_details.game_id.clone(),
                 current_teams_count: pool_details.current_teams_count,
                 rewards_distributed: pool_details.rewards_distributed,
+                pool_refund_status: false,
+                pool_reward_status: false,
             },
         )?;
         // Now save the team details
         save_team_details(
             deps.storage,
+            info.sender.clone(),
             env.clone(),
             gamer.clone(),
             pool_id.clone(),
@@ -594,19 +630,6 @@ pub fn game_pool_bid_submit(
             msg: to_binary(&swap_message)?
         },
     )?;
-    if !testing {
-        if info.funds.clone().len() != 1 {
-            return Err(ContractError::InvalidNumberOfCoinsSent {});
-        }
-        let fund = info.funds.clone();
-        if fund[0].denom == "uusd" {
-            if fund[0].amount < platform_fees {
-                return Err(ContractError::InsufficientFeesUst {});
-            }
-        }
-    }
-
-
     messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: config.clone().astro_proxy_address.to_string(),
         msg: to_binary(&swap_message).unwrap(),
@@ -630,6 +653,7 @@ pub fn game_pool_bid_submit(
 
 pub fn save_team_details(
     storage: &mut dyn Storage,
+    sender: Addr,
     _env: Env,
     gamer: String,
     pool_id: String,
@@ -645,7 +669,7 @@ pub fn save_team_details(
 ) -> Result<Response, ContractError> {
     // Get the existing teams for this pool
     let mut teams = Vec::new();
-    let all_teams = POOL_TEAM_DETAILS.may_load(storage, pool_id.clone())?;
+    let all_teams = POOL_TEAM_DETAILS.may_load(storage, (&pool_id.clone(), sender.clone().as_ref()))?;
     match all_teams {
         Some(some_teams) => {
             teams = some_teams;
@@ -659,14 +683,14 @@ pub fn save_team_details(
         pool_type: pool_type.clone(),
         pool_id: pool_id.clone(),
         team_id: team_id.clone(),
-        reward_amount: reward_amount,
-        claimed_reward: claimed_reward,
-        refund_amount: refund_amount,
-        claimed_refund: claimed_refund,
-        team_points: team_points,
-        team_rank: team_rank,
+        reward_amount,
+        claimed_reward,
+        refund_amount,
+        claimed_refund,
+        team_points,
+        team_rank,
     });
-    POOL_TEAM_DETAILS.save(storage, pool_id.clone(), &teams)?;
+    POOL_TEAM_DETAILS.save(storage, (&pool_id.clone(), sender.as_ref()), &teams)?;
 
     return Ok(Response::new().add_attribute("team_id", team_id.clone()));
 }
@@ -694,7 +718,7 @@ pub fn claim_reward(
     for pool_id in all_pools {
         // Get the existing teams for this pool
         let mut teams = Vec::new();
-        let all_teams = POOL_TEAM_DETAILS.may_load(deps.storage, pool_id.clone())?;
+        let all_teams = POOL_TEAM_DETAILS.may_load(deps.storage, (&*pool_id.clone(), info.sender.as_ref()))?;
         match all_teams {
             Some(some_teams) => {
                 teams = some_teams;
@@ -713,7 +737,7 @@ pub fn claim_reward(
             }
             updated_teams.push(updated_team);
         }
-        POOL_TEAM_DETAILS.save(deps.storage, pool_id.clone(), &updated_teams)?;
+        POOL_TEAM_DETAILS.save(deps.storage, (&*pool_id.clone(), info.sender.as_ref()), &updated_teams)?;
     }
 
     println!("reward amount is {:?}", user_reward);
@@ -751,8 +775,6 @@ pub fn claim_refund(
         });
     }
     let config = CONFIG.load(deps.storage)?;
-
-
     let mut user_refund = Uint128::zero();
     // Get all pools
     let all_pools: Vec<String> = POOL_DETAILS
@@ -762,7 +784,7 @@ pub fn claim_refund(
     for pool_id in all_pools {
         // Get the existing teams for this pool
         let mut teams = Vec::new();
-        let all_teams = POOL_TEAM_DETAILS.may_load(deps.storage, pool_id.clone())?;
+        let all_teams = POOL_TEAM_DETAILS.may_load(deps.storage, (&*pool_id.clone(), info.sender.as_ref()))?;
         match all_teams {
             Some(some_teams) => {
                 teams = some_teams;
@@ -783,7 +805,7 @@ pub fn claim_refund(
             }
             updated_teams.push(updated_team);
         }
-        POOL_TEAM_DETAILS.save(deps.storage, pool_id.clone(), &updated_teams)?;
+        POOL_TEAM_DETAILS.save(deps.storage, (&*pool_id.clone(), info.sender.as_ref()), &updated_teams)?;
     }
 
     println!("refund amount is {:?}", user_refund);
@@ -1011,12 +1033,12 @@ pub fn game_pool_reward_distribute(
         );
     }
 
-    let rsp = _transfer_to_multiple_wallets(
-        wallet_transfer_details,
-        "rake_and_platform_fee".to_string(),
-        deps,
-    )?;
-    return Ok(rsp
+    // let rsp = transfer_to_multiple_wallets(
+    //     wallet_transfer_details,
+    //     "rake_and_platform_fee".to_string(),
+    //     deps,
+    // )?;
+    return Ok(Response::new()
         .add_attribute("game_status", "GAME_COMPLETED".to_string())
         .add_attribute("game_id", game_id.clone())
         .add_attribute("pool_status", "POOL_REWARD_DISTRIBUTED".to_string())
@@ -1071,24 +1093,6 @@ pub fn transfer_from_contract_to_wallet(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let mut messages = Vec::new();
-    // Amount Requested is in Fury Now we convert it to UST
-
-    // Amount is IN UST So we wont Query Swap
-    // let amount_to_swap_in_ust = deps.querier.query_wasm_smart(
-    //     config.astro_proxy_address.clone(),
-    //     &ProxyQueryMsgs::get_ust_equivalent_to_fury {
-    //         fury_count: amount,
-    //     },
-    // )?;
-    // messages.push(CosmosMsg::Bank(BankMsg::Send {
-    //     to_address: config.platform_fees_collector_wallet.into_string(),
-    //     amount: vec![Coin{
-    //         denom:"uusd".to_string(),
-    //         amount:amount_to_swap_in_ust
-    //     }],
-    // }));
-    //===========================================
-    // Swap from UST to FURY the amount here we use the amount_to_swap_in_ust and Send the Fury to the Reciepent After Swap
     let ust_asset = Asset {
         info: AssetInfo::NativeToken {
             denom: "uusd".to_string()
@@ -1115,7 +1119,7 @@ pub fn transfer_from_contract_to_wallet(
         // We only take the first coin object since we only expect UST here
         let funds_sent = info.funds[0].clone();
         if (funds_sent.denom != "uusd") || (funds_sent.amount < swap_fee) {
-            return Err(ContractError::InsufficientFeesUst {})
+            return Err(ContractError::InsufficientFeesUst {});
         }
     }
     let final_amount = ust_asset.amount.clone().add(swap_fee).add(tax);
@@ -1127,17 +1131,13 @@ pub fn transfer_from_contract_to_wallet(
             amount: final_amount,
         }],
     }));
-
-
     if is_refund {
-        // We Have
         let refund = Coin {
             denom: "uusd".to_string(),
             amount: ust_refund,
         };
         let mut refund_: Vec<Coin> = vec![];
         refund_.push(refund);
-
         messages.push(CosmosMsg::Bank(BankMsg::Send {
             to_address: String::from(info.sender),
             amount: refund_,
@@ -1150,15 +1150,13 @@ pub fn transfer_from_contract_to_wallet(
     );
 }
 
-
 pub fn execute_sweep(
     deps: DepsMut,
     info: MessageInfo,
-    funds_to_send: Vec<Coin>,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    if info.sender != config.admin_address {
-        return Err(ContractError::Unauthorized { invoker: String::from(info.sender) });
+    funds_to_send: Vec<Coin>) -> Result<Response, ContractError> {
+    let state = CONFIG.load(deps.storage)?;
+    if info.sender != state.admin_address {
+        return Err(ContractError::Unauthorized { invoker: info.sender.clone().to_string() });
     }
     let r = CosmosMsg::Bank(BankMsg::Send {
         to_address: info.sender.to_string(),
@@ -1166,5 +1164,5 @@ pub fn execute_sweep(
     });
     Ok(Response::new()
         .add_message(r)
-        .add_attribute("action", "execute_sweep"))
+        .add_attribute("action", "exeucte_sweep"))
 }
