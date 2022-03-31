@@ -2,6 +2,8 @@
 
 #[cfg(test)]
 mod tests {
+    use std::ops::Add;
+
     use cosmwasm_std::{coin, Uint128};
     use cosmwasm_std::Addr;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
@@ -15,16 +17,16 @@ mod tests {
     #[test]
     fn test_create_and_query_game() {
         let mut deps = mock_dependencies(&[]);
-        let platform_fee = Uint128::from(300000u128);
-        let transaction_fee = Uint128::from(100000u128);
+        let platform_fee = 300000u128;
+        let transaction_fee = 100000u128;
         let _owner1_info = mock_info("Owner001", &[coin(1000, "stake")]);
         let instantiate_msg = InstantiateMsg {
             minting_contract_address: "cwtoken11111".to_string(),
             platform_fees_collector_wallet: "FEE_WALLET".to_string(),
             astro_proxy_address: "ASTROPORT".to_string(),
             admin_address: "admin11111".to_string(),
-            platform_fee: platform_fee,
-            transaction_fee: transaction_fee,
+            platform_fee,
+            transaction_fee,
             game_id: "Game001".to_string(),
         };
         let adminInfo = mock_info("admin11111", &[]);
@@ -52,8 +54,8 @@ mod tests {
     fn test_create_and_query_pool_detail() {
         let mut deps = mock_dependencies(&[]);
         let owner1_info = mock_info("Owner001", &[coin(1000, "stake")]);
-        let platform_fee = Uint128::from(300000u128);
-        let transaction_fee = Uint128::from(100000u128);
+        let platform_fee = 300000u128;
+        let transaction_fee = 100000u128;
 
         let instantiate_msg = InstantiateMsg {
             minting_contract_address: "cwtoken11111".to_string(),
@@ -107,14 +109,13 @@ mod tests {
     fn test_save_and_query_team_detail() {
         let mut deps = mock_dependencies(&[]);
         let owner1_info = mock_info("Owner001", &[coin(1000, "stake")]);
-        let platform_fee = Uint128::from(300000u128);
-        let transaction_fee = Uint128::from(100000u128);
+        let platform_fee = 300000u128;
+        let transaction_fee = 100000u128;
         let instantiate_msg = InstantiateMsg {
-            transaction_fee: transaction_fee,
-
+            transaction_fee,
             minting_contract_address: "cwtoken11111".to_string(),
             admin_address: "admin11111".to_string(),
-            platform_fee: platform_fee,
+            platform_fee,
             game_id: "Game001".to_string(),
             platform_fees_collector_wallet: "FEE_WALLET".to_string(),
             astro_proxy_address: "ASTROPORT".to_string(),
@@ -147,7 +148,6 @@ mod tests {
 
         let rsp_save_team = save_team_details(
             &mut deps.storage,
-            adminInfo.sender,
             mock_env(),
             "Gamer001".to_string(),
             poolId.to_string(),
@@ -174,7 +174,7 @@ mod tests {
             }
         }
 
-        let queryRes = query_team_details(&mut deps.storage, poolId.to_string(), teamId.to_string());
+        let queryRes = query_team_details(&mut deps.storage, poolId.to_string(), teamId.to_string(), "Gamer001".to_string());
         match queryRes {
             Ok(poolTeamDetail) => {
                 assert_eq!(poolTeamDetail.pool_id, poolId.to_string());
@@ -191,8 +191,8 @@ mod tests {
     fn test_get_team_count_for_user_in_pool_type() {
         let mut deps = mock_dependencies(&[]);
         let owner1_info = mock_info("Owner001", &[coin(1000, "stake")]);
-        let platform_fee = Uint128::from(300000u128);
-        let transaction_fee = Uint128::from(100000u128);
+        let platform_fee = 300000u128;
+        let transaction_fee = 100000u128;
         let instantiate_msg = InstantiateMsg {
             transaction_fee: transaction_fee,
 
@@ -297,9 +297,8 @@ mod tests {
     fn test_game_pool_bid_submit_when_pool_team_in_range() {
         let mut deps = mock_dependencies(&[]);
         let owner1_info = mock_info("Gamer001", &[coin(1000, "stake")]);
-        let platform_fee = Uint128::from(300000u128);
-
-        let transaction_fee = Uint128::from(100000u128);
+        let platform_fee = 300000u128;
+        let transaction_fee = 100000u128;
         let instantiate_msg = InstantiateMsg {
             transaction_fee: transaction_fee,
 
@@ -379,7 +378,7 @@ mod tests {
             "oneToOne".to_string(),
             poolId.to_string(),
             "Team001".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
         let queryRes = query_pool_details(&mut deps.storage, "1".to_string());
@@ -398,9 +397,8 @@ mod tests {
     fn test_game_pool_bid_submit_when_pool_team_not_in_range() {
         let mut deps = mock_dependencies(&[]);
         let owner1_info = mock_info("Gamer001", &[coin(1000, "stake")]);
-        let platform_fee = Uint128::from(300000u128);
-
-        let transaction_fee = Uint128::from(100000u128);
+        let platform_fee = 300000u128;
+        let transaction_fee = 100000u128;
         let instantiate_msg = InstantiateMsg {
             transaction_fee: transaction_fee,
 
@@ -480,7 +478,7 @@ mod tests {
             "oneToOne".to_string(),
             poolId.to_string(),
             "Team001".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
         game_pool_bid_submit(
@@ -491,7 +489,7 @@ mod tests {
             "oneToOne".to_string(),
             poolId.to_string(),
             "Team001".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
         let queryRes = query_pool_details(&mut deps.storage, "2".to_string());
@@ -511,9 +509,8 @@ mod tests {
     fn test_crete_different_pool_type_and_add_multiple_game_for_given_user() {
         let mut deps = mock_dependencies(&[]);
         let owner1_info = mock_info("Gamer001", &[coin(1000, "stake")]);
-        let platform_fee = Uint128::from(300000u128);
-
-        let transaction_fee = Uint128::from(100000u128);
+        let platform_fee = 300000u128;
+        let transaction_fee = 100000u128;
         let instantiate_msg = InstantiateMsg {
             transaction_fee: transaction_fee,
 
@@ -642,7 +639,7 @@ mod tests {
             "oneToOne".to_string(),
             pool_id_1.to_string(),
             "Team001".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
         game_pool_bid_submit(
@@ -653,7 +650,7 @@ mod tests {
             "oneToOne".to_string(),
             pool_id_1.to_string(),
             "Team001".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
         game_pool_bid_submit(
@@ -664,7 +661,7 @@ mod tests {
             "oneToOne".to_string(),
             pool_id_1.to_string(),
             "Team002".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
         game_pool_bid_submit(
@@ -675,7 +672,7 @@ mod tests {
             "oneToOne".to_string(),
             pool_id_1.to_string(),
             "Team003".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
 
@@ -699,7 +696,7 @@ mod tests {
             "multiple".to_string(),
             pool_id_2.to_string(),
             "Team003".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
         game_pool_bid_submit(
@@ -710,7 +707,7 @@ mod tests {
             "multiple".to_string(),
             pool_id_2.to_string(),
             "Team004".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
         game_pool_bid_submit(
@@ -721,7 +718,7 @@ mod tests {
             "multiple".to_string(),
             pool_id_2.to_string(),
             "Team005".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
 
@@ -745,7 +742,7 @@ mod tests {
             "oneToOne".to_string(),
             pool_id_3.to_string(),
             "Team001".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
         game_pool_bid_submit(
@@ -756,7 +753,7 @@ mod tests {
             "multiple".to_string(),
             pool_id_3.to_string(),
             "Team004".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
         let query_pool_details_3 = query_pool_details(&mut deps.storage, pool_id_3.to_string());
@@ -775,12 +772,10 @@ mod tests {
     fn test_max_team_per_pool_type_for_given_user() {
         let mut deps = mock_dependencies(&[]);
         let owner1_info = mock_info("Gamer002", &[coin(1000, "stake")]);
-        let platform_fee = Uint128::from(300000u128);
-
-        let transaction_fee = Uint128::from(100000u128);
+        let platform_fee = 300000u128;
+        let transaction_fee = 100000u128;
         let instantiate_msg = InstantiateMsg {
             transaction_fee: transaction_fee,
-
             minting_contract_address: "cwtoken11111".to_string(),
             admin_address: "admin11111".to_string(),
             platform_fee: platform_fee,
@@ -857,7 +852,7 @@ mod tests {
             "oneToTwo".to_string(),
             pool_id_1.to_string(),
             "Team001".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
         game_pool_bid_submit(
@@ -868,7 +863,7 @@ mod tests {
             "oneToTwo".to_string(),
             pool_id_1.to_string(),
             "Team002".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
         game_pool_bid_submit(
@@ -879,7 +874,7 @@ mod tests {
             "oneToTwo".to_string(),
             pool_id_1.to_string(),
             "Team003".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
 
@@ -900,9 +895,8 @@ mod tests {
     fn test_game_pool_reward_distribute() {
         let mut deps = mock_dependencies(&[]);
         let owner1_info = mock_info("Gamer002", &[coin(1000, "stake")]);
-        let platform_fee = Uint128::from(300000u128);
-
-        let transaction_fee = Uint128::from(100000u128);
+        let platform_fee = 300000u128;
+        let transaction_fee = 100000u128;
         let instantiate_msg = InstantiateMsg {
             transaction_fee: transaction_fee,
 
@@ -982,7 +976,7 @@ mod tests {
             "oneToTwo".to_string(),
             pool_id_1.to_string(),
             "Team001".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
         game_pool_bid_submit(
@@ -993,7 +987,7 @@ mod tests {
             "oneToTwo".to_string(),
             pool_id_1.to_string(),
             "Team002".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
         game_pool_bid_submit(
@@ -1004,7 +998,7 @@ mod tests {
             "oneToTwo".to_string(),
             pool_id_1.to_string(),
             "Team003".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
 
@@ -1094,7 +1088,7 @@ mod tests {
                 assert_eq!(1, 2);
             }
         }
-        let team_details = POOL_TEAM_DETAILS.load(&mut deps.storage, pool_id_1.clone());
+        let team_details = POOL_TEAM_DETAILS.load(&mut deps.storage, (pool_id_1.as_ref(), "Gamer002"));
         for team in team_details {
             assert_eq!(team[0].reward_amount, Uint128::from(100u128));
             assert_eq!(team[1].reward_amount, Uint128::from(200u128));
@@ -1106,9 +1100,8 @@ mod tests {
     fn test_claim_refund() {
         let mut deps = mock_dependencies(&[]);
         let owner1_info = mock_info("Gamer002", &[coin(1000, "stake")]);
-        let platform_fee = Uint128::from(300000u128);
-
-        let transaction_fee = Uint128::from(100000u128);
+        let platform_fee = 300000u128;
+        let transaction_fee = 100000u128;
         let instantiate_msg = InstantiateMsg {
             transaction_fee: transaction_fee,
             minting_contract_address: "cwtoken11111".to_string(),
@@ -1187,7 +1180,7 @@ mod tests {
             "oneToTwo".to_string(),
             pool_id_1.to_string(),
             "Team001".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
 
@@ -1218,9 +1211,8 @@ mod tests {
     fn test_cancel_game() {
         let mut deps = mock_dependencies(&[]);
         let owner1_info = mock_info("Gamer002", &[coin(1000, "stake")]);
-        let platform_fee = Uint128::from(300000u128);
-
-        let transaction_fee = Uint128::from(100000u128);
+        let platform_fee = 300000u128;
+        let transaction_fee = 100000u128;
         let instantiate_msg = InstantiateMsg {
             transaction_fee: transaction_fee,
 
@@ -1300,7 +1292,7 @@ mod tests {
             "oneToTwo".to_string(),
             pool_id_1.to_string(),
             "Team001".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
         game_pool_bid_submit(
@@ -1311,7 +1303,7 @@ mod tests {
             "oneToTwo".to_string(),
             pool_id_1.to_string(),
             "Team002".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
         game_pool_bid_submit(
@@ -1322,7 +1314,7 @@ mod tests {
             "oneToTwo".to_string(),
             pool_id_1.to_string(),
             "Team003".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
 
@@ -1408,7 +1400,7 @@ mod tests {
                 assert_eq!(5, 6);
             }
         }
-        let team_details = POOL_TEAM_DETAILS.load(&mut deps.storage, pool_id_1.clone());
+        let team_details = POOL_TEAM_DETAILS.load(&mut deps.storage, (&*pool_id_1, "Gamer002"));
         for team in team_details {
             assert_eq!(team[0].reward_amount, Uint128::zero());
             assert_eq!(team[1].reward_amount, Uint128::zero());
@@ -1420,9 +1412,8 @@ mod tests {
     fn test_claim_reward() {
         let mut deps = mock_dependencies(&[]);
         let owner1_info = mock_info("Gamer002", &[coin(1000, "stake")]);
-        let platform_fee = Uint128::from(300000u128);
-
-        let transaction_fee = Uint128::from(100000u128);
+        let platform_fee = 300000u128;
+        let transaction_fee = 100000u128;
         let instantiate_msg = InstantiateMsg {
             transaction_fee: transaction_fee,
 
@@ -1491,14 +1482,13 @@ mod tests {
                 assert_eq!(1, 2);
             }
         }
-        let platform_fee = Uint128::from(300000u128);
-        let transaction_fee = Uint128::from(100000u128);
+        let platform_fee = 300000u128;
+        let transaction_fee = 100000u128;
         let instantiate_msg = InstantiateMsg {
-            transaction_fee: transaction_fee,
-
+            transaction_fee,
             minting_contract_address: "cwtoken11111".to_string(),
             admin_address: "admin11111".to_string(),
-            platform_fee: platform_fee,
+            platform_fee,
             game_id: "Game001".to_string(),
             platform_fees_collector_wallet: "FEE_WALLET".to_string(),
             astro_proxy_address: "ASTROPORT".to_string(),
@@ -1520,7 +1510,7 @@ mod tests {
             "oneToTwo".to_string(),
             pool_id_1.to_string(),
             "Team001".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
         game_pool_bid_submit(
@@ -1531,7 +1521,7 @@ mod tests {
             "oneToTwo".to_string(),
             pool_id_1.to_string(),
             "Team002".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
         game_pool_bid_submit(
@@ -1542,7 +1532,7 @@ mod tests {
             "oneToTwo".to_string(),
             pool_id_1.to_string(),
             "Team003".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
 
@@ -1632,7 +1622,7 @@ mod tests {
                 assert_eq!(5, 6);
             }
         }
-        let team_details = POOL_TEAM_DETAILS.load(&mut deps.storage, pool_id_1.clone());
+        let team_details = POOL_TEAM_DETAILS.load(&mut deps.storage, (&*pool_id_1.clone(), "Gamer002"));
         for team in team_details {
             assert_eq!(team[0].reward_amount, Uint128::from(500u128));
             assert_eq!(team[1].reward_amount, Uint128::from(200u128));
@@ -1672,7 +1662,7 @@ mod tests {
             }
         }
 
-        let team_details = POOL_TEAM_DETAILS.load(&mut deps.storage, pool_id_1.clone());
+        let team_details = POOL_TEAM_DETAILS.load(&mut deps.storage, (pool_id_1.as_ref(), "Game001"));
         for team in team_details {
             assert_eq!(team[0].reward_amount, Uint128::from(500u128)); // TODO This reward should be 0 after full functionality working.
             assert_eq!(team[1].reward_amount, Uint128::from(200u128)); // TODO This reward should be 0 after full functionality working.
@@ -1690,15 +1680,13 @@ mod tests {
     fn test_claim_reward_twice() {
         let mut deps = mock_dependencies(&[]);
         let owner1_info = mock_info("Gamer002", &[coin(1000, "stake")]);
-        let platform_fee = Uint128::from(300000u128);
-
-        let transaction_fee = Uint128::from(100000u128);
+        let platform_fee = 300000u128;
+        let transaction_fee = 100000u128;
         let instantiate_msg = InstantiateMsg {
-            transaction_fee: transaction_fee,
-
+            transaction_fee,
             minting_contract_address: "cwtoken11111".to_string(),
             admin_address: "admin11111".to_string(),
-            platform_fee: platform_fee,
+            platform_fee,
             game_id: "Game001".to_string(),
             platform_fees_collector_wallet: "FEE_WALLET".to_string(),
             astro_proxy_address: "ASTROPORT".to_string(),
@@ -1772,7 +1760,7 @@ mod tests {
             "oneToTwo".to_string(),
             pool_id_1.to_string(),
             "Team001".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
         game_pool_bid_submit(
@@ -1783,7 +1771,7 @@ mod tests {
             "oneToTwo".to_string(),
             pool_id_1.to_string(),
             "Team002".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
         game_pool_bid_submit(
@@ -1794,7 +1782,7 @@ mod tests {
             "oneToTwo".to_string(),
             pool_id_1.to_string(),
             "Team003".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
 
@@ -1884,7 +1872,7 @@ mod tests {
                 assert_eq!(5, 6);
             }
         }
-        let team_details = POOL_TEAM_DETAILS.load(&mut deps.storage, pool_id_1.clone());
+        let team_details = POOL_TEAM_DETAILS.load(&mut deps.storage, (&*pool_id_1.clone(), "Game001"));
         for team in team_details {
             assert_eq!(team[0].reward_amount, Uint128::from(100u128));
             assert_eq!(team[1].reward_amount, Uint128::from(200u128));
@@ -1923,7 +1911,7 @@ mod tests {
             }
         }
 
-        let team_details = POOL_TEAM_DETAILS.load(&mut deps.storage, pool_id_1.clone());
+        let team_details = POOL_TEAM_DETAILS.load(&mut deps.storage, (pool_id_1.as_ref(), "Gamer002"));
         for team in team_details {
             assert_eq!(team[0].reward_amount, Uint128::from(100u128)); // TODO This reward should be 0 after full functionality working.
             assert_eq!(team[1].reward_amount, Uint128::from(200u128)); // TODO This reward should be 0 after full functionality working.
@@ -1961,9 +1949,8 @@ mod tests {
     fn test_refund_game_pool_close_with_team_less_than_minimum_team_count() {
         let mut deps = mock_dependencies(&[]);
         let owner1_info = mock_info("Gamer002", &[coin(1000, "stake")]);
-        let platform_fee = Uint128::from(300000u128);
-
-        let transaction_fee = Uint128::from(100000u128);
+        let platform_fee = 300000u128;
+        let transaction_fee = 100000u128;
         let instantiate_msg = InstantiateMsg {
             transaction_fee: transaction_fee,
 
@@ -2032,14 +2019,13 @@ mod tests {
                 assert_eq!(1, 2);
             }
         }
-        let platform_fee = Uint128::from(300000u128);
-        let transaction_fee = Uint128::from(100000u128);
+        let platform_fee = 300000u128;
+        let transaction_fee = 100000u128;
         let instantiate_msg = InstantiateMsg {
-            transaction_fee: transaction_fee,
-
+            transaction_fee,
             minting_contract_address: "cwtoken11111".to_string(),
             admin_address: "admin11111".to_string(),
-            platform_fee: platform_fee,
+            platform_fee,
             game_id: "Game001".to_string(),
             platform_fees_collector_wallet: "FEE_WALLET".to_string(),
             astro_proxy_address: "ASTROPORT".to_string(),
@@ -2055,7 +2041,7 @@ mod tests {
             "oneToTwo".to_string(),
             pool_id_1.to_string(),
             "Team001".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
         game_pool_bid_submit(
@@ -2066,7 +2052,7 @@ mod tests {
             "oneToTwo".to_string(),
             pool_id_1.to_string(),
             "Team002".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
         game_pool_bid_submit(
@@ -2077,7 +2063,7 @@ mod tests {
             "oneToTwo".to_string(),
             pool_id_1.to_string(),
             "Team003".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
 
@@ -2140,7 +2126,7 @@ mod tests {
                 assert_eq!(3, 4);
             }
         }
-        let team_details = POOL_TEAM_DETAILS.load(&mut deps.storage, pool_id_1.clone());
+        let team_details = POOL_TEAM_DETAILS.load(&mut deps.storage, (pool_id_1.as_ref(), "Gamer002"));
         let mut teams = Vec::new();
         match team_details {
             Ok(some_teams) => {
@@ -2161,9 +2147,9 @@ mod tests {
     fn test_cancel_on_completed_game() {
         let mut deps = mock_dependencies(&[]);
         let owner1_info = mock_info("Gamer002", &[coin(1000, "stake")]);
-        let platform_fee = Uint128::from(30u128);
+        let platform_fee = 30u128;
 
-        let transaction_fee = Uint128::from(10u128);
+        let transaction_fee = 10u128;
         let instantiate_msg = InstantiateMsg {
             transaction_fee: transaction_fee,
             minting_contract_address: "cwtoken11111".to_string(),
@@ -2243,7 +2229,7 @@ mod tests {
             "oneToTwo".to_string(),
             pool_id_1.to_string(),
             "Team001".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
         game_pool_bid_submit(
@@ -2254,7 +2240,7 @@ mod tests {
             "oneToTwo".to_string(),
             pool_id_1.to_string(),
             "Team002".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
         game_pool_bid_submit(
@@ -2265,7 +2251,7 @@ mod tests {
             "oneToTwo".to_string(),
             pool_id_1.to_string(),
             "Team003".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
 
@@ -2376,9 +2362,8 @@ mod tests {
     fn test_reward_distribute_non_completed_game() {
         let mut deps = mock_dependencies(&[]);
         let owner1_info = mock_info("Gamer002", &[coin(1000, "stake")]);
-        let platform_fee = Uint128::from(300000u128);
-
-        let transaction_fee = Uint128::from(100000u128);
+        let platform_fee = 300000u128;
+        let transaction_fee = 100000u128;
         let instantiate_msg = InstantiateMsg {
             transaction_fee: transaction_fee,
 
@@ -2513,7 +2498,7 @@ mod tests {
             "oneToTwo".to_string(),
             pool_id_1.to_string(),
             "Team001".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
         game_pool_bid_submit(
@@ -2524,7 +2509,7 @@ mod tests {
             "oneToTwo".to_string(),
             pool_id_1.to_string(),
             "Team002".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
         game_pool_bid_submit(
@@ -2535,7 +2520,7 @@ mod tests {
             "oneToTwo".to_string(),
             pool_id_1.to_string(),
             "Team003".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
 
@@ -2578,15 +2563,13 @@ mod tests {
     fn test_game_pool_reward_distribute_again() {
         let mut deps = mock_dependencies(&[]);
         let owner1_info = mock_info("Gamer002", &[coin(1000, "stake")]);
-        let platform_fee = Uint128::from(300000u128);
-
-        let transaction_fee = Uint128::from(100000u128);
+        let platform_fee = 300000u128;
+        let transaction_fee = 100000u128;
         let instantiate_msg = InstantiateMsg {
-            transaction_fee: transaction_fee,
-
+            transaction_fee,
             minting_contract_address: "cwtoken11111".to_string(),
             admin_address: "admin11111".to_string(),
-            platform_fee: platform_fee,
+            platform_fee,
             game_id: "Game001".to_string(),
             platform_fees_collector_wallet: "FEE_WALLET".to_string(),
             astro_proxy_address: "ASTROPORT".to_string(),
@@ -2649,8 +2632,8 @@ mod tests {
                 assert_eq!(1, 2);
             }
         }
-        let platform_fee = Uint128::from(300000u128);
-        let transaction_fee = Uint128::from(100000u128);
+        let platform_fee = 300000u128;
+        let transaction_fee = 100000u128;
         let instantiate_msg = InstantiateMsg {
             transaction_fee: transaction_fee,
 
@@ -2672,7 +2655,7 @@ mod tests {
             "oneToTwo".to_string(),
             pool_id_1.to_string(),
             "Team001".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
         game_pool_bid_submit(
@@ -2683,7 +2666,7 @@ mod tests {
             "oneToTwo".to_string(),
             pool_id_1.to_string(),
             "Team002".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
         game_pool_bid_submit(
@@ -2694,7 +2677,7 @@ mod tests {
             "oneToTwo".to_string(),
             pool_id_1.to_string(),
             "Team003".to_string(),
-            Uint128::from(144262u128) + platform_fee,
+            Uint128::from(144262u128.add(platform_fee)),
             true,
         );
 
@@ -2784,7 +2767,7 @@ mod tests {
                 assert_eq!(5, 6);
             }
         }
-        let team_details = POOL_TEAM_DETAILS.load(&mut deps.storage, pool_id_1.clone());
+        let team_details = POOL_TEAM_DETAILS.load(&mut deps.storage, (pool_id_1.as_ref(), "Gamer002"));
         for team in team_details {
             assert_eq!(team[0].reward_amount, Uint128::from(100u128));
             assert_eq!(team[1].reward_amount, Uint128::from(200u128));
@@ -2816,9 +2799,8 @@ mod tests {
     #[test]
     fn test_set_platform_fee_wallets() {
         let mut deps = mock_dependencies(&[]);
-        let platform_fee = Uint128::from(300000u128);
-
-        let transaction_fee = Uint128::from(100000u128);
+        let platform_fee = 300000u128;
+        let transaction_fee = 100000u128;
         let instantiate_msg = InstantiateMsg {
             transaction_fee: transaction_fee,
 

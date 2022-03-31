@@ -564,7 +564,6 @@ pub fn game_pool_bid_submit(
         // Now save the team details
         save_team_details(
             deps.storage,
-            info.sender.clone(),
             env.clone(),
             gamer.clone(),
             pool_id.clone(),
@@ -644,7 +643,6 @@ pub fn game_pool_bid_submit(
 
 pub fn save_team_details(
     storage: &mut dyn Storage,
-    sender: Addr,
     _env: Env,
     gamer: String,
     pool_id: String,
@@ -660,7 +658,7 @@ pub fn save_team_details(
 ) -> Result<Response, ContractError> {
     // Get the existing teams for this pool
     let mut teams = Vec::new();
-    let all_teams = POOL_TEAM_DETAILS.may_load(storage, (&pool_id.clone(), sender.clone().as_ref()))?;
+    let all_teams = POOL_TEAM_DETAILS.may_load(storage, (&pool_id.clone(), gamer.clone().as_ref()))?;
     match all_teams {
         Some(some_teams) => {
             teams = some_teams;
@@ -669,7 +667,7 @@ pub fn save_team_details(
     }
 
     teams.push(PoolTeamDetails {
-        gamer_address: gamer,
+        gamer_address: gamer.clone(),
         game_id: game_id.clone(),
         pool_type: pool_type.clone(),
         pool_id: pool_id.clone(),
@@ -681,7 +679,7 @@ pub fn save_team_details(
         team_points,
         team_rank,
     });
-    POOL_TEAM_DETAILS.save(storage, (&pool_id.clone(), sender.as_ref()), &teams)?;
+    POOL_TEAM_DETAILS.save(storage, (&pool_id.clone(), gamer.as_ref()), &teams)?;
 
     return Ok(Response::new().add_attribute("team_id", team_id.clone()));
 }
