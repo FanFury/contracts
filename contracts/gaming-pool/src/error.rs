@@ -48,5 +48,7 @@ pub enum ContractError {
     RefundAlreadyClaimed {},
     #[error("Reward already claimed")]
     RewardAlreadyClaimed {},
+    #[error("Error Calcualting Plarform fee")]
+    ErrorCalculatingPlatformFee {},
 
 }

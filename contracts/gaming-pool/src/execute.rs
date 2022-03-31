@@ -392,19 +392,19 @@ pub fn create_pool(
     )?;
     return Ok(Response::new().add_attribute("pool_id", pool_id_str.clone()));
 }
-
+//  TODO review this since we implemented unwrap here, it will raise unreachable wasm
 pub fn query_platform_fees(
     pool_fee: u128,
     platform_fees_percentage: u128,
     transaction_fee_percentage: u128,
-) -> StdResult<FeeDetails> {
+) -> Result<FeeDetails,ContractError> {
     return Ok(FeeDetails {
         platform_fee: Uint128::from(pool_fee
-            .checked_mul(platform_fees_percentage)?
-            .checked_div(HUNDRED_PERCENT)?),
+            .checked_mul(platform_fees_percentage).unwrap()
+            .checked_div(HUNDRED_PERCENT).unwrap()),
         transaction_fee: Uint128::from(pool_fee
-            .checked_mul(transaction_fee_percentage)?
-            .checked_div(HUNDRED_PERCENT)?),
+            .checked_mul(transaction_fee_percentage).unwrap()
+            .checked_div(HUNDRED_PERCENT).unwrap()),
     });
 }
 
@@ -463,7 +463,7 @@ pub fn game_pool_bid_submit(
         }
         false => {
             let fee_details = query_platform_fees(
-                ptd.unwrap().pool_fee,
+                u128::from(ptd.unwrap().pool_fee),
                 platform_fee,
                 config.transaction_fee,
             )?;
@@ -709,7 +709,7 @@ pub fn claim_reward(
     for pool_id in all_pools {
         // Get the existing teams for this pool
         let mut pool_details: PoolDetails = Default::default();
-        pd = POOL_DETAILS.load(deps.storage, pool_id.clone());
+        let pd = POOL_DETAILS.load(deps.storage, pool_id.clone());
         match pd {
             Ok(some) => { pool_details = some; }
             Err(_) => {
@@ -720,7 +720,7 @@ pub fn claim_reward(
             continue;
         }
         let mut pool_team_details ;
-        match POOL_TEAM_DETAILS.load(deps.storage, (&*pool_id.clone()?, info.sender.as_ref())){
+        match POOL_TEAM_DETAILS.load(deps.storage, (&*pool_id.clone(), info.sender.as_ref())){
             Ok(some) => {pool_team_details = some}
             Err(_) => {
                 continue
@@ -801,14 +801,14 @@ pub fn claim_refund(
     let config = CONFIG.load(deps.storage)?;
     // Get all pools
 
-    // let all_pools: Vec<String> = POOL_DETAILS
-    //     .keys(deps.storage, None, None, Order::Ascending)
-    //     .map(|k| String::from_utf8(k).unwrap())
-    //     .collect();
+    let all_pools: Vec<String> = POOL_DETAILS
+        .keys(deps.storage, None, None, Order::Ascending)
+        .map(|k| String::from_utf8(k).unwrap())
+        .collect();
     let mut total_refund_amount = Uint128::zero();
-    for pool_id in POOL_DETAILS.keys(deps.storage, None, None, Order::Ascending).into_iter() {
+    for pool_id in all_pools {
         let mut pool_details: PoolDetails = Default::default();
-        pd = POOL_DETAILS.load(deps.storage, String::from_utf8(pool_id.clone())?);
+        let pd = POOL_DETAILS.load(deps.storage, pool_id.clone());
         match pd {
             Ok(some) => { pool_details = some; }
             Err(_) => {
@@ -820,7 +820,7 @@ pub fn claim_refund(
         }
         let pool_type = POOL_TYPE_DETAILS.load(deps.storage, pool_details.pool_type)?;
         let refund_amount = pool_type.pool_fee;
-        let pool_team_details = POOL_TEAM_DETAILS.load(deps.storage, (&*String::from_utf8(pool_id.clone())?, info.sender.as_ref()))?.clone();
+        let pool_team_details = POOL_TEAM_DETAILS.load(deps.storage, (pool_id.as_ref(), info.sender.as_ref()))?.clone();
         let mut updated_details = Vec::new();
         for team_details in pool_team_details {
             if !team_details.claimed_refund {
@@ -834,7 +834,7 @@ pub fn claim_refund(
             }
         }
         if !updated_details.is_empty() {
-            POOL_TEAM_DETAILS.save(deps.storage, (&*String::from_utf8(pool_id)?, info.sender.as_ref()), &updated_details)?
+            POOL_TEAM_DETAILS.save(deps.storage, (pool_id.as_ref(), info.sender.as_ref()), &updated_details)?
         }
         // Get the existing teams for this pool
         // let mut teams = Vec::new();
@@ -872,7 +872,7 @@ pub fn claim_refund(
         }));
     }
     let refund_details = query_platform_fees(u128::from(total_refund_amount), config.platform_fee, config.transaction_fee)?;
-    refund_in_ust_fees = refund_details.transaction_fee.add(refund_details.platform_fee)?;
+    refund_in_ust_fees = refund_details.transaction_fee.add(refund_details.platform_fee);
     // Do the transfer of refund to the actual gamer_addr from the contract
     transfer_from_contract_to_wallet(
         total_refund_amount,
@@ -968,7 +968,7 @@ pub fn game_pool_reward_distribute(
             }));
         }
     }
-    platform_fee = query_platform_fees(pool_type_details.pool_fee, platform_fee_in_percentage, config.transaction_fee.clone())?.platform_fee;
+    platform_fee = query_platform_fees(u128::from(pool_type_details.pool_fee), platform_fee_in_percentage, config.transaction_fee.clone())?.platform_fee;
 
 
     // let pool_fee: Uint128 = deps.querier.query_wasm_smart(
@@ -1093,7 +1093,7 @@ pub fn game_pool_reward_distribute(
         );
     }
 
-    let rsp = transfer_to_multiple_wallets(
+    let rsp = _transfer_to_multiple_wallets(
         wallet_transfer_details,
         "rake_and_platform_fee".to_string(),
         deps,
