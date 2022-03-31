@@ -43,4 +43,10 @@ pub enum ContractError {
 
     #[error("Number Of Coins Sent Is Invalid")]
     InvalidNumberOfCoinsSent {},
+
+    #[error("Refund already claimed")]
+    RefundAlreadyClaimed {},
+    #[error("Reward already claimed")]
+    RewardAlreadyClaimed {},
+
 }

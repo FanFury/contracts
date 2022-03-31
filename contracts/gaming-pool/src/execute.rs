@@ -394,17 +394,17 @@ pub fn create_pool(
 }
 
 pub fn query_platform_fees(
-    pool_fee: Uint128,
-    platform_fees_percentage: Uint128,
-    transaction_fee_percentage: Uint128,
+    pool_fee: u128,
+    platform_fees_percentage: u128,
+    transaction_fee_percentage: u128,
 ) -> StdResult<FeeDetails> {
     return Ok(FeeDetails {
-        platform_fee: pool_fee
+        platform_fee: Uint128::from(pool_fee
             .checked_mul(platform_fees_percentage)?
-            .checked_div(Uint128::from(HUNDRED_PERCENT))?,
-        transaction_fee: pool_fee
+            .checked_div(HUNDRED_PERCENT)?),
+        transaction_fee: Uint128::from(pool_fee
             .checked_mul(transaction_fee_percentage)?
-            .checked_div(Uint128::from(HUNDRED_PERCENT))?,
+            .checked_div(HUNDRED_PERCENT)?),
     });
 }
 
@@ -521,7 +521,6 @@ pub fn game_pool_bid_submit(
         }));
     }
     let mut user_team_count = 0;
-    // TODO REVIEW THIS IMPLEMENTATION
     // Here we load the details based on the user placing the bid
     let ptd = POOL_TEAM_DETAILS.may_load(deps.storage, (&pool_id.clone(), info.sender.as_ref()))?;
     match ptd {
@@ -638,14 +637,6 @@ pub fn game_pool_bid_submit(
             amount: platform_fees,
         }],
     }));
-    //  Double UST Fees Removed
-    // let final_amount = asset.deduct_tax(&deps.querier)?;
-    // messages.push(CosmosMsg::Bank(BankMsg::Send {
-    //     to_address: config.platform_fees_collector_wallet.into_string(),
-    //     amount: vec![final_amount],
-    // }));
-
-    // Nothing required to transfer anything gaming fund has arrived in the gaming contract
     return Ok(Response::new()
         .add_attribute("pool_id", pool_id_return.clone())
         .add_messages(messages));
@@ -717,28 +708,61 @@ pub fn claim_reward(
         .collect();
     for pool_id in all_pools {
         // Get the existing teams for this pool
-        let mut teams = Vec::new();
-        let all_teams = POOL_TEAM_DETAILS.may_load(deps.storage, (&*pool_id.clone(), info.sender.as_ref()))?;
-        match all_teams {
-            Some(some_teams) => {
-                teams = some_teams;
+        let mut pool_details: PoolDetails = Default::default();
+        pd = POOL_DETAILS.load(deps.storage, pool_id.clone());
+        match pd {
+            Ok(some) => { pool_details = some; }
+            Err(_) => {
+                continue;
             }
-            None => {}
         }
-
-        let existing_teams = teams.clone();
-        let mut updated_teams = Vec::new();
-        for team in existing_teams {
-            let mut updated_team = team.clone();
-            println!("Gamer {:?} gamer_address {:?} ", gamer, team.gamer_address);
-            if gamer == team.gamer_address && team.claimed_reward == UNCLAIMED_REWARD {
-                user_reward += team.reward_amount;
-                updated_team.claimed_reward = CLAIMED_REWARD;
+        if !pool_details.pool_reward_status {
+            continue;
+        }
+        let mut pool_team_details ;
+        match POOL_TEAM_DETAILS.load(deps.storage, (&*pool_id.clone()?, info.sender.as_ref())){
+            Ok(some) => {pool_team_details = some}
+            Err(_) => {
+                continue
             }
-            updated_teams.push(updated_team);
         }
-        POOL_TEAM_DETAILS.save(deps.storage, (&*pool_id.clone(), info.sender.as_ref()), &updated_teams)?;
+        let mut updated_details = Vec::new();
+        for team_details in pool_team_details {
+            if !team_details.claimed_reward {
+                let mut updated_team = team_details.clone();
+                user_reward += team_details.reward_amount;
+                updated_team.claimed_reward = true;
+                updated_details.push(updated_team);
+            } else {
+                updated_details.push(team_details);
+            }
+        }
+        if !updated_details.is_empty() {
+            POOL_TEAM_DETAILS.save(deps.storage, (&*pool_id, info.sender.as_ref()), &updated_details)?
+        }
     }
+
+    // let mut teams = Vec::new();
+    //   let all_teams = POOL_TEAM_DETAILS.may_load(deps.storage, (&*pool_id.clone(), info.sender.as_ref()))?;
+    //   match all_teams {
+    //       Some(some_teams) => {
+    //           teams = some_teams;
+    //       }
+    //       None => {}
+    //   }
+    //
+    //   let existing_teams = teams.clone();
+    //   let mut updated_teams = Vec::new();
+    //   for team in existing_teams {
+    //       let mut updated_team = team.clone();
+    //       println!("Gamer {:?} gamer_address {:?} ", gamer, team.gamer_address);
+    //       if gamer == team.gamer_address && team.claimed_reward == UNCLAIMED_REWARD {
+    //           user_reward += team.reward_amount;
+    //           updated_team.claimed_reward = CLAIMED_REWARD;
+    //       }
+    //       updated_teams.push(updated_team);
+    //   }
+    //   POOL_TEAM_DETAILS.save(deps.storage, (&*pool_id.clone(), info.sender.as_ref()), &updated_teams)?;
 
     println!("reward amount is {:?}", user_reward);
 
@@ -775,50 +799,83 @@ pub fn claim_refund(
         });
     }
     let config = CONFIG.load(deps.storage)?;
-    let mut user_refund = Uint128::zero();
     // Get all pools
-    let all_pools: Vec<String> = POOL_DETAILS
-        .keys(deps.storage, None, None, Order::Ascending)
-        .map(|k| String::from_utf8(k).unwrap())
-        .collect();
-    for pool_id in all_pools {
+
+    // let all_pools: Vec<String> = POOL_DETAILS
+    //     .keys(deps.storage, None, None, Order::Ascending)
+    //     .map(|k| String::from_utf8(k).unwrap())
+    //     .collect();
+    let mut total_refund_amount = Uint128::zero();
+    for pool_id in POOL_DETAILS.keys(deps.storage, None, None, Order::Ascending).into_iter() {
+        let mut pool_details: PoolDetails = Default::default();
+        pd = POOL_DETAILS.load(deps.storage, String::from_utf8(pool_id.clone())?);
+        match pd {
+            Ok(some) => { pool_details = some; }
+            Err(_) => {
+                continue;
+            }
+        }
+        if !pool_details.pool_refund_status {
+            continue;
+        }
+        let pool_type = POOL_TYPE_DETAILS.load(deps.storage, pool_details.pool_type)?;
+        let refund_amount = pool_type.pool_fee;
+        let pool_team_details = POOL_TEAM_DETAILS.load(deps.storage, (&*String::from_utf8(pool_id.clone())?, info.sender.as_ref()))?.clone();
+        let mut updated_details = Vec::new();
+        for team_details in pool_team_details {
+            if !team_details.claimed_refund {
+                let mut updated_team = team_details.clone();
+                updated_team.refund_amount = refund_amount;
+                total_refund_amount += refund_amount;
+                updated_team.claimed_refund = true;
+                updated_details.push(updated_team);
+            } else {
+                return Err(ContractError::RefundAlreadyClaimed {});
+            }
+        }
+        if !updated_details.is_empty() {
+            POOL_TEAM_DETAILS.save(deps.storage, (&*String::from_utf8(pool_id)?, info.sender.as_ref()), &updated_details)?
+        }
         // Get the existing teams for this pool
-        let mut teams = Vec::new();
-        let all_teams = POOL_TEAM_DETAILS.may_load(deps.storage, (&*pool_id.clone(), info.sender.as_ref()))?;
-        match all_teams {
-            Some(some_teams) => {
-                teams = some_teams;
-            }
-            None => {}
-        }
-        let existing_teams = teams.clone();
-        let mut updated_teams = Vec::new();
-        for team in existing_teams {
-            let mut updated_team = team.clone();
-            println!("Gamer {:?} gamer_address {:?} ", gamer, team.gamer_address);
-            if gamer == team.gamer_address && team.claimed_refund == UNCLAIMED_REFUND {
-                user_refund += team.refund_amount;
-                updated_team.claimed_refund = CLAIMED_REFUND;
-                let pool_details = query_pool_type_details(deps.storage, team.pool_type)?;
-                let refund_details = query_platform_fees(pool_details.pool_fee, config.platform_fee, config.transaction_fee)?;
-                refund_in_ust_fees += refund_details.transaction_fee.add(refund_details.platform_fee);
-            }
-            updated_teams.push(updated_team);
-        }
-        POOL_TEAM_DETAILS.save(deps.storage, (&*pool_id.clone(), info.sender.as_ref()), &updated_teams)?;
+        // let mut teams = Vec::new();
+        // let all_teams = POOL_TEAM_DETAILS.may_load(deps.storage, (&*pool_id.clone(), info.sender.as_ref()))?;
+        // match all_teams {
+        //     Some(some_teams) => {
+        //         teams = some_teams;
+        //     }
+        //     None => {}
+        // }
+        //
+        // let existing_teams = teams.clone();
+        // let mut updated_teams = Vec::new();
+        //
+        // for team in existing_teams {
+        //     let mut updated_team = team.clone();
+        //     println!("Gamer {:?} gamer_address {:?} ", gamer, team.gamer_address);
+        //     if gamer == team.gamer_address && team.claimed_refund == UNCLAIMED_REFUND {
+        //         user_refund += team.refund_amount;
+        //         updated_team.claimed_refund = CLAIMED_REFUND;
+        //         let pool_details = query_pool_type_details(deps.storage, team.pool_type)?;
+        //         let refund_details = query_platform_fees(pool_details.pool_fee, config.platform_fee, config.transaction_fee)?;
+        //         refund_in_ust_fees += refund_details.transaction_fee.add(refund_details.platform_fee);
+        //     }
+        //     updated_teams.push(updated_team);
+        // }
+        // POOL_TEAM_DETAILS.save(deps.storage, (&*pool_id.clone(), info.sender.as_ref()), &updated_teams)?;
     }
 
-    println!("refund amount is {:?}", user_refund);
+    println!("refund amount is {:?}", total_refund_amount);
 
-    if user_refund == Uint128::zero() {
+    if total_refund_amount == Uint128::zero() {
         return Err(ContractError::Std(StdError::GenericErr {
             msg: String::from("No refund for this user"),
         }));
     }
-
+    let refund_details = query_platform_fees(u128::from(total_refund_amount), config.platform_fee, config.transaction_fee)?;
+    refund_in_ust_fees = refund_details.transaction_fee.add(refund_details.platform_fee)?;
     // Do the transfer of refund to the actual gamer_addr from the contract
     transfer_from_contract_to_wallet(
-        user_refund,
+        total_refund_amount,
         "refund".to_string(),
         deps,
         env,
@@ -894,8 +951,8 @@ pub fn game_pool_reward_distribute(
             pool_type: pool_type.clone(),
             current_teams_count: pool_details.current_teams_count,
             rewards_distributed: REWARDS_DISTRIBUTED,
-            pool_refund_status: true,
-            pool_reward_status: false,
+            pool_refund_status: false,
+            pool_reward_status: true,
         },
     )?;
 
@@ -1036,12 +1093,12 @@ pub fn game_pool_reward_distribute(
         );
     }
 
-    // let rsp = transfer_to_multiple_wallets(
-    //     wallet_transfer_details,
-    //     "rake_and_platform_fee".to_string(),
-    //     deps,
-    // )?;
-    return Ok(Response::new()
+    let rsp = transfer_to_multiple_wallets(
+        wallet_transfer_details,
+        "rake_and_platform_fee".to_string(),
+        deps,
+    )?;
+    return Ok(rsp
         .add_attribute("game_status", "GAME_COMPLETED".to_string())
         .add_attribute("game_id", game_id.clone())
         .add_attribute("pool_status", "POOL_REWARD_DISTRIBUTED".to_string())
@@ -1134,7 +1191,7 @@ pub fn transfer_from_contract_to_wallet(
             amount: final_amount,
         }],
     }));
-    if is_refund {
+    if is_refund && !ust_refund.is_zero() {
         let refund = Coin {
             denom: "uusd".to_string(),
             amount: ust_refund,
