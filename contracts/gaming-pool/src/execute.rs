@@ -895,7 +895,6 @@ pub fn game_pool_reward_distribute(
             current_teams_count: pool_details.current_teams_count,
             rewards_distributed: REWARDS_DISTRIBUTED,
             pool_refund_status: true,
-            // TODO REVIEW THIS
             pool_reward_status: false,
         },
     )?;

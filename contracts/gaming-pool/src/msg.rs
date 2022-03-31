@@ -90,6 +90,7 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     PoolTeamDetails {
         pool_id: String,
+        user: String,
     },
     PoolDetails {
         pool_id: String,
@@ -98,7 +99,7 @@ pub enum QueryMsg {
         pool_type: String,
     },
     AllPoolTypeDetails {},
-    AllTeams {},
+    AllTeams { users: Vec<String> },
     QueryReward {
         gamer: String
     },
@@ -114,6 +115,7 @@ pub enum QueryMsg {
     PoolTeamDetailsWithTeamId {
         pool_id: String,
         team_id: String,
+        gamer: String,
     },
     AllPoolsInGame {},
     PoolCollection {

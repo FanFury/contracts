@@ -201,15 +201,15 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::PoolTeamDetails { pool_id } => {
-            to_binary(&query_pool_team_details(deps.storage, pool_id)?)
+        QueryMsg::PoolTeamDetails { pool_id, user } => {
+            to_binary(&query_pool_team_details(deps.storage, pool_id, user)?)
         }
         QueryMsg::PoolDetails { pool_id } => to_binary(&query_pool_details(deps.storage, pool_id)?),
         QueryMsg::PoolTypeDetails { pool_type } => {
             to_binary(&query_pool_type_details(deps.storage, pool_type)?)
         }
         QueryMsg::AllPoolTypeDetails {} => to_binary(&query_all_pool_type_details(deps.storage)?),
-        QueryMsg::AllTeams {} => to_binary(&query_all_teams(deps.storage)?),
+        QueryMsg::AllTeams { users } => to_binary(&query_all_teams(deps.storage, users)?),
         QueryMsg::QueryReward { gamer } => to_binary(&query_reward(deps.storage, gamer)?),
         QueryMsg::QueryRefund { gamer } => to_binary(&query_refund(deps.storage, gamer)?),
         QueryMsg::QueryGameResult {
@@ -218,8 +218,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             team_id,
         } => to_binary(&query_game_result(deps, gamer, pool_id, team_id)?),
         QueryMsg::GameDetails {} => to_binary(&query_game_details(deps.storage)?),
-        QueryMsg::PoolTeamDetailsWithTeamId { pool_id, team_id } => {
-            to_binary(&query_team_details(deps.storage, pool_id, team_id)?)
+        QueryMsg::PoolTeamDetailsWithTeamId { pool_id, team_id, gamer } => {
+            to_binary(&query_team_details(deps.storage, pool_id, team_id, gamer)?)
         }
         QueryMsg::AllPoolsInGame {} => to_binary(&query_all_pools_in_game(deps.storage)?),
         QueryMsg::PoolCollection { pool_id } => {
