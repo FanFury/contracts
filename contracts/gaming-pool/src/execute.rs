@@ -392,12 +392,13 @@ pub fn create_pool(
     )?;
     return Ok(Response::new().add_attribute("pool_id", pool_id_str.clone()));
 }
+
 //  TODO review this since we implemented unwrap here, it will raise unreachable wasm
 pub fn query_platform_fees(
     pool_fee: u128,
     platform_fees_percentage: u128,
     transaction_fee_percentage: u128,
-) -> Result<FeeDetails,ContractError> {
+) -> Result<FeeDetails, ContractError> {
     return Ok(FeeDetails {
         platform_fee: Uint128::from(pool_fee
             .checked_mul(platform_fees_percentage).unwrap()
@@ -717,9 +718,9 @@ pub fn claim_reward(
         if !pool_details.pool_reward_status {
             continue;
         }
-        let mut pool_team_details ;
-        match POOL_TEAM_DETAILS.load(deps.storage, (&*pool_id.clone(), info.sender.as_ref())){
-            Ok(some) => {pool_team_details = some}
+        let mut pool_team_details;
+        match POOL_TEAM_DETAILS.load(deps.storage, (&*pool_id.clone(), info.sender.as_ref())) {
+            Ok(some) => { pool_team_details = some }
             Err(_) => {
                 continue
             }
@@ -771,15 +772,29 @@ pub fn claim_reward(
     }
 
     // Do the transfer of reward to the actual gamer_addr from the contract
-    transfer_from_contract_to_wallet(
-        user_reward,
-        "reward".to_string(),
-        deps,
-        env,
-        info,
-        false,
-        Uint128::zero(),
-    )
+    let config = CONFIG.load(deps.storage)?;
+    let mut messages = Vec::new();
+    let fee_details = query_platform_fees(u128::from(user_reward), config.platform_fee, config.transaction_fee)?;
+    // We only take the first coin object since we only expect UST here
+    let funds_sent = info.funds[0].clone();
+    if (funds_sent.denom != "uusd") || (funds_sent.amount < fee_details.platform_fee.add(fee_details.transaction_fee)) {
+        return Err(ContractError::InsufficientFeesUst {});
+    }
+    let transfer_msg = Cw20ExecuteMsg::TransferFrom {
+        owner: info.sender.into_string(),
+        recipient: env.clone().contract.address.to_string(),
+        amount: user_reward,
+    };
+    messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: config.minting_contract_address.to_string(),
+        msg: to_binary(&transfer_msg).unwrap(),
+        funds: vec![],
+    }));
+    return Ok(Response::new()
+        .add_attribute("amount", user_reward.to_string())
+        .add_attribute("action", "reward")
+        .add_messages(messages)
+    );
 }
 
 pub fn claim_refund(
@@ -872,15 +887,53 @@ pub fn claim_refund(
     let refund_details = query_platform_fees(u128::from(total_refund_amount), config.platform_fee, config.transaction_fee)?;
     refund_in_ust_fees = refund_details.transaction_fee.add(refund_details.platform_fee);
     // Do the transfer of refund to the actual gamer_addr from the contract
-    transfer_from_contract_to_wallet(
-        total_refund_amount,
-        "refund".to_string(),
-        deps,
-        env,
-        info,
-        true,
-        refund_in_ust_fees,
-    )
+    let mut messages = Vec::new();
+    let ust_asset = Asset {
+        info: AssetInfo::NativeToken {
+            denom: "uusd".to_string()
+        },
+        amount: total_refund_amount,
+    };
+    let tax = ust_asset.compute_tax(&deps.querier)?;
+    // ust_asset.amount += tax;
+    let swap_message = AstroPortExecute::Swap {
+        offer_asset: ust_asset.clone(),
+        belief_price: None,
+        max_spread: None,
+        to: Option::from(info.sender.to_string()),
+    };
+
+    // Swap fee should be platform+transaction fee for the transaction
+    let swap_fee: Uint128 = deps.querier.query_wasm_smart(
+        config.clone().astro_proxy_address,
+        &QueryMsgSimulation::QueryPlatformFees {
+            msg: to_binary(&swap_message)?
+        },
+    )?;
+    let final_amount = ust_asset.amount.clone().add(swap_fee).add(tax);
+    messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: config.astro_proxy_address.to_string(),
+        msg: to_binary(&swap_message)?,
+        funds: vec![Coin {
+            denom: "uusd".to_string(),
+            amount: final_amount,
+        }],
+    }));
+    let refund = Coin {
+        denom: "uusd".to_string(),
+        amount: refund_in_ust_fees,
+    };
+    let mut refund_: Vec<Coin> = vec![];
+    refund_.push(refund);
+    messages.push(CosmosMsg::Bank(BankMsg::Send {
+        to_address: String::from(info.sender),
+        amount: refund_,
+    }));
+    return Ok(Response::new()
+        .add_attribute("amount", final_amount.to_string())
+        .add_attribute("action", "refund")
+        .add_messages(messages)
+    );
 }
 
 pub fn game_pool_reward_distribute(
