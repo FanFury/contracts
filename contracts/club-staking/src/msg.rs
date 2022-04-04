@@ -102,7 +102,9 @@ pub enum QueryMsg {
     },
     AllPreviousClubOwnershipDetails {
     },
-    AllStakes {},
+    AllStakes {
+        user_address_list: Vec<String>,
+	},
     AllStakesForUser { 
         user_address: String,
     },

@@ -513,7 +513,7 @@ fn buy_a_club(
 
     let mut stakes = Vec::new();
     let mut user_stake_exists = false;
-    let all_stakes = CLUB_STAKING_DETAILS.may_load(deps.storage, club_name.clone())?;
+    let all_stakes = CLUB_STAKING_DETAILS.may_load(deps.storage, (&club_name.clone(), &buyer.clone()))?;
     match all_stakes {
         Some(some_stakes) => {
             stakes = some_stakes;
@@ -689,7 +689,7 @@ fn assign_a_club(
 
     let mut stakes = Vec::new();
     let mut user_stake_exists = false;
-    let all_stakes = CLUB_STAKING_DETAILS.may_load(deps.storage, club_name.clone())?;
+    let all_stakes = CLUB_STAKING_DETAILS.may_load(deps.storage, (&club_name.clone(), &buyer.clone()))?;
     match all_stakes {
         Some(some_stakes) => {
             stakes = some_stakes;
@@ -1023,7 +1023,7 @@ fn withdraw_stake_from_a_club(
     }
 
     let mut stakes = Vec::new();
-    let all_stakes = CLUB_STAKING_DETAILS.may_load(deps.storage, club_name.clone())?;
+    let all_stakes = CLUB_STAKING_DETAILS.may_load(deps.storage, (&club_name.clone(), &staker.clone()))?;
     match all_stakes {
         Some(some_stakes) => {
             stakes = some_stakes;
@@ -1274,7 +1274,7 @@ fn save_staking_details(
 ) -> Result<Response, ContractError> {
     // Get the exising stakes for this club
     let mut stakes = Vec::new();
-    let all_stakes = CLUB_STAKING_DETAILS.may_load(storage, club_name.clone())?;
+    let all_stakes = CLUB_STAKING_DETAILS.may_load(storage, (&club_name.clone(), &staker.clone()))?;
     match all_stakes {
         Some(some_stakes) => {
             stakes = some_stakes;
@@ -1311,11 +1311,11 @@ fn save_staking_details(
     }
     if already_staked == true {
         // save the modified stakes - with updation or removal of existing stake
-        CLUB_STAKING_DETAILS.save(storage, club_name, &updated_stakes)?;
+        CLUB_STAKING_DETAILS.save(storage, (&club_name.clone(), &staker.clone()), &updated_stakes)?;
     } else if increase_stake == INCREASE_STAKE {
         stakes.push(ClubStakingDetails {
             // TODO duration and timestamp fields no longer needed - should be removed
-            staker_address: staker,
+            staker_address: staker.clone(),
             staking_start_timestamp: env.block.time,
             staked_amount: amount,
             staking_duration: CLUB_STAKING_DURATION,
@@ -1323,7 +1323,7 @@ fn save_staking_details(
             reward_amount: Uint128::from(CLUB_STAKING_REWARD_AMOUNT), // ensure that the first time reward amount is set to 0
             auto_stake: auto_stake,
         });
-        CLUB_STAKING_DETAILS.save(storage, club_name, &stakes)?;
+        CLUB_STAKING_DETAILS.save(storage, (&club_name.clone(), &staker.clone()), &stakes)?;
     }
 
     return Ok(Response::default());
@@ -1419,7 +1419,7 @@ fn claim_staker_rewards(
 
     // Get the exising stakes for this club
     let mut stakes = Vec::new();
-    let all_stakes = CLUB_STAKING_DETAILS.may_load(deps.storage, club_name.clone())?;
+    let all_stakes = CLUB_STAKING_DETAILS.may_load(deps.storage, (&club_name.clone(), &staker.clone()))?;
     match all_stakes {
         Some(some_stakes) => {
             stakes = some_stakes;
@@ -1439,7 +1439,7 @@ fn claim_staker_rewards(
         }
         updated_stakes.push(updated_stake);
     }
-    CLUB_STAKING_DETAILS.save(deps.storage, club_name, &updated_stakes)?;
+	CLUB_STAKING_DETAILS.save(deps.storage, (&club_name.clone(), &staker.clone()), &stakes)?;
 
     if transfer_confirmed == false {
         return Err(ContractError::Std(StdError::GenericErr {
@@ -1614,7 +1614,7 @@ fn calculate_and_distribute_rewards(
         let club_owner_address = club_details.owner_address;
 
         let mut all_stakes = Vec::new();
-        let staking_details = CLUB_STAKING_DETAILS.load(deps.storage, club_name.clone())?;
+        let staking_details = CLUB_STAKING_DETAILS.load(deps.storage, (&club_name.clone(), &String::default()))?;
         for mut stake in staking_details {
             let mut updated_stake = stake.clone();
             let auto_stake = updated_stake.auto_stake;
@@ -1686,8 +1686,9 @@ fn calculate_and_distribute_rewards(
                 );
             }
             all_stakes.push(updated_stake);
+			CLUB_STAKING_DETAILS.save(deps.storage, (&club_name.clone(), &stake.staker_address.clone()), &all_stakes)?;
         }
-        CLUB_STAKING_DETAILS.save(deps.storage, club_name, &all_stakes)?;
+        //CLUB_STAKING_DETAILS.save(deps.storage, club_name, &all_stakes)?;
         clubs_distributed += 1u64;
     }
 
@@ -1858,7 +1859,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::ClubOwnershipDetailsForOwner { owner_address } => to_binary(
             &query_club_ownership_details_for_owner(deps.storage, owner_address)?,
         ),
-        QueryMsg::AllStakes {} => to_binary(&query_all_stakes(deps.storage)?),
+        QueryMsg::AllStakes {user_address_list} => to_binary(&query_all_stakes(deps.storage, user_address_list)?),
         QueryMsg::AllStakesForUser { user_address } => {
             to_binary(&query_all_stakes_for_user(deps.storage, user_address)?)
         }
@@ -1969,7 +1970,24 @@ pub fn query_club_staking_details(
     storage: &dyn Storage,
     club_name: String,
 ) -> StdResult<Vec<ClubStakingDetails>> {
-    let csd = CLUB_STAKING_DETAILS.may_load(storage, club_name)?;
+/*
+    let mut all_staks = Vec::new();
+    let all_clubs: Vec<String> = CLUB_STAKING_DETAILS
+        .prefix(&club_name)
+        .range(&store, None, None, Order::Ascending)
+        .collect();
+
+    for club_name in all_clubs {
+		for k in CLUB_STAKING_DETAILS.prefix(club_name.as_ref()).iter(){
+			let csd = CLUB_STAKING_DETAILS.may_load(storage, (&club_name.clone(), String::from_utf8(k).unwrap().as_ref()))?;
+			for stak in csd {
+				all_staks.push(stak);
+			}
+		}
+    }
+    return Ok(all_staks);
+*/
+    let csd = CLUB_STAKING_DETAILS.may_load(storage, (&club_name.clone(), ""))?;
     match csd {
         Some(csd) => return Ok(csd),
         None => return Err(StdError::generic_err("No staking details found")),
@@ -1988,18 +2006,26 @@ pub fn query_club_bonding_details(
     };
 }
 
-fn query_all_stakes(storage: &dyn Storage) -> StdResult<Vec<ClubStakingDetails>> {
+fn query_all_stakes(storage: &dyn Storage, user_address_list: Vec<String>) -> StdResult<Vec<ClubStakingDetails>> {
     let mut all_stakes = Vec::new();
-    let all_clubs: Vec<String> = CLUB_STAKING_DETAILS
+    let all_clubs: Vec<String> = CLUB_OWNERSHIP_DETAILS
         .keys(storage, None, None, Order::Ascending)
         .map(|k| String::from_utf8(k).unwrap())
         .collect();
     for club_name in all_clubs {
-        let staking_details = CLUB_STAKING_DETAILS.load(storage, club_name)?;
-        for stake in staking_details {
-            all_stakes.push(stake);
-        }
-    }
+		for user_address in user_address_list.clone() {
+			let csd = CLUB_STAKING_DETAILS.may_load(storage, (&club_name.clone(), &user_address.clone()))?;
+			match csd {
+				Some(staking_details) => {
+					for stake in staking_details {
+						all_stakes.push(stake);
+					}
+				}
+				None => {
+				}
+			}
+		}
+	}
     return Ok(all_stakes);
 }
 
@@ -2024,7 +2050,7 @@ fn get_clubs_ranking_by_stakes(storage: &dyn Storage) -> StdResult<(Vec<(String,
     let mut matching_winners = 0u64;
     
     let mut all_stakes = Vec::new();
-    let all_clubs: Vec<String> = CLUB_STAKING_DETAILS
+    let all_clubs: Vec<String> = CLUB_OWNERSHIP_DETAILS
         .keys(storage, None, None, Order::Ascending)
         .map(|k| String::from_utf8(k).unwrap())
         .collect();
@@ -2094,7 +2120,7 @@ fn get_and_modify_clubs_ranking_by_stakes(storage: &mut dyn Storage) -> StdResul
     let mut matching_winners = 0u64;
     
     let mut all_stakes = Vec::new();
-    let all_clubs: Vec<String> = CLUB_STAKING_DETAILS
+    let all_clubs: Vec<String> = CLUB_OWNERSHIP_DETAILS
         .keys(storage, None, None, Order::Ascending)
         .map(|k| String::from_utf8(k).unwrap())
         .collect();
@@ -2161,7 +2187,7 @@ fn get_clubs_ranking_by_incremental_stakes(
 ) -> StdResult<(Vec<(String, i128)>)> {
     let mut all_stakes = Vec::new();
     let mut all_old_stakes = all_stakes.clone();
-    let all_clubs: Vec<String> = CLUB_STAKING_DETAILS
+    let all_clubs: Vec<String> = CLUB_OWNERSHIP_DETAILS
         .keys(storage, None, None, Order::Ascending)
         .map(|k| String::from_utf8(k).unwrap())
         .collect();
@@ -2207,7 +2233,7 @@ fn query_staker_rewards(
 ) -> StdResult<Uint128> {
     // Get the exising stakes for this club
     let mut stakes = Vec::new();
-    let all_stakes = CLUB_STAKING_DETAILS.may_load(deps.storage, club_name.clone())?;
+    let all_stakes = CLUB_STAKING_DETAILS.may_load(deps.storage, (&club_name.clone(), &staker.clone()))?;
     match all_stakes {
         Some(some_stakes) => {
             stakes = some_stakes;
@@ -2250,12 +2276,12 @@ pub fn query_all_stakes_for_user(
     user_address: String,
 ) -> StdResult<Vec<ClubStakingDetails>> {
     let mut all_stakes = Vec::new();
-    let all_clubs: Vec<String> = CLUB_STAKING_DETAILS
+    let all_clubs: Vec<String> = CLUB_OWNERSHIP_DETAILS
         .keys(storage, None, None, Order::Ascending)
         .map(|k| String::from_utf8(k).unwrap())
         .collect();
     for club_name in all_clubs {
-        let staking_details = CLUB_STAKING_DETAILS.load(storage, club_name)?;
+        let staking_details = CLUB_STAKING_DETAILS.load(storage, (&club_name.clone(), &user_address.clone()))?;
         for stake in staking_details {
             if stake.staker_address == user_address {
                 all_stakes.push(stake);
@@ -2757,8 +2783,20 @@ mod tests {
         }
 
         let mut stake_list: Vec<ClubStakingDetails> = Vec::new();
+		let mut user_address_list = Vec::new();
+		user_address_list.push("Owner001".to_string());
         for i in 1 .. 7 {
-            let staker: String = "Staker00".to_string() + &i.to_string();
+			let mut staker = String::default();
+			match i {
+				1 => { staker = "Staker001".to_string(); }
+				2 => { staker = "Staker002".to_string(); }
+				3 => { staker = "Staker003".to_string(); }
+				4 => { staker = "Staker004".to_string(); }
+				5 => { staker = "Staker005".to_string(); }
+				6 => { staker = "Staker006".to_string(); }
+				_ => { }
+			}
+			user_address_list.push(staker.clone());
             println!("staker is {}", staker);
             stake_list.push(ClubStakingDetails {
                 // TODO duration and timestamp fields no longer needed - should be removed
@@ -2781,7 +2819,7 @@ mod tests {
             "CLUB001".to_string(),
         );
 
-        let queryRes1 = query_all_stakes(&mut deps.storage);
+        let queryRes1 = query_all_stakes(&mut deps.storage, user_address_list);
         match queryRes1 {
             Ok(all_stakes) => {
                 println!("all stakes : {:?}",all_stakes);
@@ -3183,7 +3221,10 @@ mod tests {
         .unwrap();
         assert_eq!(res.messages, Response::default().messages); // no longer a totally empty default response
 
-        let queryRes = query_all_stakes(&mut deps.storage);
+		let mut user_address_list = Vec::new();
+		user_address_list.push("Staker001".to_string());
+		user_address_list.push("Owner001".to_string());
+        let queryRes = query_all_stakes(&mut deps.storage, user_address_list);
         match queryRes {
             Ok(all_stakes) => {
                 assert_eq!(all_stakes.len(), 2);
@@ -3278,8 +3319,11 @@ mod tests {
             SET_AUTO_STAKE,
         );
 
-        let query_res = query_all_stakes(&mut deps.storage);
-        match query_res {
+		let mut user_address_list = Vec::new();
+		user_address_list.push("Staker001".to_string());
+		user_address_list.push("Owner001".to_string());
+        let query_stakes = query_all_stakes(&mut deps.storage, user_address_list);
+        match query_stakes {
             Ok(all_stakes) => {
                 assert_eq!(all_stakes.len(), 2);
                 for stake in all_stakes {
@@ -3377,7 +3421,10 @@ mod tests {
             IMMEDIATE_WITHDRAWAL,
         );
 
-        let query_stakes = query_all_stakes(&mut deps.storage);
+		let mut user_address_list = Vec::new();
+		user_address_list.push("Staker001".to_string());
+		user_address_list.push("Owner001".to_string());
+        let query_stakes = query_all_stakes(&mut deps.storage, user_address_list);
         match query_stakes {
             Ok(all_stakes) => {
                 assert_eq!(all_stakes.len(), 2);
@@ -3496,8 +3543,11 @@ mod tests {
             IMMEDIATE_WITHDRAWAL,
         );
 
-        let queryStakes = query_all_stakes(&mut deps.storage);
-        match queryStakes {
+		let mut user_address_list = Vec::new();
+		user_address_list.push("Staker001".to_string());
+		user_address_list.push("Owner001".to_string());
+        let query_stakes = query_all_stakes(&mut deps.storage, user_address_list);
+        match query_stakes {
             Ok(all_stakes) => {
                 assert_eq!(all_stakes.len(), 0);
             }
@@ -3608,7 +3658,10 @@ mod tests {
             NO_IMMEDIATE_WITHDRAWAL,
         );
 
-        let query_stakes = query_all_stakes(&mut deps.storage);
+		let mut user_address_list = Vec::new();
+		user_address_list.push("Staker001".to_string());
+		user_address_list.push("Owner001".to_string());
+        let query_stakes = query_all_stakes(&mut deps.storage, user_address_list);
         match query_stakes {
             Ok(all_stakes) => {
                 assert_eq!(all_stakes.len(), 2);
@@ -3769,7 +3822,10 @@ mod tests {
             NO_IMMEDIATE_WITHDRAWAL,
         );
 
-        let query_stakes = query_all_stakes(&mut deps.storage);
+		let mut user_address_list = Vec::new();
+		user_address_list.push("Staker001".to_string());
+		user_address_list.push("Owner001".to_string());
+        let query_stakes = query_all_stakes(&mut deps.storage, user_address_list);
         match query_stakes {
             Ok(all_stakes) => {
                 assert_eq!(all_stakes.len(), 2);
@@ -3914,7 +3970,10 @@ mod tests {
             NO_IMMEDIATE_WITHDRAWAL,
         );
         println!("result = {:?}", result);
-        let query_stakes = query_all_stakes(&mut deps.storage);
+		let mut user_address_list = Vec::new();
+		user_address_list.push("Staker001".to_string());
+		user_address_list.push("Owner001".to_string());
+        let query_stakes = query_all_stakes(&mut deps.storage, user_address_list);
         match query_stakes {
             Ok(all_stakes) => {
                 assert_eq!(all_stakes.len(), 2);
@@ -4084,7 +4143,17 @@ mod tests {
             SET_AUTO_STAKE,
         );
 
-        let queryRes0 = query_all_stakes(&mut deps.storage);
+		let mut user_address_list = Vec::new();
+		user_address_list.push("Staker001".to_string());
+		user_address_list.push("Staker002".to_string());
+		user_address_list.push("Staker003".to_string());
+		user_address_list.push("Staker004".to_string());
+		user_address_list.push("Staker005".to_string());
+		user_address_list.push("Staker006".to_string());
+		user_address_list.push("Owner001".to_string());
+		user_address_list.push("Owner002".to_string());
+		user_address_list.push("Owner003".to_string());
+        let queryRes0 = query_all_stakes(&mut deps.storage, user_address_list.clone());
         match queryRes0 {
             Ok(all_stakes) => {
                 assert_eq!(all_stakes.len(), 9);
@@ -4116,7 +4185,7 @@ mod tests {
 
         let queryReward = query_reward_amount(&mut deps.storage);
         println!("reward amount after distribution: {:?}",queryReward);
-        let queryRes = query_all_stakes(&mut deps.storage);
+        let queryRes = query_all_stakes(&mut deps.storage, user_address_list);
         match queryRes {
             Ok(all_stakes) => {
                 assert_eq!(all_stakes.len(), 9);

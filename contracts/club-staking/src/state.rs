@@ -115,7 +115,7 @@ pub const CLUB_OWNERSHIP_DETAILS: Map<String, ClubOwnershipDetails> =
 
 /// Map of clubs and its stakers. the key is club name and the
 /// ClubStakingDetails will contain information about the stakers and amount staked
-pub const CLUB_STAKING_DETAILS: Map<String, Vec<ClubStakingDetails>> =
+pub const CLUB_STAKING_DETAILS: Map<(&str, &str), Vec<ClubStakingDetails>> =
     Map::new("club_staking_details");
 
 /// Map of clubs and its bonders. the key is club name and the
