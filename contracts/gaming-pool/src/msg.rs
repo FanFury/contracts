@@ -22,9 +22,9 @@ pub struct InstantiateMsg {
     pub admin_address: String,
     pub minting_contract_address: String,
     pub platform_fees_collector_wallet: String,
-    pub transaction_fee: u128,
+    pub transaction_fee: Uint128,
     pub astro_proxy_address: String,
-    pub platform_fee: u128,
+    pub platform_fee: Uint128,
     pub game_id: String,
 }
 

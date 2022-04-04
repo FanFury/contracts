@@ -11,8 +11,8 @@ pub struct Config {
     pub minting_contract_address: Addr,
     pub platform_fees_collector_wallet: Addr,
     pub astro_proxy_address: Addr,
-    pub platform_fee: u128,
-    pub transaction_fee: u128,
+    pub platform_fee: Uint128,
+    pub transaction_fee: Uint128,
     pub game_id: String,
 }
 

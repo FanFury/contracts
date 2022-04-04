@@ -2,7 +2,9 @@ use std::ops::Add;
 
 use astroport::asset::{Asset, AssetInfo};
 use astroport::pair::ExecuteMsg as AstroPortExecute;
-use cosmwasm_std::{Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, from_binary, MessageInfo, Order, Response, StdError, StdResult, Storage, SubMsg, to_binary, Uint128, WasmMsg};
+use cosmwasm_std::{Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env,
+                   from_binary, MessageInfo, Order, Response, StdError,
+                   StdResult, Storage, SubMsg, to_binary, Uint128, WasmMsg};
 
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 
@@ -395,17 +397,17 @@ pub fn create_pool(
 
 //  TODO review this since we implemented unwrap here, it will raise unreachable wasm
 pub fn query_platform_fees(
-    pool_fee: u128,
-    platform_fees_percentage: u128,
-    transaction_fee_percentage: u128,
+    pool_fee: Uint128,
+    platform_fees_percentage: Uint128,
+    transaction_fee_percentage: Uint128,
 ) -> Result<FeeDetails, ContractError> {
     return Ok(FeeDetails {
         platform_fee: Uint128::from(pool_fee
             .checked_mul(platform_fees_percentage).unwrap()
-            .checked_div(HUNDRED_PERCENT).unwrap()),
+            .checked_div(Uint128::from(HUNDRED_PERCENT)).unwrap()),
         transaction_fee: Uint128::from(pool_fee
             .checked_mul(transaction_fee_percentage).unwrap()
-            .checked_div(HUNDRED_PERCENT).unwrap()),
+            .checked_div(Uint128::from(HUNDRED_PERCENT)).unwrap()),
     });
 }
 
@@ -464,7 +466,7 @@ pub fn game_pool_bid_submit(
         }
         false => {
             let fee_details = query_platform_fees(
-                u128::from(ptd.unwrap().pool_fee),
+                ptd.unwrap().pool_fee,
                 platform_fee,
                 config.transaction_fee,
             )?;
@@ -685,6 +687,10 @@ pub fn save_team_details(
     return Ok(Response::new().add_attribute("team_id", team_id.clone()));
 }
 
+// Reward:Platform fee has to charged. Reward amount here is in FURY.
+// Make a call to astroport to get the platform fee, that is to be charged.
+// Here we only transfer the FURY and here since the amount is in
+// FURY no swap needs to be done so no call to astroport for swap.
 pub fn claim_reward(
     deps: DepsMut,
     info: MessageInfo,
@@ -774,7 +780,7 @@ pub fn claim_reward(
     // Do the transfer of reward to the actual gamer_addr from the contract
     let config = CONFIG.load(deps.storage)?;
     let mut messages = Vec::new();
-    let fee_details = query_platform_fees(u128::from(user_reward), config.platform_fee, config.transaction_fee)?;
+    let fee_details = query_platform_fees(user_reward, config.platform_fee, config.transaction_fee)?;
     // We only take the first coin object since we only expect UST here
     let funds_sent = info.funds[0].clone();
     if (funds_sent.denom != "uusd") || (funds_sent.amount < fee_details.platform_fee.add(fee_details.transaction_fee)) {
@@ -797,6 +803,13 @@ pub fn claim_reward(
     );
 }
 
+// Refund: Pool fee is in UST but has to be given back in FURY,
+// It is 10UST Equivant of Fury, Use Query platform fee on UST value directly.
+// This means it has to be swapped. So we make a call to astorport
+// to swap it and we also need to pass the swap fee.
+// No Platform fee charged at time of refund, we only
+// refund the fee and swap fee is accepted by the contract.
+// Transafer of UST and FURY has to be done together at refund.
 pub fn claim_refund(
     deps: DepsMut,
     info: MessageInfo,
@@ -884,7 +897,7 @@ pub fn claim_refund(
             msg: String::from("No refund for this user"),
         }));
     }
-    let refund_details = query_platform_fees(u128::from(total_refund_amount), config.platform_fee, config.transaction_fee)?;
+    let refund_details = query_platform_fees(total_refund_amount, config.platform_fee, config.transaction_fee)?;
     refund_in_ust_fees = refund_details.transaction_fee.add(refund_details.platform_fee);
     // Do the transfer of refund to the actual gamer_addr from the contract
     let mut messages = Vec::new();
@@ -1019,7 +1032,7 @@ pub fn game_pool_reward_distribute(
             }));
         }
     }
-    platform_fee = query_platform_fees(u128::from(pool_type_details.pool_fee), platform_fee_in_percentage, config.transaction_fee.clone())?.platform_fee;
+    platform_fee = query_platform_fees(pool_type_details.pool_fee, platform_fee_in_percentage, config.transaction_fee.clone())?.platform_fee;
 
 
     // let pool_fee: Uint128 = deps.querier.query_wasm_smart(
