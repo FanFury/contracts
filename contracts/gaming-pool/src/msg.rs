@@ -60,6 +60,7 @@ pub enum ExecuteMsg {
     GamePoolRewardDistribute {
         pool_id: String,
         game_winners: Vec<GameResult>,
+        is_final_batch: bool,
     },
     GamePoolBidSubmitCommand {
         gamer: String,

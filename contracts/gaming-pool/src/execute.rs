@@ -955,6 +955,7 @@ pub fn game_pool_reward_distribute(
     info: MessageInfo,
     pool_id: String,
     game_winners: Vec<GameResult>,
+    is_final_batch: bool,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     if info.sender != config.admin_address {
@@ -988,12 +989,22 @@ pub fn game_pool_reward_distribute(
             msg: String::from("Rewards cant be distributed as game not yet started"),
         }));
     }
+    let reward_status;
+    let game_status;
+
+    if is_final_batch {
+        reward_status = true;
+        game_status = GAME_POOL_OPEN;
+    } else {
+        reward_status = false;
+        game_status = GAME_COMPLETED;
+    }
     GAME_DETAILS.save(
         deps.storage,
         game_id.clone(),
         &GameDetails {
             game_id: game_id.clone(),
-            game_status: GAME_COMPLETED,
+            game_status: game_status,
         },
     )?;
 
@@ -1003,9 +1014,10 @@ pub fn game_pool_reward_distribute(
             msg: String::from("Rewards are already distributed for this pool"),
         }));
     }
-
     let pool_count = pool_details.current_teams_count;
     let pool_type = pool_details.pool_type;
+
+
     POOL_DETAILS.save(
         deps.storage,
         pool_id.clone(),
@@ -1014,7 +1026,7 @@ pub fn game_pool_reward_distribute(
             pool_id: pool_id.clone(),
             pool_type: pool_type.clone(),
             current_teams_count: pool_details.current_teams_count,
-            rewards_distributed: REWARDS_DISTRIBUTED,
+            rewards_distributed: reward_status,
             pool_refund_status: false,
             pool_reward_status: true,
         },
@@ -1085,8 +1097,6 @@ pub fn game_pool_reward_distribute(
             .unwrap_or_default()
             .checked_div(Uint128::from(100u128))
             .unwrap_or_default();
-        // Transfer proportionate_amount to the corresponding platform wallet
-
         let transfer_detail = WalletTransferDetails {
             wallet_address: wallet_address.clone(),
             amount: proportionate_amount,
@@ -1103,38 +1113,40 @@ pub fn game_pool_reward_distribute(
     // Get all teams for this pool
     let mut reward_given_so_far = Uint128::zero();
     let mut all_teams: Vec<PoolTeamDetails> = Vec::new();
-    // TODO REVIEW THIS
-    let ptd = POOL_TEAM_DETAILS.may_load(deps.storage, (&pool_id.clone(), info.sender.as_ref()))?;
-    match ptd {
-        Some(ptd) => {
-            all_teams = ptd;
-        }
-        None => {}
-    }
-    let mut updated_teams: Vec<PoolTeamDetails> = Vec::new();
-    for team in all_teams {
-        // No transfer to be done to the winners. Just update their reward amounts.
-        // They have to come and collect their rewards
-        let mut updated_team = team.clone();
-        let winners = game_winners.clone();
-        for winner in winners {
-            if team.gamer_address == winner.gamer_address
-                && team.team_id == winner.team_id
-                && team.game_id == winner.game_id
-            {
-                updated_team.reward_amount = winner.reward_amount;
-                updated_team.team_rank = winner.team_rank;
-                updated_team.team_points = winner.team_points;
-                reward_given_so_far += winner.reward_amount;
-                println!(
-                    "reward for {:?} is {:?}",
-                    team.team_id, updated_team.reward_amount
-                );
+    for winner in game_winners.clone().into_iter() {
+        let ptd = POOL_TEAM_DETAILS.may_load(deps.storage, (&pool_id.clone(), winner.gamer_address.as_ref()))?;
+        match ptd {
+            Some(ptd) => {
+                all_teams = ptd;
             }
+            None => {}
         }
-        updated_teams.push(updated_team);
+        let mut updated_teams: Vec<PoolTeamDetails> = Vec::new();
+        for team in &all_teams {
+            // No transfer to be done to the winners. Just update their reward amounts.
+            // They have to come and collect their rewards
+            let mut updated_team = team.clone();
+            let winners = game_winners.clone();
+            for winner in winners {
+                if team.gamer_address == winner.gamer_address
+                    && team.team_id == winner.team_id
+                    && team.game_id == winner.game_id
+                {
+                    updated_team.reward_amount = winner.reward_amount;
+                    updated_team.team_rank = winner.team_rank;
+                    updated_team.team_points = winner.team_points;
+                    reward_given_so_far += winner.reward_amount;
+                    println!(
+                        "reward for {:?} is {:?}",
+                        team.team_id, updated_team.reward_amount
+                    );
+                }
+            }
+            updated_teams.push(updated_team);
+        }
+        POOL_TEAM_DETAILS.save(deps.storage, (&pool_id.clone(), winner.gamer_address.as_ref()), &updated_teams)?;
     }
-    POOL_TEAM_DETAILS.save(deps.storage, (&pool_id.clone(), info.sender.as_ref()), &updated_teams)?;
+
 
     // Transfer rake_amount to all the rake wallets. Can also be only one rake wallet
     for wallet in pool_type_details.rake_list {

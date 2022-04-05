@@ -18,6 +18,8 @@ pub struct Config {
 
 pub const CONFIG_KEY: &str = "config";
 pub const CONFIG: Item<Config> = Item::new(CONFIG_KEY);
+// This param will enable or disable contract completely as a fail safe
+pub const ACTIVATION_STATUS: Item<bool> = Item::new("activation_status");
 
 /// This is used for saving various vesting details
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]

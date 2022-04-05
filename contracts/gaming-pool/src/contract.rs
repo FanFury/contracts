@@ -20,6 +20,7 @@ use crate::query::{
 };
 use crate::state::{Config, CONFIG, GAME_DETAILS, GAME_RESULT_DUMMY, GameDetails, GameResult};
 
+// This is a comment
 // version info for migration info
 pub const CONTRACT_NAME: &str = "crates.io:gaming-pool";
 pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -140,7 +141,8 @@ pub fn execute(
         ExecuteMsg::GamePoolRewardDistribute {
             pool_id,
             game_winners,
-        } => game_pool_reward_distribute(deps, env, info, pool_id, game_winners),
+            is_final_batch
+        } => game_pool_reward_distribute(deps, env, info, pool_id, game_winners, is_final_batch),
         ExecuteMsg::GamePoolBidSubmitCommand {
             gamer,
             pool_type,
