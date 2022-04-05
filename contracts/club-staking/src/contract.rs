@@ -1682,39 +1682,47 @@ fn distribute_reward_to_club_stakers(
 	let mut reward_given_so_far = Uint128::zero();
 	for staker in staker_list {
         let mut updated_stakes_for_this_staker = Vec::new();
-        let staking_details = CLUB_STAKING_DETAILS.load(deps.storage, (&club_name.clone(), &staker.clone()))?;
-        for mut stake in staking_details {
-            let mut updated_stake = stake.clone();
-            let auto_stake = updated_stake.auto_stake;
-            // Calculate for All Staker - 78% proportional
-            let mut reward_for_this_stake = (all_stakers_reward.checked_mul(stake.staked_amount))
-                .unwrap_or_default()
-                .checked_div(total_stake_across_all_clubs)
-                .unwrap_or_default();
+        let csd = CLUB_STAKING_DETAILS.may_load(deps.storage, (&club_name.clone(), &staker.clone()))?;
+		let staking_details;
+		match csd {
+			None => {}
+			Some(some_csd) => {
+				staking_details = some_csd;
 
-			if is_club_a_winner {
-				// Calculate for Winning Club Staker - 19% proportional
-                reward_for_this_stake += (reward_for_all_stakers_in_winning_club.checked_mul(stake.staked_amount))
-                    .unwrap_or_default()
-                    .checked_div(total_stake_in_winning_club)
-                    .unwrap_or_default();
+				for mut stake in staking_details {
+					let mut updated_stake = stake.clone();
+					let auto_stake = updated_stake.auto_stake;
+					// Calculate for All Staker - 78% proportional
+					let mut reward_for_this_stake = (all_stakers_reward.checked_mul(stake.staked_amount))
+						.unwrap_or_default()
+						.checked_div(total_stake_across_all_clubs)
+						.unwrap_or_default();
+
+					if is_club_a_winner {
+						// Calculate for Winning Club Staker - 19% proportional
+						reward_for_this_stake += (reward_for_all_stakers_in_winning_club.checked_mul(stake.staked_amount))
+							.unwrap_or_default()
+							.checked_div(total_stake_in_winning_club)
+							.unwrap_or_default();
+					}
+
+					if stake.staker_address == club_owner_address {
+						// Calculate for Club Owner - (1% or 3% for winner owner) or 2% proportional for non-winner owner
+						reward_for_this_stake += owner_reward;
+					}
+
+					reward_given_so_far += reward_for_this_stake;
+
+					if auto_stake == SET_AUTO_STAKE {
+						updated_stake.staked_amount += reward_for_this_stake;
+						updated_stake.staked_amount += updated_stake.reward_amount;
+						updated_stake.reward_amount = Uint128::zero();
+					} else {
+						updated_stake.reward_amount += reward_for_this_stake;
+					}
+					updated_stakes_for_this_staker.push(updated_stake);
+				}
 			}
-
-			if stake.staker_address == club_owner_address {
-				// Calculate for Club Owner - (1% or 3% for winner owner) or 2% proportional for non-winner owner
-                reward_for_this_stake += owner_reward;
-			}
-
-            reward_given_so_far += reward_for_this_stake;
-
-            if auto_stake == SET_AUTO_STAKE {
-                updated_stake.staked_amount += reward_for_this_stake;
-                updated_stake.staked_amount += updated_stake.reward_amount;
-                updated_stake.reward_amount = Uint128::zero();
-            } else {
-                updated_stake.reward_amount += reward_for_this_stake;
-            }
-            updated_stakes_for_this_staker.push(updated_stake);
 		}
 		CLUB_STAKING_DETAILS.save(deps.storage, (&club_name.clone(), &staker.clone()), &updated_stakes_for_this_staker)?;
 	}
@@ -4129,15 +4137,21 @@ mod tests {
             "reward_from abc".to_string(),
             Uint128::from(1000000u128),
         );
+        let mut queryReward = query_reward_amount(&mut deps.storage);
+        println!("reward amount before distribution: {:?}",queryReward);
 		let club_name1 = "CLUB001".to_string();
 		calculate_and_distribute_rewards(deps.as_mut(), mock_env(), adminInfo.clone(), user_address_list.clone(), club_name1, false);
+        queryReward = query_reward_amount(&mut deps.storage);
+        println!("reward amount after first distribution: {:?}",queryReward);
 		let club_name2 = "CLUB002".to_string();
 		calculate_and_distribute_rewards(deps.as_mut(), mock_env(), adminInfo.clone(), user_address_list.clone(), club_name2, false);
+        queryReward = query_reward_amount(&mut deps.storage);
+        println!("reward amount after second distribution: {:?}",queryReward);
 		let club_name3 = "CLUB003".to_string();
 		calculate_and_distribute_rewards(deps.as_mut(), mock_env(), adminInfo.clone(), user_address_list.clone(), club_name3, true);
 
-        let queryReward = query_reward_amount(&mut deps.storage);
-        println!("reward amount after distribution: {:?}",queryReward);
+        queryReward = query_reward_amount(&mut deps.storage);
+        println!("reward amount after third distribution: {:?}",queryReward);
         let queryRes = query_all_stakes(&mut deps.storage, user_address_list.clone());
         match queryRes {
             Ok(all_stakes) => {
