@@ -1073,6 +1073,7 @@ mod tests {
             adminInfo.clone(),
             pool_id_1.to_string(),
             game_results,
+            true,
         );
 
         match game_pool_reward_distribute_rsp {
@@ -1611,6 +1612,7 @@ mod tests {
             adminInfo.clone(),
             pool_id_1.to_string(),
             game_results,
+            true,
         );
 
         match game_pool_reward_distribute_rsp {
@@ -1863,6 +1865,7 @@ mod tests {
             adminInfo.clone(),
             pool_id_1.to_string(),
             game_results,
+            true,
         );
 
         match game_pool_reward_distribute_rsp {
@@ -2334,6 +2337,7 @@ mod tests {
             adminInfo.clone(),
             pool_id_1.to_string(),
             game_results,
+            true,
         );
 
         match game_pool_reward_distribute_rsp {
@@ -2485,6 +2489,7 @@ mod tests {
             adminInfo.clone(),
             pool_id_1.to_string(),
             game_results.clone(),
+            true,
         );
 
         match game_pool_reward_distribute_rsp {
@@ -2556,6 +2561,7 @@ mod tests {
             adminInfo.clone(),
             pool_id_1.to_string(),
             game_results,
+            true,
         );
 
         match game_pool_reward_distribute_rsp {
@@ -2763,6 +2769,7 @@ mod tests {
             adminInfo.clone(),
             pool_id_1.to_string(),
             game_results.clone(),
+            true,
         );
 
         match game_pool_reward_distribute_rsp {
@@ -2796,6 +2803,7 @@ mod tests {
             adminInfo.clone(),
             pool_id_1.to_string(),
             game_results,
+            true,
         );
 
         match game_pool_reward_distribute_rsp_2 {
