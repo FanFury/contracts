@@ -157,8 +157,12 @@ pub fn execute(
             amount,
             immediate_withdrawal,
         ),
-        ExecuteMsg::CalculateAndDistributeRewards {} => {
-            calculate_and_distribute_rewards(deps, env, info)
+        ExecuteMsg::CalculateAndDistributeRewards {
+            staker_list,
+            club_name,
+            is_final_batch,
+		} => {
+            calculate_and_distribute_rewards(deps, env, info, staker_list, club_name, is_final_batch)
         }
         ExecuteMsg::ClaimStakerRewards { staker, club_name } => {
             claim_staker_rewards(deps, info, staker, club_name)
@@ -1482,6 +1486,192 @@ fn calculate_and_distribute_rewards(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
+    staker_list: Vec<String>,
+    club_name: String,
+	is_final_batch: bool,
+) -> Result<Response, ContractError> {
+    // Check if this is executed by main/transaction wallet
+    let config = CONFIG.load(deps.storage)?;
+    if info.sender != config.admin_address {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: String::from("not authorised"),
+        }));
+    }
+    let total_reward = REWARD.may_load(deps.storage)?.unwrap_or_default(); 
+
+    let mut next_reward_time = CLUB_REWARD_NEXT_TIMESTAMP
+        .may_load(deps.storage)?
+        .unwrap_or_default();
+    println!(
+        "now = {:?} next_reward_time = {:?} periodicity = {:?} is_final_batch = {:?}",
+        env.block.time, next_reward_time, config.reward_periodicity, is_final_batch
+    );
+    if env.block.time < next_reward_time {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: String::from("Time for Reward not yet arrived"),
+        }));
+    }
+	if is_final_batch {
+		if next_reward_time < env.block.time {
+			next_reward_time = next_reward_time.plus_seconds(config.reward_periodicity);
+		}
+		println!("setting next_reward_time = {:?}", next_reward_time);
+		CLUB_REWARD_NEXT_TIMESTAMP.save(deps.storage, &next_reward_time)?;
+
+		let new_reward = Uint128::zero();
+		REWARD.save(deps.storage, &new_reward)?;
+	}
+
+    // No need to calculate if there is no reward amount
+    if total_reward == Uint128::zero() {
+        return Ok(Response::new().add_attribute("response", "no accumulated rewards")
+            .add_attribute("next_timestamp", next_reward_time.to_string())
+            );
+    }
+
+	distribute_reward_to_club_stakers(deps, staker_list.clone(), club_name.clone(), total_reward)
+}
+
+fn distribute_reward_to_club_stakers(
+    deps: DepsMut,
+    staker_list: Vec<String>,
+    club_name: String,
+    total_reward: Uint128,
+) -> Result<Response, ContractError> {
+	let response = get_total_clubs_details()?;
+	let total_number_of_clubs = response.0;
+	let winner_list = response.1;
+	let num_of_winners = winner_list.len() as u128;
+	let other_club_count = total_number_of_clubs - num_of_winners;
+	let mut owner_reward = Uint128::zero();
+	let is_club_a_winner = is_winning_club(club_name.clone(), winner_list);
+	let club_details = query_club_ownership_details(deps.storage, club_name.clone())?;
+	let club_owner_address = club_details.owner_address;
+
+	let total_staking = Uint128::from(100u128);
+	let total_staking_in_club = Uint128::from(100u128);
+
+	if !is_club_a_winner && other_club_count <= 0 {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: String::from("computation error - should never happen"),
+        }));
+	}
+
+	if is_club_a_winner {
+		if other_club_count > 0 {
+			// distribute 1% equally to owners in this winning club
+			owner_reward = total_reward
+				.checked_div(Uint128::from(100u128))
+				.unwrap_or_default()
+				.checked_div(Uint128::from(num_of_winners))
+				.unwrap_or_default();
+		} else {
+			// there are only winning clubs
+			// distribute 3% equally to owners in this winning club
+			owner_reward = total_reward
+				.checked_mul(Uint128::from(3u128))
+				.unwrap_or_default()
+				.checked_div(Uint128::from(100u128))
+				.unwrap_or_default()
+				.checked_div(Uint128::from(num_of_winners))
+				.unwrap_or_default();
+		}
+	} else {
+		// other_club_count must be greater than 0
+		// distribute 2% equally to owner in this non winning club
+		owner_reward = total_reward
+			.checked_mul(Uint128::from(2u128))
+			.unwrap_or_default()
+			.checked_div(Uint128::from(100u128))
+			.unwrap_or_default()
+			.checked_div(Uint128::from(other_club_count))
+			.unwrap_or_default();
+	}
+
+	// distribute 19% to stakers in winning club
+	let reward_for_all_stakers_in_winning_club = total_reward
+		.checked_mul(Uint128::from(19u128))
+		.unwrap_or_default()
+		.checked_div(Uint128::from(100u128))
+		.unwrap_or_default()
+		.checked_div(Uint128::from(num_of_winners))
+		.unwrap_or_default();
+
+    // distribute the 78% to all stakers
+    let all_stakers_reward = total_reward
+        .checked_mul(Uint128::from(78u128))
+        .unwrap_or_default()
+        .checked_div(Uint128::from(100u128))
+        .unwrap_or_default();
+
+	let mut reward_given_so_far = Uint128::zero();
+	for staker in staker_list {
+        let mut updated_stakes_for_this_staker = Vec::new();
+        let staking_details = CLUB_STAKING_DETAILS.load(deps.storage, (&club_name.clone(), &staker.clone()))?;
+        for mut stake in staking_details {
+            let mut updated_stake = stake.clone();
+            let auto_stake = updated_stake.auto_stake;
+            // Calculate for All Staker - 78% proportional
+            let mut reward_for_this_stake = (all_stakers_reward.checked_mul(stake.staked_amount))
+                .unwrap_or_default()
+                .checked_div(total_staking)
+                .unwrap_or_default();
+
+			if is_club_a_winner {
+				// Calculate for Winning Club Staker - 19% proportional
+                reward_for_this_stake += (reward_for_all_stakers_in_winning_club.checked_mul(stake.staked_amount))
+                    .unwrap_or_default()
+                    .checked_div(total_staking_in_club)
+                    .unwrap_or_default();
+			}
+
+			if stake.staker_address == club_owner_address {
+				// Calculate for Club Owner - (1% or 3% for winner owner) or 2% proportional for non-winner owner
+                reward_for_this_stake += owner_reward;
+			}
+
+            reward_given_so_far += reward_for_this_stake;
+
+            if auto_stake == SET_AUTO_STAKE {
+                updated_stake.staked_amount += reward_for_this_stake;
+                updated_stake.staked_amount += updated_stake.reward_amount;
+                updated_stake.reward_amount = Uint128::zero();
+            } else {
+                updated_stake.reward_amount += reward_for_this_stake;
+            }
+            updated_stakes_for_this_staker.push(updated_stake);
+		}
+		CLUB_STAKING_DETAILS.save(deps.storage, (&club_name.clone(), &staker.clone()), &updated_stakes_for_this_staker)?;
+	}
+	println!("club_name = {:?} total reward = {:?} reward so far = {:?}", club_name.clone(), total_reward, reward_given_so_far);
+    Ok(Response::default())
+}
+
+fn get_total_clubs_details(
+) -> StdResult<(u128, Vec<String>)> {
+	let total = 0u128;
+	let winners: Vec<String> = Vec::new();
+	
+    Ok((total, winners))
+}
+
+
+fn is_winning_club(
+    club_name: String,
+    winner_list: Vec<String>,
+) -> bool {
+	for winner in winner_list {
+		if club_name == winner {
+			return true;
+		}
+	}
+	return false;
+}
+
+fn _old_calculate_and_distribute_rewards(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
 ) -> Result<Response, ContractError> {
 
     let mut cadr_response = Response::new();
@@ -1733,18 +1923,6 @@ fn calculate_and_distribute_rewards(
     return Ok(cadr_response);
 }
 
-fn is_club_a_winner(
-    club_name: String,
-    winner_list: Vec<String>,
-) -> StdResult<bool> {
-	for winner in winner_list {
-		if winner == club_name {
-			return Ok(true);
-		}
-	}
-	return Ok(false);
-}
-
 fn get_winner_club_names(
     storage: &dyn Storage,
     top_rankers_for_incremental_stake: Vec<(String, i128)>,
@@ -1944,7 +2122,11 @@ pub fn query_platform_fees(deps: Deps, msg: Binary) -> StdResult<Uint128> {
         Ok(ExecuteMsg::PeriodicallyRefundStakeouts {}) => {
             return Ok(Uint128::zero());
         }
-        Ok(ExecuteMsg::CalculateAndDistributeRewards {}) => {
+        Ok(ExecuteMsg::CalculateAndDistributeRewards {
+            staker_list: _,
+            club_name: _,
+            is_final_batch: _,
+        }) => {
             return Ok(Uint128::zero());
         }
         Ok(ExecuteMsg::ClaimStakerRewards { staker, club_name }) => {
@@ -3033,14 +3215,11 @@ mod tests {
             Uint128::from(1000000u128),
         );
 
-        let res = execute(
-            deps.as_mut(),
-            mock_env(),
-            adminInfo.clone(),
-            ExecuteMsg::CalculateAndDistributeRewards {},
-        )
-        .unwrap();
-        assert_eq!(res.messages, Response::default().messages); // no longer a totally empty default response
+		let mut staker_list1 = Vec::new();
+		staker_list1.push ("Staker001".to_string());
+		staker_list1.push ("Owner001".to_string());
+		let club_name1 = "CLUB001".to_string();
+		calculate_and_distribute_rewards(deps.as_mut(), mock_env(), adminInfo.clone(), staker_list1.clone(), club_name1, true);
 
         println!("releasing club");
         release_club(
@@ -3212,14 +3391,11 @@ mod tests {
             Uint128::from(1000000u128),
         );
 
-        let res = execute(
-            deps.as_mut(),
-            mock_env(),
-            adminInfo.clone(),
-            ExecuteMsg::CalculateAndDistributeRewards {},
-        )
-        .unwrap();
-        assert_eq!(res.messages, Response::default().messages); // no longer a totally empty default response
+		let mut staker_list1 = Vec::new();
+		staker_list1.push ("Staker001".to_string());
+		staker_list1.push ("Owner001".to_string());
+		let club_name1 = "CLUB001".to_string();
+		calculate_and_distribute_rewards(deps.as_mut(), mock_env(), adminInfo.clone(), staker_list1.clone(), club_name1, true);
 
 		let mut user_address_list = Vec::new();
 		user_address_list.push("Staker001".to_string());
@@ -3235,8 +3411,10 @@ mod tests {
                     println!("staker : {:?} reward_amount : {:?} staked_amount : {:?}", staker_address.clone(), reward_amount, staked_amount);
                     if staker_address == "Staker001" {
                         assert_eq!(reward_amount, Uint128::from(970000u128));
+                        assert_eq!(staked_amount, Uint128::from(33000u128));
                     }
                     if staker_address == "Owner001" {
+                        assert_eq!(staked_amount, Uint128::from(0u128));
                         assert_eq!(reward_amount, Uint128::from(30000u128));
                     }
                 }
@@ -4172,20 +4350,16 @@ mod tests {
             "reward_from abc".to_string(),
             Uint128::from(1000000u128),
         );
-        let queryReward = query_reward_amount(&mut deps.storage);
-        println!("reward amount before distribution: {:?}",queryReward);
-        let res = execute(
-            deps.as_mut(),
-            mock_env(),
-            adminInfo.clone(),
-            ExecuteMsg::CalculateAndDistributeRewards {},
-        )
-        .unwrap();
-        assert_eq!(res.messages, Response::default().messages); // no longer a totally empty default response
+		let club_name1 = "CLUB001".to_string();
+		calculate_and_distribute_rewards(deps.as_mut(), mock_env(), adminInfo.clone(), user_address_list.clone(), club_name1, false);
+		let club_name2 = "CLUB002".to_string();
+		calculate_and_distribute_rewards(deps.as_mut(), mock_env(), adminInfo.clone(), user_address_list.clone(), club_name2, false);
+		let club_name3 = "CLUB003".to_string();
+		calculate_and_distribute_rewards(deps.as_mut(), mock_env(), adminInfo.clone(), user_address_list.clone(), club_name3, true);
 
         let queryReward = query_reward_amount(&mut deps.storage);
         println!("reward amount after distribution: {:?}",queryReward);
-        let queryRes = query_all_stakes(&mut deps.storage, user_address_list);
+        let queryRes = query_all_stakes(&mut deps.storage, user_address_list.clone());
         match queryRes {
             Ok(all_stakes) => {
                 assert_eq!(all_stakes.len(), 9);
@@ -4239,6 +4413,8 @@ mod tests {
             Uint128::from(1000000u128),
         );
 
+/*
+		let club_name2 = "CLUB001".to_string();
         let err = execute(
             deps.as_mut(),
             mock_env(),
@@ -4253,6 +4429,7 @@ mod tests {
                 msg: String::from("Time for Reward not yet arrived")
             }))
         );
+*/
 
         // test by preponing club_reward_next_timestamp
         let instantiate_msg = InstantiateMsg {
@@ -4313,15 +4490,12 @@ mod tests {
             Uint128::from(1000000u128),
         );
 
-
-        let res = execute(
-            deps.as_mut(),
-            mock_env(),
-            adminInfo.clone(),
-            ExecuteMsg::CalculateAndDistributeRewards {},
-        )
-        .unwrap();
-
-        assert_eq!(res.messages, Response::default().messages); // no longer a totally empty default response
+        let queryReward = query_reward_amount(&mut deps.storage);
+		let club_name1 = "CLUB001".to_string();
+		calculate_and_distribute_rewards(deps.as_mut(), mock_env(), adminInfo.clone(), user_address_list.clone(), club_name1, false);
+		let club_name2 = "CLUB002".to_string();
+		calculate_and_distribute_rewards(deps.as_mut(), mock_env(), adminInfo.clone(), user_address_list.clone(), club_name2, false);
+		let club_name3 = "CLUB003".to_string();
+		calculate_and_distribute_rewards(deps.as_mut(), mock_env(), adminInfo.clone(), user_address_list.clone(), club_name3, true);
     }
 }

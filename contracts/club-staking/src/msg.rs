@@ -70,7 +70,11 @@ pub enum ExecuteMsg {
         immediate_withdrawal: bool,
     },
     PeriodicallyRefundStakeouts {},
-    CalculateAndDistributeRewards {},
+    CalculateAndDistributeRewards {
+        staker_list: Vec<String>,
+        club_name: String,
+        is_final_batch: bool,
+	},
     ClaimStakerRewards {
         staker: String,
         club_name: String,
