@@ -50,6 +50,9 @@ pub struct ClubOwnershipDetails {
 
     /// has owner released the club to let another buyer purchase it
     pub owner_released: bool,
+
+    /// total amount staked across all stakes for this club
+    pub total_staked_amount: Uint128,
 }
 
 /// Used to shift previous owner from ClubOwnerShipDetails to a new state variable -

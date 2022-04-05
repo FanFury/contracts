@@ -297,6 +297,7 @@ fn claim_owner_rewards(
                         price_paid: owner_detail.price_paid,
                         reward_amount: Uint128::zero(),
                         owner_released: owner_detail.owner_released,
+                        total_staked_amount: owner_detail.total_staked_amount,
                     },
                 )?;
             }
@@ -441,6 +442,7 @@ fn buy_a_club(
     }
 
     let mut previous_owners_reward_amount = Uint128::from(0u128);
+	let mut total_staked_amount = Uint128::from(0u128);
 
     if !(ownership_details.is_none()) {
         for owner in ownership_details {
@@ -469,6 +471,8 @@ fn buy_a_club(
                     msg: String::from("Seller is not the owner for the club"),
                 }));
             }
+
+            total_staked_amount = owner.total_staked_amount;
 
             // Evaluate previous owner rewards
             previous_owners_reward_amount = owner.reward_amount;
@@ -510,6 +514,7 @@ fn buy_a_club(
             price_paid: price,
             reward_amount: Uint128::from(CLUB_BUYING_REWARD_AMOUNT),
             owner_released: false,
+			total_staked_amount: total_staked_amount,
         },
     )?;
 
@@ -617,6 +622,7 @@ fn assign_a_club(
     }
 
     let mut previous_owners_reward_amount = Uint128::from(0u128);
+	let mut total_staked_amount = Uint128::from(0u128);
 
     if !(ownership_details.is_none()) {
         for owner in ownership_details {
@@ -645,6 +651,8 @@ fn assign_a_club(
                     msg: String::from("Seller is not the owner for the club"),
                 }));
             }
+
+            total_staked_amount = owner.total_staked_amount;
 
             // Evaluate previous owner rewards
             previous_owners_reward_amount = owner.reward_amount;
@@ -686,6 +694,7 @@ fn assign_a_club(
             price_paid: Uint128::zero(),
             reward_amount: Uint128::from(CLUB_BUYING_REWARD_AMOUNT),
             owner_released: false,
+			total_staked_amount: total_staked_amount,
         },
     )?;
 
@@ -773,6 +782,7 @@ fn release_club(
                     price_paid: owner.price_paid,
                     reward_amount: owner.reward_amount,
                     owner_released: true,
+                    total_staked_amount: owner.total_staked_amount,
                 },
             )?;
         }
@@ -840,6 +850,7 @@ fn stake_on_a_club(
         }
     }
     if ownership_details.is_some() {
+		let owner = ownership_details.unwrap();
         // Now save the staking details
         save_staking_details(
             deps.storage,
@@ -850,6 +861,22 @@ fn stake_on_a_club(
             auto_stake,
             INCREASE_STAKE,
         )?;
+
+		// Now update the total stake for this club 
+		CLUB_OWNERSHIP_DETAILS.save(
+			deps.storage,
+			club_name.clone(),
+			&ClubOwnershipDetails {
+				club_name: owner.club_name,
+				start_timestamp: owner.start_timestamp,
+				locking_period: owner.locking_period,
+				owner_address: owner.owner_address,
+				price_paid: owner.price_paid,
+				reward_amount: owner.reward_amount,
+				owner_released: owner.owner_released,
+				total_staked_amount: owner.total_staked_amount + amount,
+			},
+		)?;
     } else {
         return Err(ContractError::Std(StdError::GenericErr {
             msg: String::from("The club is not available for staking"),
@@ -922,6 +949,7 @@ fn assign_stakes_to_a_club(
             msg: String::from("The club is not available for staking"),
         }));
     }
+	let owner = ownership_details.unwrap();
 
     let mut total_amount = Uint128::zero();
     for stake in stake_list {
@@ -941,6 +969,22 @@ fn assign_stakes_to_a_club(
             INCREASE_STAKE,
         )?;
     }
+
+	// Now update the total stake for this club 
+	CLUB_OWNERSHIP_DETAILS.save(
+		deps.storage,
+		club_name.clone(),
+		&ClubOwnershipDetails {
+			club_name: owner.club_name,
+			start_timestamp: owner.start_timestamp,
+			locking_period: owner.locking_period,
+			owner_address: owner.owner_address,
+			price_paid: owner.price_paid,
+			reward_amount: owner.reward_amount,
+			owner_released: owner.owner_released,
+			total_staked_amount: owner.total_staked_amount + total_amount,
+		},
+	)?;
 
     let transfer_msg = Cw20ExecuteMsg::TransferFrom {
         owner: info.sender.into_string(),
@@ -1056,6 +1100,7 @@ fn withdraw_stake_from_a_club(
     let mut action = "withdraw_stake".to_string();
     let mut burn_amount = Uint128::zero();
     if ownership_details.is_some() {
+		let owner = ownership_details.unwrap();
         let mut unbonded_amount = Uint128::zero();
         let mut bonded_amount = Uint128::zero();
         let mut amount_remaining = withdrawal_amount.clone();
@@ -1139,6 +1184,23 @@ fn withdraw_stake_from_a_club(
 
             CLUB_BONDING_DETAILS.save(deps.storage, club_name.clone(), &updated_bonds)?;
 
+
+			// Now update the total stake for this club 
+			CLUB_OWNERSHIP_DETAILS.save(
+				deps.storage,
+				club_name.clone(),
+				&ClubOwnershipDetails {
+					club_name: owner.club_name,
+					start_timestamp: owner.start_timestamp,
+					locking_period: owner.locking_period,
+					owner_address: owner.owner_address,
+					price_paid: owner.price_paid,
+					reward_amount: owner.reward_amount,
+					owner_released: owner.owner_released,
+					total_staked_amount: owner.total_staked_amount - (withdrawal_amount - unbonded_amount),
+				},
+			)?;
+
             // update the staking details
             save_staking_details(
                 deps.storage,
@@ -1172,6 +1234,23 @@ fn withdraw_stake_from_a_club(
                     msg: String::from("Excess amount demanded for unstaking"),
                 }));
             }
+
+			// Now update the total stake for this club 
+			CLUB_OWNERSHIP_DETAILS.save(
+				deps.storage,
+				club_name.clone(),
+				&ClubOwnershipDetails {
+					club_name: owner.club_name,
+					start_timestamp: owner.start_timestamp,
+					locking_period: owner.locking_period,
+					owner_address: owner.owner_address,
+					price_paid: owner.price_paid,
+					reward_amount: owner.reward_amount,
+					owner_released: owner.owner_released,
+					total_staked_amount: owner.total_staked_amount - withdrawal_amount,
+				},
+			)?;
+
 
             let action = "withdrawn_stake_bonded".to_string();
             // update the staking details
@@ -1659,7 +1738,7 @@ fn get_total_clubs_details(
         .collect();
     for club in all_clubs {
 		let club_details = query_club_ownership_details(storage, club.clone())?;
-		let stake_in_club = club_details.reward_amount; // TODO : add a field total_stake
+		let stake_in_club = club_details.total_staked_amount; 
 		total_stake_across_all_clubs += stake_in_club;
         all_stakes.push((club.clone(), stake_in_club));
 		if club == club_name {
