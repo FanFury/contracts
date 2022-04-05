@@ -1540,16 +1540,15 @@ fn distribute_reward_to_club_stakers(
 ) -> Result<Response, ContractError> {
 	let response = get_total_clubs_details()?;
 	let total_number_of_clubs = response.0;
-	let winner_list = response.1;
+	let total_stake_across_all_clubs = response.1;
+	let total_stake_in_winning_club = response.2;
+	let winner_list = response.3;
 	let num_of_winners = winner_list.len() as u128;
 	let other_club_count = total_number_of_clubs - num_of_winners;
 	let mut owner_reward = Uint128::zero();
 	let is_club_a_winner = is_winning_club(club_name.clone(), winner_list);
 	let club_details = query_club_ownership_details(deps.storage, club_name.clone())?;
 	let club_owner_address = club_details.owner_address;
-
-	let total_staking = Uint128::from(100u128);
-	let total_staking_in_club = Uint128::from(100u128);
 
 	if !is_club_a_winner && other_club_count <= 0 {
         return Err(ContractError::Std(StdError::GenericErr {
@@ -1614,14 +1613,14 @@ fn distribute_reward_to_club_stakers(
             // Calculate for All Staker - 78% proportional
             let mut reward_for_this_stake = (all_stakers_reward.checked_mul(stake.staked_amount))
                 .unwrap_or_default()
-                .checked_div(total_staking)
+                .checked_div(total_stake_across_all_clubs)
                 .unwrap_or_default();
 
 			if is_club_a_winner {
 				// Calculate for Winning Club Staker - 19% proportional
                 reward_for_this_stake += (reward_for_all_stakers_in_winning_club.checked_mul(stake.staked_amount))
                     .unwrap_or_default()
-                    .checked_div(total_staking_in_club)
+                    .checked_div(total_stake_in_winning_club)
                     .unwrap_or_default();
 			}
 
@@ -1648,11 +1647,13 @@ fn distribute_reward_to_club_stakers(
 }
 
 fn get_total_clubs_details(
-) -> StdResult<(u128, Vec<String>)> {
-	let total = 0u128;
+) -> StdResult<(u128, Uint128, Uint128, Vec<String>)> {
+	let total_number_of_clubs = 1u128;
+	let total_stake_across_all_clubs = Uint128::from(100u128);
+	let total_stake_in_winning_club = Uint128::from(100u128);
 	let winners: Vec<String> = Vec::new();
 	
-    Ok((total, winners))
+    Ok((total_number_of_clubs, total_stake_across_all_clubs, total_stake_in_winning_club, winners))
 }
 
 
