@@ -137,12 +137,12 @@ pub fn execute(
         ExecuteMsg::LockGame {} => lock_game(deps, env, info),
         ExecuteMsg::CreatePool { pool_type } => create_pool(deps, env, info, pool_type),
         ExecuteMsg::ClaimReward { gamer } => claim_reward(deps, info, gamer, env),
-        ExecuteMsg::ClaimRefund { gamer } => claim_refund(deps, info, gamer, env),
+        ExecuteMsg::ClaimRefund { gamer } => claim_refund(deps, info, gamer, env, None),
         ExecuteMsg::GamePoolRewardDistribute {
             pool_id,
             game_winners,
             is_final_batch
-        } => game_pool_reward_distribute(deps, env, info, pool_id, game_winners, is_final_batch),
+        } => game_pool_reward_distribute(deps, env, info, pool_id, game_winners, is_final_batch, false),
         ExecuteMsg::GamePoolBidSubmitCommand {
             gamer,
             pool_type,

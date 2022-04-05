@@ -815,7 +815,9 @@ pub fn claim_refund(
     info: MessageInfo,
     gamer: String,
     env: Env,
+    testing: Option<bool>,
 ) -> Result<Response, ContractError> {
+    let testing_status = testing.unwrap_or(false);
     let mut refund_in_ust_fees = Uint128::default();
     let gamer_addr = deps.api.addr_validate(&gamer)?;
     //Check if withdrawer is same as invoker
@@ -916,13 +918,16 @@ pub fn claim_refund(
         to: Option::from(info.sender.to_string()),
     };
 
+    let mut swap_fee = Uint128::zero();
     // Swap fee should be platform+transaction fee for the transaction
-    let swap_fee: Uint128 = deps.querier.query_wasm_smart(
-        config.clone().astro_proxy_address,
-        &QueryMsgSimulation::QueryPlatformFees {
-            msg: to_binary(&swap_message)?
-        },
-    )?;
+    if !testing_status {
+        swap_fee = deps.querier.query_wasm_smart(
+            config.clone().astro_proxy_address,
+            &QueryMsgSimulation::QueryPlatformFees {
+                msg: to_binary(&swap_message)?
+            },
+        )?;
+    }
     let final_amount = ust_asset.amount.clone().add(swap_fee).add(tax);
     messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: config.astro_proxy_address.to_string(),
@@ -956,6 +961,7 @@ pub fn game_pool_reward_distribute(
     pool_id: String,
     game_winners: Vec<GameResult>,
     is_final_batch: bool,
+    testing: bool,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     if info.sender != config.admin_address {
@@ -994,10 +1000,10 @@ pub fn game_pool_reward_distribute(
 
     if is_final_batch {
         reward_status = true;
-        game_status = GAME_POOL_OPEN;
+        game_status = GAME_COMPLETED;
     } else {
         reward_status = false;
-        game_status = GAME_COMPLETED;
+        game_status = GAME_POOL_OPEN
     }
     GAME_DETAILS.save(
         deps.storage,
@@ -1119,7 +1125,9 @@ pub fn game_pool_reward_distribute(
             Some(ptd) => {
                 all_teams = ptd;
             }
-            None => {}
+            None => {
+                continue
+            }
         }
         let mut updated_teams: Vec<PoolTeamDetails> = Vec::new();
         for team in &all_teams {
@@ -1173,6 +1181,7 @@ pub fn game_pool_reward_distribute(
         wallet_transfer_details,
         "rake_and_platform_fee".to_string(),
         deps,
+        testing,
     )?;
     return Ok(rsp
         .add_attribute("game_status", "GAME_COMPLETED".to_string())
@@ -1185,9 +1194,13 @@ pub fn _transfer_to_multiple_wallets(
     wallet_details: Vec<WalletTransferDetails>,
     action: String,
     deps: DepsMut,
+    testing: bool,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let mut rsp = Response::new();
+    if testing {
+        return Ok(rsp)
+    }
     for wallet in wallet_details {
         let current_amt = deps.querier.query_wasm_smart(
             config.astro_proxy_address.clone(),
@@ -1218,73 +1231,6 @@ pub fn _transfer_to_multiple_wallets(
     Ok(rsp.add_attribute("action", action).set_data(data_msg))
 }
 
-pub fn transfer_from_contract_to_wallet(
-    amount: Uint128, // UST and we need swap it to FURY At time of return
-    action: String,
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    is_refund: bool,
-    ust_refund: Uint128,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    let mut messages = Vec::new();
-    let ust_asset = Asset {
-        info: AssetInfo::NativeToken {
-            denom: "uusd".to_string()
-        },
-        amount,
-    };
-    let tax = ust_asset.compute_tax(&deps.querier)?;
-    // ust_asset.amount += tax;
-    let swap_message = AstroPortExecute::Swap {
-        offer_asset: ust_asset.clone(),
-        belief_price: None,
-        max_spread: None,
-        to: Option::from(info.sender.to_string()),
-    };
-
-    // Swap fee should be platform+transaction fee for the transaction
-    let swap_fee: Uint128 = deps.querier.query_wasm_smart(
-        config.clone().astro_proxy_address,
-        &QueryMsgSimulation::QueryPlatformFees {
-            msg: to_binary(&swap_message)?
-        },
-    )?;
-    if !is_refund {
-        // We only take the first coin object since we only expect UST here
-        let funds_sent = info.funds[0].clone();
-        if (funds_sent.denom != "uusd") || (funds_sent.amount < swap_fee) {
-            return Err(ContractError::InsufficientFeesUst {});
-        }
-    }
-    let final_amount = ust_asset.amount.clone().add(swap_fee).add(tax);
-    messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: config.astro_proxy_address.to_string(),
-        msg: to_binary(&swap_message)?,
-        funds: vec![Coin {
-            denom: "uusd".to_string(),
-            amount: final_amount,
-        }],
-    }));
-    if is_refund && !ust_refund.is_zero() {
-        let refund = Coin {
-            denom: "uusd".to_string(),
-            amount: ust_refund,
-        };
-        let mut refund_: Vec<Coin> = vec![];
-        refund_.push(refund);
-        messages.push(CosmosMsg::Bank(BankMsg::Send {
-            to_address: String::from(info.sender),
-            amount: refund_,
-        }));
-    }
-    return Ok(Response::new()
-        .add_attribute("amount", amount.to_string())
-        .add_attribute("action", action)
-        .add_messages(messages)
-    );
-}
 
 pub fn execute_sweep(
     deps: DepsMut,
