@@ -2120,30 +2120,6 @@ pub fn query_club_bonding_details_for_user(
     return Ok(all_bonds);
 }
 
-// )
-// -> StdResult<Vec<ClubBondingDetails>> {
-//     let mut all_bonds = Vec::new();
-//     let all_clubs: Vec<String> = CLUB_BONDING_DETAILS
-//         .keys(storage, None, None, Order::Ascending)
-//         .map(|k| String::from_utf8(k).unwrap())
-//         .collect();
-//     for club_name in all_clubs {
-//         let bonding_details = CLUB_BONDING_DETAILS.load(storage, club_name)?;
-//         for bond in bonding_details {
-//             all_bonds.push(bond);
-//         }
-//     }
-//     return Ok(all_bonds);
-
-// let mut all_bonds = Vec::new();
-// let bonding_details = CLUB_BONDING_DETAILS.load(storage, club_name.to_string())?;
-// for bond in bonding_details {
-//     if true { //bond.bonder_address == user_address {
-//         all_bonds.push(bond);
-//     }
-// }
-// return Ok(all_bonds);
-// }
 
 pub fn query_all_club_ownership_details(
     storage: &dyn Storage,
