@@ -395,7 +395,6 @@ pub fn create_pool(
     return Ok(Response::new().add_attribute("pool_id", pool_id_str.clone()));
 }
 
-//  TODO review this since we implemented unwrap here, it will raise unreachable wasm
 pub fn query_platform_fees(
     pool_fee: Uint128,
     platform_fees_percentage: Uint128,

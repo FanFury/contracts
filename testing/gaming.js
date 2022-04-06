@@ -18,8 +18,8 @@ const question = promisify(rl.question).bind(rl);
 const assert = chai.assert;
 // Init and Vars
 let gaming_contract_address = ""
-let proxy_contract_address = "terra1pcknsatx5ceyfu6zvtmz3yr8auumzrdts4ax4a"
-let fury_contract_address = "terra10pyejy66429refv3g35g2t7am0was7ya7kz2a4"
+let proxy_contract_address = "terra19zpyd046u4swqpksr3n44cej4j8pg6ah2y6dcg"
+let fury_contract_address = "terra18vd8fpwxzck93qlwghaj6arh4p7c5n896xzem5"
 const gamer = walletTest1.key.accAddress
 // const gamer_extra_1 = walletTest3.key.accAddress
 // const gamer_extra_2 = walletTest4.key.accAddress
