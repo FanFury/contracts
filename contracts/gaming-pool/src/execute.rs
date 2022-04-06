@@ -997,11 +997,16 @@ pub fn game_pool_reward_distribute(
     }
     let reward_status;
     let game_status;
-
+    let pool_status_string;
+    let reward_status_string;
     if is_final_batch {
         reward_status = true;
         game_status = GAME_COMPLETED;
+        reward_status_string = "GAME_COMPLETED";
+        pool_status_string = "POOL_REWARD_DISTRIBUTED";
     } else {
+        reward_status_string = "GAME_NOT_COMPLETED";
+        pool_status_string = "POOL_REWARD_DISTRIBUTED_INCOMPLETE";
         reward_status = false;
         game_status = GAME_POOL_OPEN
     }
@@ -1184,9 +1189,9 @@ pub fn game_pool_reward_distribute(
         testing,
     )?;
     return Ok(rsp
-        .add_attribute("game_status", "GAME_COMPLETED".to_string())
+        .add_attribute("game_status", reward_status_string.to_string())
         .add_attribute("game_id", game_id.clone())
-        .add_attribute("pool_status", "POOL_REWARD_DISTRIBUTED".to_string())
+        .add_attribute("pool_status", pool_status_string.to_string())
         .add_attribute("pool_id", pool_id.clone()));
 }
 

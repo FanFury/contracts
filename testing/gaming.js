@@ -1,4 +1,4 @@
-import {GamingContractPath, mint_wallet, treasury_wallet, walletTest1,} from './constants.js';
+import {GamingContractPath, mint_wallet, sleep_time, treasury_wallet, walletTest1} from './constants.js';
 import {executeContract, instantiateContract, migrateContract, queryContract, storeCode} from "./utils.js";
 
 import {promisify} from 'util';
@@ -17,11 +17,10 @@ const question = promisify(rl.question).bind(rl);
 
 const assert = chai.assert;
 // Init and Vars
-const sleep_time = 0
 let gaming_contract_address = ""
 let proxy_contract_address = "terra1pcknsatx5ceyfu6zvtmz3yr8auumzrdts4ax4a"
 let fury_contract_address = "terra10pyejy66429refv3g35g2t7am0was7ya7kz2a4"
-const gamer = treasury_wallet.key.accAddress
+const gamer = walletTest1.key.accAddress
 // const gamer_extra_1 = walletTest3.key.accAddress
 // const gamer_extra_2 = walletTest4.key.accAddress
 
