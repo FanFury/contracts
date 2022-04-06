@@ -74,7 +74,7 @@ pub enum ExecuteMsg {
         staker_list: Vec<String>,
         club_name: String,
         is_final_batch: bool,
-	},
+    },
     ClaimStakerRewards {
         staker: String,
         club_name: String,
@@ -108,7 +108,7 @@ pub enum QueryMsg {
     },
     AllStakes {
         user_address_list: Vec<String>,
-	},
+    },
     AllStakesForUser { 
         user_address: String,
     },

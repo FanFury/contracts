@@ -133,7 +133,7 @@ pub const CLUB_PREVIOUS_OWNER_DETAILS: Map<String, ClubPreviousOwnerDetails> =
     Map::new("club_previous_owner_details");
 
 pub const REWARD: Item<Uint128> = Item::new("staking_reward");
-
+pub const REWARD_GIVEN_IN_CURRENT_TIMESTAMP: Item<Uint128> = Item::new("reward_given_in_current_timestamp");
 pub const CLUB_REWARD_NEXT_TIMESTAMP: Item<Timestamp> = Item::new("club_reward_next_timestamp");
 
 /// Snapshot of ranking by stakes
