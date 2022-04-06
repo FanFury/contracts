@@ -786,8 +786,8 @@ pub fn claim_reward(
         return Err(ContractError::InsufficientFeesUst {});
     }
     let transfer_msg = Cw20ExecuteMsg::TransferFrom {
-        owner: info.sender.into_string(),
-        recipient: env.clone().contract.address.to_string(),
+        owner: env.clone().contract.address.to_string(),
+        recipient: info.sender.into_string(),
         amount: user_reward,
     };
     messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
@@ -1220,12 +1220,56 @@ pub fn _transfer_to_multiple_wallets(
     Ok(rsp.add_attribute("action", action).set_data(data_msg))
 }
 
+pub fn swap(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    amount: Uint128,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    if info.sender != config.admin_address {
+        return Err(ContractError::Unauthorized {
+            invoker: info.sender.to_string(),
+        });
+    }
+    let ust_asset = Asset {
+        info: AssetInfo::NativeToken {
+            denom: "uusd".to_string()
+        },
+        amount,
+    };
+    let tax = ust_asset.compute_tax(&deps.querier)?;
+    let swap_message = AstroPortExecute::Swap {
+        offer_asset: ust_asset.clone(),
+        belief_price: None,
+        max_spread: None,
+        to: Option::from(env.contract.address.to_string()),
+    };
+
+    // Swap fee should be platform+transaction fee for the transaction
+    let swap_fee: Uint128 = deps.querier.query_wasm_smart(
+        config.clone().astro_proxy_address,
+        &QueryMsgSimulation::QueryPlatformFees {
+            msg: to_binary(&swap_message)?
+        },
+    )?;
+    let final_amount = ust_asset.amount.clone().add(swap_fee).add(tax);
+    return Ok(Response::new().add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: config.astro_proxy_address.to_string(),
+        msg: to_binary(&swap_message)?,
+        funds: vec![Coin {
+            denom: "uusd".to_string(),
+            amount: final_amount,
+        }],
+    })));
+}
 
 pub fn execute_sweep(
     deps: DepsMut,
     info: MessageInfo,
     funds_to_send: Vec<Coin>) -> Result<Response, ContractError> {
     let state = CONFIG.load(deps.storage)?;
+
     if info.sender != state.admin_address {
         return Err(ContractError::Unauthorized { invoker: info.sender.clone().to_string() });
     }
