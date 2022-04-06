@@ -116,14 +116,14 @@ pub struct ClubBondingDetails {
 pub const CLUB_OWNERSHIP_DETAILS: Map<String, ClubOwnershipDetails> =
     Map::new("club_ownership_details");
 
-/// Map of clubs and its stakers. the key is club name and the
+/// Map of clubs and its stakers. the key is club name and staker address and the
 /// ClubStakingDetails will contain information about the stakers and amount staked
 pub const CLUB_STAKING_DETAILS: Map<(&str, &str), Vec<ClubStakingDetails>> =
     Map::new("club_staking_details");
 
-/// Map of clubs and its bonders. the key is club name and the
+/// Map of clubs and its bonders. the key is club name and (un)staker address and the
 /// ClubBondingDetails will contain information about the bonders and amount bonded
-pub const CLUB_BONDING_DETAILS: Map<String, Vec<ClubBondingDetails>> =
+pub const CLUB_BONDING_DETAILS: Map<(&str, &str), Vec<ClubBondingDetails>> =
     Map::new("club_bonding_details");
 
 /// Map of previous owners and their reward points. the key is owner address and the
@@ -133,7 +133,7 @@ pub const CLUB_PREVIOUS_OWNER_DETAILS: Map<String, ClubPreviousOwnerDetails> =
     Map::new("club_previous_owner_details");
 
 pub const REWARD: Item<Uint128> = Item::new("staking_reward");
-
+pub const REWARD_GIVEN_IN_CURRENT_TIMESTAMP: Item<Uint128> = Item::new("reward_given_in_current_timestamp");
 pub const CLUB_REWARD_NEXT_TIMESTAMP: Item<Timestamp> = Item::new("club_reward_next_timestamp");
 
 /// Snapshot of ranking by stakes

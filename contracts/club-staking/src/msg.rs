@@ -74,7 +74,7 @@ pub enum ExecuteMsg {
         staker_list: Vec<String>,
         club_name: String,
         is_final_batch: bool,
-	},
+    },
     ClaimStakerRewards {
         staker: String,
         club_name: String,
@@ -90,9 +90,6 @@ pub enum QueryMsg {
     /// Returns the current state of withdrawn tokens that are locked for
     /// BONDING_DURATION = 7 days (before being credited back) for the given address.
     /// Return type: BondingDetails.
-    ClubBondingDetails {
-        club_name: String,
-    },
     ClubOwnershipDetails {
         club_name: String,
     },
@@ -108,11 +105,13 @@ pub enum QueryMsg {
     },
     AllStakes {
         user_address_list: Vec<String>,
-	},
+    },
     AllStakesForUser { 
         user_address: String,
     },
-    AllBonds {},
+    AllBonds {
+        user_address_list: Vec<String>,
+    },
     ClubBondingDetailsForUser { 
         club_name: String,
         user_address: String,
