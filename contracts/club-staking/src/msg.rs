@@ -117,7 +117,6 @@ pub enum QueryMsg {
         club_name: String,
         user_address: String,
     },
-    GetClubRankingByStakes {},
     RewardAmount {},
     QueryPlatformFees { 
         msg: Binary,
