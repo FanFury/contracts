@@ -728,7 +728,7 @@ pub fn claim_reward(
         match POOL_TEAM_DETAILS.load(deps.storage, (&*pool_id.clone(), info.sender.as_ref())) {
             Ok(some) => { pool_team_details = some }
             Err(_) => {
-                continue
+                continue;
             }
         }
         let mut updated_details = Vec::new();
@@ -1126,7 +1126,7 @@ pub fn game_pool_reward_distribute(
                 all_teams = ptd;
             }
             None => {
-                continue
+                continue;
             }
         }
         let mut updated_teams: Vec<PoolTeamDetails> = Vec::new();
@@ -1196,35 +1196,20 @@ pub fn _transfer_to_multiple_wallets(
     deps: DepsMut,
     testing: bool,
 ) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
     let mut rsp = Response::new();
     if testing {
-        return Ok(rsp)
+        return Ok(rsp);
     }
     for wallet in wallet_details {
-        let current_amt = deps.querier.query_wasm_smart(
-            config.astro_proxy_address.clone(),
-            &ProxyQueryMsgs::get_ust_equivalent_to_fury {
-                fury_count: wallet.amount,
-            },
-        )?;
-        let swap_message = AstroPortExecute::Swap {
-            offer_asset: Asset {
-                info: AssetInfo::NativeToken {
-                    denom: "uusd".to_string()
-                },
+        let current_amt = wallet.amount;
+        let r = CosmosMsg::Bank(BankMsg::Send {
+            to_address: wallet.wallet_address,
+            amount: vec![Coin {
+                denom: "uusd".to_string(),
                 amount: current_amt,
-            },
-            belief_price: None,
-            max_spread: Option::from(Decimal::from("0.1".to_string().parse().unwrap())),
-            to: Option::from(wallet.wallet_address.to_string()),
-        };
-        let exec = WasmMsg::Execute {
-            contract_addr: config.astro_proxy_address.to_string(),
-            msg: to_binary(&swap_message).unwrap(),
-            funds: vec![],
-        };
-        let send: SubMsg = SubMsg::new(exec);
+            }],
+        });
+        let send: SubMsg = SubMsg::new(r);
         rsp = rsp.add_submessage(send);
     }
     let data_msg = format!("Amount transferred").into_bytes();
