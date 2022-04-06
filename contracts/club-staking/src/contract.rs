@@ -322,6 +322,9 @@ fn periodically_refund_stakeouts(
     env: Env,
     info: MessageInfo,
 ) -> Result<Response, ContractError> {
+/*
+	Commenting out as this is no longer used, 6 Apr 2022... cannot do load without club and address
+
     let config = CONFIG.load(deps.storage)?;
     if info.sender != config.admin_address {
         return Err(ContractError::Unauthorized {});
@@ -351,6 +354,7 @@ fn periodically_refund_stakeouts(
         }
         CLUB_BONDING_DETAILS.save(deps.storage, club_name, &all_bonds)?;
     }
+*/
     return Ok(Response::default());
 }
 
@@ -1108,7 +1112,7 @@ fn withdraw_stake_from_a_club(
         if immediate_withdrawal == IMMEDIATE_WITHDRAWAL {
             // parse bonding to check maturity and sort with descending order of timestamp
             let mut bonds = Vec::new();
-            let mut all_bonds = CLUB_BONDING_DETAILS.may_load(deps.storage, club_name.clone())?;
+            let mut all_bonds = CLUB_BONDING_DETAILS.may_load(deps.storage, (&club_name.clone(), &staker.clone()))?;
             let mut s_bonds = Vec::new();
             match all_bonds {
                 Some(some_bonds) => {
@@ -1182,7 +1186,7 @@ fn withdraw_stake_from_a_club(
             // }
 
 
-            CLUB_BONDING_DETAILS.save(deps.storage, club_name.clone(), &updated_bonds)?;
+            CLUB_BONDING_DETAILS.save(deps.storage, (&club_name.clone(), &staker.clone()), &updated_bonds)?;
 
 
             // Now update the total stake for this club 
@@ -1420,7 +1424,7 @@ fn save_bonding_details(
 ) -> Result<Response, ContractError> {
     // Get the exising bonds for this club
     let mut bonds = Vec::new();
-    let all_bonds = CLUB_BONDING_DETAILS.may_load(storage, club_name.clone())?;
+    let all_bonds = CLUB_BONDING_DETAILS.may_load(storage, (&club_name.clone(), &bonder.clone()))?;
     match all_bonds {
         Some(some_bonds) => {
             bonds = some_bonds;
@@ -1428,13 +1432,13 @@ fn save_bonding_details(
         None => {}
     }
     bonds.push(ClubBondingDetails {
-        bonder_address: bonder,
+        bonder_address: bonder.clone(),
         bonding_start_timestamp: env.block.time,
         bonded_amount: bonded_amount,
         bonding_duration: duration,
         club_name: club_name.clone(),
     });
-    CLUB_BONDING_DETAILS.save(storage, club_name, &bonds)?;
+    CLUB_BONDING_DETAILS.save(storage, (&club_name.clone(), &bonder.clone()), &bonds)?;
     return Ok(Response::default());
 }
 
@@ -1862,9 +1866,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::ClubStakingDetails { club_name } => {
             to_binary(&query_club_staking_details(deps.storage, club_name)?)
         }
-        QueryMsg::ClubBondingDetails { club_name } => {
-            to_binary(&query_club_bonding_details(deps.storage, club_name)?)
-        }
         QueryMsg::ClubOwnershipDetails { club_name } => {
             to_binary(&query_club_ownership_details(deps.storage, club_name)?)
         }
@@ -1884,7 +1885,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::AllStakesForUser { user_address } => {
             to_binary(&query_all_stakes_for_user(deps.storage, user_address)?)
         }
-        QueryMsg::AllBonds {} => to_binary(&query_all_bonds(deps.storage)?),
+        QueryMsg::AllBonds {user_address_list} => to_binary(&query_all_bonds(deps.storage, user_address_list)?),
         QueryMsg::ClubBondingDetailsForUser {
             user_address,
             club_name,
@@ -1999,17 +2000,6 @@ pub fn query_club_staking_details(
     };
 }
 
-pub fn query_club_bonding_details(
-    storage: &dyn Storage,
-    club_name: String,
-) -> StdResult<Vec<ClubBondingDetails>> {
-    println!("club {:?}", club_name);
-    let csd = CLUB_BONDING_DETAILS.may_load(storage, club_name)?;
-    match csd {
-        Some(csd) => return Ok(csd),
-        None => return Err(StdError::generic_err("No bonding details found")),
-    };
-}
 
 fn query_all_stakes(storage: &dyn Storage, user_address_list: Vec<String>) -> StdResult<Vec<ClubStakingDetails>> {
     let mut all_stakes = Vec::new();
@@ -2034,16 +2024,24 @@ fn query_all_stakes(storage: &dyn Storage, user_address_list: Vec<String>) -> St
     return Ok(all_stakes);
 }
 
-fn query_all_bonds(storage: &dyn Storage) -> StdResult<Vec<ClubBondingDetails>> {
+fn query_all_bonds(storage: &dyn Storage, user_address_list: Vec<String>) -> StdResult<Vec<ClubBondingDetails>> {
     let mut all_bonds = Vec::new();
-    let all_clubs: Vec<String> = CLUB_BONDING_DETAILS
+    let all_clubs: Vec<String> = CLUB_OWNERSHIP_DETAILS
         .keys(storage, None, None, Order::Ascending)
         .map(|k| String::from_utf8(k).unwrap())
         .collect();
     for club_name in all_clubs {
-        let bonding_details = CLUB_BONDING_DETAILS.load(storage, club_name)?;
-        for bond in bonding_details {
-            all_bonds.push(bond);
+        for user_address in user_address_list.clone() {
+			let cbd = CLUB_BONDING_DETAILS.may_load(storage, (&club_name.clone(), &user_address.clone()))?;
+            match cbd {
+                Some(bonding_details) => {
+					for bond in bonding_details {
+						all_bonds.push(bond);
+					}
+                }
+                None => {
+                }
+            }
         }
     }
     return Ok(all_bonds);
@@ -2125,7 +2123,7 @@ pub fn query_club_bonding_details_for_user(
     user_address: String,
 ) -> StdResult<Vec<ClubBondingDetails>> {
     let mut bonds: Vec<ClubBondingDetails> = Vec::new();
-    let cbd = CLUB_BONDING_DETAILS.may_load(storage, club_name)?;
+    let cbd = CLUB_BONDING_DETAILS.may_load(storage, (&club_name.clone(), &user_address.clone()))?;
     match cbd {
         Some(cbd) => {
             bonds = cbd;
@@ -3224,7 +3222,7 @@ mod tests {
         let mut user_address_list = Vec::new();
         user_address_list.push("Staker001".to_string());
         user_address_list.push("Owner001".to_string());
-        let query_stakes = query_all_stakes(&mut deps.storage, user_address_list);
+        let query_stakes = query_all_stakes(&mut deps.storage, user_address_list.clone());
         match query_stakes {
             Ok(all_stakes) => {
                 assert_eq!(all_stakes.len(), 2);
@@ -3242,7 +3240,7 @@ mod tests {
             }
         }
 
-        let queryBonds = query_all_bonds(&mut deps.storage);
+        let queryBonds = query_all_bonds(&mut deps.storage, user_address_list.clone());
         match queryBonds {
             Ok(all_bonds) => {
                 assert_eq!(all_bonds.len(), 0);
@@ -3346,7 +3344,7 @@ mod tests {
         let mut user_address_list = Vec::new();
         user_address_list.push("Staker001".to_string());
         user_address_list.push("Owner001".to_string());
-        let query_stakes = query_all_stakes(&mut deps.storage, user_address_list);
+        let query_stakes = query_all_stakes(&mut deps.storage, user_address_list.clone());
         match query_stakes {
             Ok(all_stakes) => {
                 assert_eq!(all_stakes.len(), 0);
@@ -3357,7 +3355,7 @@ mod tests {
             }
         }
 
-        let queryBonds = query_all_bonds(&mut deps.storage);
+        let queryBonds = query_all_bonds(&mut deps.storage, user_address_list.clone());
         match queryBonds {
             Ok(all_bonds) => {
                 assert_eq!(all_bonds.len(), 0);
@@ -3461,7 +3459,7 @@ mod tests {
         let mut user_address_list = Vec::new();
         user_address_list.push("Staker001".to_string());
         user_address_list.push("Owner001".to_string());
-        let query_stakes = query_all_stakes(&mut deps.storage, user_address_list);
+        let query_stakes = query_all_stakes(&mut deps.storage, user_address_list.clone());
         match query_stakes {
             Ok(all_stakes) => {
                 assert_eq!(all_stakes.len(), 2);
@@ -3472,7 +3470,7 @@ mod tests {
             }
         }
 
-        let queryBonds = query_all_bonds(&mut deps.storage);
+        let queryBonds = query_all_bonds(&mut deps.storage, user_address_list.clone());
         match queryBonds {
             Ok(all_bonds) => {
                 assert_eq!(all_bonds.len(), 4);
@@ -3625,7 +3623,7 @@ mod tests {
         let mut user_address_list = Vec::new();
         user_address_list.push("Staker001".to_string());
         user_address_list.push("Owner001".to_string());
-        let query_stakes = query_all_stakes(&mut deps.storage, user_address_list);
+        let query_stakes = query_all_stakes(&mut deps.storage, user_address_list.clone());
         match query_stakes {
             Ok(all_stakes) => {
                 assert_eq!(all_stakes.len(), 2);
@@ -3638,28 +3636,31 @@ mod tests {
 
         let now = mock_env().block.time; // today
 
-        let query_bonds = query_all_bonds(&mut deps.storage);
+        let query_bonds = query_all_bonds(&mut deps.storage, user_address_list.clone());
+		let club_name = "CLUB001".to_string();
         match query_bonds {
             Ok(all_bonds) => {
                 let existing_bonds = all_bonds.clone();
                 let mut updated_bonds = Vec::new();
                 assert_eq!(existing_bonds.len(), 4);
-                for bond in existing_bonds {
-                    let mut updated_bond = bond.clone();
-                    if updated_bond.bonded_amount != Uint128::from(11u128)
-                        && updated_bond.bonded_amount != Uint128::from(12u128)
-                        && updated_bond.bonded_amount != Uint128::from(13u128)
-                        && updated_bond.bonded_amount != Uint128::from(63u128)
-                    {
-                        println!("updated_bond is {:?} ", updated_bond);
-                        assert_eq!(1, 2);
-                    }
-                    if updated_bond.bonded_amount == Uint128::from(63u128) {
-                        updated_bond.bonding_start_timestamp = now.minus_seconds(8 * 24 * 60 * 60);
-                    }
-                    updated_bonds.push(updated_bond);
+				for user_addr in user_address_list.clone() {
+					for bond in existing_bonds.clone() {
+						let mut updated_bond = bond.clone();
+						if updated_bond.bonded_amount != Uint128::from(11u128)
+							&& updated_bond.bonded_amount != Uint128::from(12u128)
+							&& updated_bond.bonded_amount != Uint128::from(13u128)
+							&& updated_bond.bonded_amount != Uint128::from(63u128)
+						{
+							println!("updated_bond is {:?} ", updated_bond);
+							assert_eq!(1, 2);
+						}
+						if updated_bond.bonded_amount == Uint128::from(63u128) {
+							updated_bond.bonding_start_timestamp = now.minus_seconds(8 * 24 * 60 * 60);
+						}
+						updated_bonds.push(updated_bond);
+					}
+					CLUB_BONDING_DETAILS.save(&mut deps.storage, (&club_name.clone(), &user_addr.clone()), &updated_bonds);
                 }
-                CLUB_BONDING_DETAILS.save(&mut deps.storage, "CLUB001".to_string(), &updated_bonds);
             }
             Err(e) => {
                 println!("error parsing header: {:?}", e);
@@ -3667,9 +3668,12 @@ mod tests {
             }
         }
 
+/*
+		Commenting out as this is no longer used, 6 Apr 2022
+
         periodically_refund_stakeouts(deps.as_mut(), mock_env(), adminInfo);
 
-        let queryBondsAfterPeriodicRefund = query_all_bonds(&mut deps.storage);
+        let queryBondsAfterPeriodicRefund = query_all_bonds(&mut deps.storage, user_address_list.clone());
         match queryBondsAfterPeriodicRefund {
             Ok(all_bonds) => {
                 assert_eq!(all_bonds.len(), 3);
@@ -3688,6 +3692,7 @@ mod tests {
                 assert_eq!(1, 2);
             }
         }
+*/
     }
 
     #[test]
@@ -3773,7 +3778,7 @@ mod tests {
         let mut user_address_list = Vec::new();
         user_address_list.push("Staker001".to_string());
         user_address_list.push("Owner001".to_string());
-        let query_stakes = query_all_stakes(&mut deps.storage, user_address_list);
+        let query_stakes = query_all_stakes(&mut deps.storage, user_address_list.clone());
         match query_stakes {
             Ok(all_stakes) => {
                 assert_eq!(all_stakes.len(), 2);
@@ -3791,7 +3796,7 @@ mod tests {
             }
         }
 
-        let queryBonds = query_all_bonds(&mut deps.storage);
+        let queryBonds = query_all_bonds(&mut deps.storage, user_address_list.clone());
         match queryBonds {
             Ok(all_bonds) => {
                 assert_eq!(all_bonds.len(), 3);

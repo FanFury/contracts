@@ -90,9 +90,6 @@ pub enum QueryMsg {
     /// Returns the current state of withdrawn tokens that are locked for
     /// BONDING_DURATION = 7 days (before being credited back) for the given address.
     /// Return type: BondingDetails.
-    ClubBondingDetails {
-        club_name: String,
-    },
     ClubOwnershipDetails {
         club_name: String,
     },
@@ -112,7 +109,9 @@ pub enum QueryMsg {
     AllStakesForUser { 
         user_address: String,
     },
-    AllBonds {},
+    AllBonds {
+        user_address_list: Vec<String>,
+    },
     ClubBondingDetailsForUser { 
         club_name: String,
         user_address: String,
