@@ -73,6 +73,7 @@ pub enum ExecuteMsg {
     CalculateAndDistributeRewards {
         staker_list: Vec<String>,
         club_name: String,
+        is_first_batch: bool,
         is_final_batch: bool,
     },
     ClaimStakerRewards {

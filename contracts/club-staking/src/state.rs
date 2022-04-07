@@ -109,7 +109,16 @@ pub struct ClubBondingDetails {
     pub bonding_duration: u64,
 }
 
-// pub const ALLOWANCES: Map<(&Addr, &Addr), AllowanceResponse> = Map::new("allowance");
+
+/// This is used for saving various bonding details for an unstaked club
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]
+#[serde(rename_all = "snake_case")]
+pub struct WinningClubDetails {
+    pub total_number_of_clubs: u64,
+    pub total_stake_across_all_clubs: Uint128,
+    pub total_stake_in_winning_club: Uint128,
+    pub winner_list: Vec<String>,
+}
 
 /// Map of clubs and its owners. the key is club name and the
 /// ClubOwnershipDetails will contain information about the owner
@@ -140,3 +149,5 @@ pub const CLUB_REWARD_NEXT_TIMESTAMP: Item<Timestamp> = Item::new("club_reward_n
 pub const CLUB_STAKING_SNAPSHOT: Map<String, Uint128> =
     Map::new("club_staking_snapshot");
 
+/// Snapshot of winning club details
+pub const WINNING_CLUB_DETAILS_SNAPSHOT: Item<WinningClubDetails> = Item::new("winning_club_details_snapshot");
