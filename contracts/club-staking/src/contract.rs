@@ -81,6 +81,7 @@ pub fn instantiate(
         platform_fees: msg.platform_fees,
         transaction_fees: msg.transaction_fees,
         control_fees: msg.control_fees,
+        max_bonding_limit_per_user: msg.max_bonding_limit_per_user,
     };
     CONFIG.save(deps.storage, &config)?;
 
@@ -1192,6 +1193,15 @@ fn withdraw_stake_from_a_club(
                 }));
             }
 
+            let all_bonds = CLUB_BONDING_DETAILS.may_load(deps.storage, (&club_name.clone(), &staker.clone()))?.unwrap_or_default();
+			let bonds_for_staker = all_bonds.len() as u64;
+			if config.max_bonding_limit_per_user <= bonds_for_staker {
+				println!("bonds for this staker = {:?}", bonds_for_staker);
+                return Err(ContractError::Std(StdError::GenericErr {
+                    msg: String::from("Too many bonded stakes for this staker"),
+                }));
+			}
+
             let action = "withdrawn_stake_bonded".to_string();
             // update the staking details
             save_staking_details(
@@ -2205,6 +2215,7 @@ mod tests {
             platform_fees: Uint128::from(100u128),
             transaction_fees: Uint128::from(30u128),
             control_fees: Uint128::from(50u128),
+            max_bonding_limit_per_user: 10u64,
         };
         let adminInfo = mock_info("admin11111", &[]);
         let mintingContractInfo = mock_info("minting_admin11111", &[]);
@@ -2262,6 +2273,7 @@ mod tests {
             platform_fees: Uint128::from(100u128),
             transaction_fees: Uint128::from(30u128),
             control_fees: Uint128::from(50u128),
+            max_bonding_limit_per_user: 10u64,
         };
         let adminInfo = mock_info("admin11111", &[]);
         let mintingContractInfo = mock_info("minting_admin11111", &[]);
@@ -2341,6 +2353,7 @@ mod tests {
             platform_fees: Uint128::from(100u128),
             transaction_fees: Uint128::from(30u128),
             control_fees: Uint128::from(50u128),
+            max_bonding_limit_per_user: 10u64,
         };
         let adminInfo = mock_info("admin11111", &[]);
         let mintingContractInfo = mock_info("minting_admin11111", &[]);
@@ -2409,6 +2422,7 @@ mod tests {
             platform_fees: Uint128::from(100u128),
             transaction_fees: Uint128::from(30u128),
             control_fees: Uint128::from(50u128),
+            max_bonding_limit_per_user: 10u64,
         };
         let adminInfo = mock_info("admin11111", &[]);
         let mintingContractInfo = mock_info("minting_admin11111", &[]);
@@ -2537,6 +2551,7 @@ mod tests {
             platform_fees: Uint128::from(100u128),
             transaction_fees: Uint128::from(30u128),
             control_fees: Uint128::from(50u128),
+            max_bonding_limit_per_user: 10u64,
         };
         let adminInfo = mock_info("admin11111", &[]);
         let mintingContractInfo = mock_info("minting_admin11111", &[]);
@@ -2643,6 +2658,7 @@ mod tests {
             platform_fees: Uint128::from(100u128),
             transaction_fees: Uint128::from(30u128),
             control_fees: Uint128::from(50u128),
+            max_bonding_limit_per_user: 10u64,
         };
         let adminInfo = mock_info("admin11111", &[]);
         let mintingContractInfo = mock_info("minting_admin11111", &[]);
@@ -2759,6 +2775,7 @@ mod tests {
             platform_fees: Uint128::from(100u128),
             transaction_fees: Uint128::from(30u128),
             control_fees: Uint128::from(50u128),
+            max_bonding_limit_per_user: 10u64,
         };
         let adminInfo = mock_info("admin11111", &[]);
         let mintingContractInfo = mock_info("minting_admin11111", &[]);
@@ -2958,6 +2975,7 @@ mod tests {
             platform_fees: Uint128::from(100u128),
             transaction_fees: Uint128::from(30u128),
             control_fees: Uint128::from(50u128),
+            max_bonding_limit_per_user: 10u64,
         };
         let adminInfo = mock_info("admin11111", &[]);
         let mintingContractInfo = mock_info("minting_admin11111", &[]);
@@ -3055,6 +3073,7 @@ mod tests {
             platform_fees: Uint128::from(100u128),
             transaction_fees: Uint128::from(30u128),
             control_fees: Uint128::from(50u128),
+            max_bonding_limit_per_user: 10u64,
         };
         let adminInfo = mock_info("admin11111", &[]);
         let mintingContractInfo = mock_info("minting_admin11111", &[]);
@@ -3148,6 +3167,7 @@ mod tests {
             platform_fees: Uint128::from(100u128),
             transaction_fees: Uint128::from(30u128),
             control_fees: Uint128::from(50u128),
+            max_bonding_limit_per_user: 10u64,
         };
         let adminInfo = mock_info("admin11111", &[]);
         let mintingContractInfo = mock_info("minting_admin11111", &[]);
@@ -3261,6 +3281,7 @@ mod tests {
             platform_fees: Uint128::from(100u128),
             transaction_fees: Uint128::from(30u128),
             control_fees: Uint128::from(50u128),
+            max_bonding_limit_per_user: 10u64,
         };
         let adminInfo = mock_info("admin11111", &[]);
         let mintingContractInfo = mock_info("minting_admin11111", &[]);
@@ -3376,6 +3397,7 @@ mod tests {
             platform_fees: Uint128::from(100u128),
             transaction_fees: Uint128::from(30u128),
             control_fees: Uint128::from(50u128),
+            max_bonding_limit_per_user: 10u64,
         };
         let admin_info = mock_info("admin11111", &[]);
         let minting_contract_info = mock_info("minting_admin11111", &[]);
@@ -3541,6 +3563,7 @@ mod tests {
             platform_fees: Uint128::from(100u128),
             transaction_fees: Uint128::from(30u128),
             control_fees: Uint128::from(50u128),
+            max_bonding_limit_per_user: 10u64,
         };
         let adminInfo = mock_info("admin11111", &[]);
         let mintingContractInfo = mock_info("minting_admin11111", &[]);
@@ -3704,6 +3727,7 @@ mod tests {
             platform_fees: Uint128::from(100u128),
             transaction_fees: Uint128::from(30u128),
             control_fees: Uint128::from(50u128),
+            max_bonding_limit_per_user: 10u64,
         };
         let adminInfo = mock_info("admin11111", &[]);
         let mintingContractInfo = mock_info("minting_admin11111", &[]);
@@ -3826,6 +3850,7 @@ mod tests {
             platform_fees: Uint128::from(100u128),
             transaction_fees: Uint128::from(30u128),
             control_fees: Uint128::from(50u128),
+            max_bonding_limit_per_user: 10u64,
         };
         let adminInfo = mock_info("admin11111", &[]);
         let mintingContractInfo = mock_info("minting_admin11111", &[]);
@@ -4069,6 +4094,7 @@ mod tests {
             platform_fees: Uint128::from(100u128),
             transaction_fees: Uint128::from(30u128),
             control_fees: Uint128::from(50u128),
+            max_bonding_limit_per_user: 10u64,
         };
         instantiate(
             deps.as_mut(),
