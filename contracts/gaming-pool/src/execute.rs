@@ -1,4 +1,5 @@
 use std::ops::Add;
+use std::str::FromStr;
 
 use astroport::asset::{Asset, AssetInfo};
 use astroport::pair::ExecuteMsg as AstroPortExecute;
@@ -910,7 +911,7 @@ pub fn claim_refund(
     let swap_message = AstroPortExecute::Swap {
         offer_asset: ust_asset.clone(),
         belief_price: None,
-        max_spread: None,
+        max_spread: Option::from(Decimal::from_str("0.01")),
         to: Option::from(info.sender.to_string()),
     };
 
@@ -1263,7 +1264,7 @@ pub fn swap(
     let swap_message = AstroPortExecute::Swap {
         offer_asset: ust_asset.clone(),
         belief_price: None,
-        max_spread: None,
+        max_spread: Option::from(Decimal::from_str("0.01")),
         to: Option::from(env.contract.address.to_string()),
     };
 
