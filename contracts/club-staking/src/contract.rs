@@ -1665,6 +1665,7 @@ fn distribute_reward_to_club_stakers(
         .unwrap_or_default();
 
     let mut reward_given_so_far = Uint128::zero();
+    let mut stake_to_add_for_club = Uint128::zero();
     for staker in staker_list {
         let mut updated_stakes_for_this_staker = Vec::new();
         let csd = CLUB_STAKING_DETAILS.may_load(deps.storage, (&club_name.clone(), &staker.clone()))?;
@@ -1701,6 +1702,7 @@ fn distribute_reward_to_club_stakers(
                     reward_given_so_far += reward_for_this_stake;
 
                     if auto_stake == SET_AUTO_STAKE {
+						stake_to_add_for_club += reward_for_this_stake;
                         updated_stake.staked_amount += reward_for_this_stake;
                         updated_stake.staked_amount += updated_stake.reward_amount;
                         updated_stake.reward_amount = Uint128::zero();
@@ -1713,18 +1715,38 @@ fn distribute_reward_to_club_stakers(
         }
         CLUB_STAKING_DETAILS.save(deps.storage, (&club_name.clone(), &staker.clone()), &updated_stakes_for_this_staker)?;
     }
-    println!("club_name = {:?} total reward = {:?} reward so far = {:?}", club_name.clone(), total_reward, reward_given_so_far);
+
+    // Now update the total stake for this club 
+    CLUB_OWNERSHIP_DETAILS.save(
+        deps.storage,
+        club_name.clone(),
+        &ClubOwnershipDetails {
+            club_name: club_details.club_name.clone(),
+            start_timestamp: club_details.start_timestamp,
+            locking_period: club_details.locking_period,
+            owner_address: club_details.owner_address,
+            price_paid: club_details.price_paid,
+            reward_amount: club_details.reward_amount,
+            owner_released: club_details.owner_released,
+            total_staked_amount: club_details.total_staked_amount + stake_to_add_for_club,
+        },
+    )?;
+
+    println!("club_name = {:?} total reward = {:?} reward so far = {:?} club stake increased by {:?}", 
+		club_name.clone(), total_reward, reward_given_so_far, stake_to_add_for_club);
+
     let mut reward_given_in_current_timestamp = REWARD_GIVEN_IN_CURRENT_TIMESTAMP.may_load(deps.storage)?.unwrap_or_default();
     reward_given_in_current_timestamp += reward_given_so_far;
     REWARD_GIVEN_IN_CURRENT_TIMESTAMP.save(deps.storage, &reward_given_in_current_timestamp)?;
+	println!("reward_given_in_current_timestamp = {:?}", reward_given_in_current_timestamp);
+
     if is_final_batch {
         let mut new_reward = Uint128::zero();
         if total_reward > reward_given_in_current_timestamp {
             new_reward = total_reward - reward_given_in_current_timestamp;
         }
         REWARD.save(deps.storage, &new_reward)?;
-        println!("total reward = {:?} new_reward = {:?} reward_given_in_current_timestamp = {:?}", 
-            total_reward, new_reward, reward_given_in_current_timestamp);
+        println!("new_reward = {:?} ", new_reward);
     }
     Ok(Response::default())
 }
