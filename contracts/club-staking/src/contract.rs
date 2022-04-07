@@ -1194,13 +1194,13 @@ fn withdraw_stake_from_a_club(
             }
 
             let all_bonds = CLUB_BONDING_DETAILS.may_load(deps.storage, (&club_name.clone(), &staker.clone()))?.unwrap_or_default();
-			let bonds_for_staker = all_bonds.len() as u64;
-			if config.max_bonding_limit_per_user <= bonds_for_staker {
-				println!("bonds for this staker = {:?}", bonds_for_staker);
+            let bonds_for_staker = all_bonds.len() as u64;
+            if config.max_bonding_limit_per_user <= bonds_for_staker {
+                println!("bonds for this staker = {:?}", bonds_for_staker);
                 return Err(ContractError::Std(StdError::GenericErr {
                     msg: String::from("Too many bonded stakes for this staker"),
                 }));
-			}
+            }
 
             let action = "withdrawn_stake_bonded".to_string();
             // update the staking details
@@ -1712,7 +1712,7 @@ fn distribute_reward_to_club_stakers(
                     reward_given_so_far += reward_for_this_stake;
 
                     if auto_stake == SET_AUTO_STAKE {
-						stake_to_add_for_club += reward_for_this_stake;
+                        stake_to_add_for_club += reward_for_this_stake;
                         updated_stake.staked_amount += reward_for_this_stake;
                         updated_stake.staked_amount += updated_stake.reward_amount;
                         updated_stake.reward_amount = Uint128::zero();
@@ -1743,12 +1743,12 @@ fn distribute_reward_to_club_stakers(
     )?;
 
     println!("club_name = {:?} total reward = {:?} reward so far = {:?} club stake increased by {:?}", 
-		club_name.clone(), total_reward, reward_given_so_far, stake_to_add_for_club);
+        club_name.clone(), total_reward, reward_given_so_far, stake_to_add_for_club);
 
     let mut reward_given_in_current_timestamp = REWARD_GIVEN_IN_CURRENT_TIMESTAMP.may_load(deps.storage)?.unwrap_or_default();
     reward_given_in_current_timestamp += reward_given_so_far;
     REWARD_GIVEN_IN_CURRENT_TIMESTAMP.save(deps.storage, &reward_given_in_current_timestamp)?;
-	println!("reward_given_in_current_timestamp = {:?}", reward_given_in_current_timestamp);
+    println!("reward_given_in_current_timestamp = {:?}", reward_given_in_current_timestamp);
 
     if is_final_batch {
         let mut new_reward = Uint128::zero();
