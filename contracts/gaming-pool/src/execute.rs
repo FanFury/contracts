@@ -1252,18 +1252,12 @@ pub fn swap(
             invoker: info.sender.to_string(),
         });
     }
-    let amount_to_swap = deps.querier.query_wasm_smart(
-        config.clone().astro_proxy_address,
-        &ProxyQueryMsgs::get_ust_equivalent_to_fury {
-            fury_count: amount,
-        },
-    )?;
 
     let ust_asset = Asset {
         info: AssetInfo::NativeToken {
             denom: "uusd".to_string()
         },
-        amount: amount_to_swap,
+        amount,
     };
     let tax = ust_asset.compute_tax(&deps.querier)?;
     let swap_message = AstroPortExecute::Swap {
