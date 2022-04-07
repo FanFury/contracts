@@ -97,6 +97,7 @@ pub struct PoolDetails {
     pub pool_refund_status: bool,
 
     pub pool_reward_status: bool,
+
 }
 
 
@@ -189,3 +190,4 @@ pub const GAME_RESULT_DUMMY: Map<&Addr, GameResult> = Map::new("game_result");
 
 pub const PLATFORM_WALLET_PERCENTAGES: Map<String, WalletPercentage> = Map::new("platform_wallet_percentages");
 
+pub const CURRENT_REWARD_FOR_POOL: Map<String, Uint128> = Map::new("current_reward_for_pool");

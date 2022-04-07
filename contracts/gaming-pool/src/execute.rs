@@ -16,10 +16,7 @@ use crate::contract::{CLAIMED_REFUND, CLAIMED_REWARD, DUMMY_WALLET, GAME_CANCELL
 use crate::ContractError;
 use crate::msg::{ProxyQueryMsgs, QueryMsgSimulation, ReceivedMsg};
 use crate::query::{get_team_count_for_user_in_pool_type, query_pool_details, query_pool_type_details};
-use crate::state::{CONFIG, CONTRACT_POOL_COUNT, FeeDetails, GAME_DETAILS, GameDetails,
-                   GameResult, PLATFORM_WALLET_PERCENTAGES, POOL_DETAILS,
-                   POOL_TEAM_DETAILS, POOL_TYPE_DETAILS, PoolDetails, PoolTeamDetails,
-                   PoolTypeDetails, WalletPercentage, WalletTransferDetails};
+use crate::state::{CONFIG, CONTRACT_POOL_COUNT, CURRENT_REWARD_FOR_POOL, FeeDetails, GAME_DETAILS, GameDetails, GameResult, PLATFORM_WALLET_PERCENTAGES, POOL_DETAILS, POOL_TEAM_DETAILS, POOL_TYPE_DETAILS, PoolDetails, PoolTeamDetails, PoolTypeDetails, WalletPercentage, WalletTransferDetails};
 
 pub fn received_message(
     deps: DepsMut,
@@ -1158,35 +1155,51 @@ pub fn game_pool_reward_distribute(
         }
         POOL_TEAM_DETAILS.save(deps.storage, (&pool_id.clone(), winner.gamer_address.as_ref()), &updated_teams)?;
     }
-
-
-    // Transfer rake_amount to all the rake wallets. Can also be only one rake wallet
-    for wallet in pool_type_details.rake_list {
-        let wallet_address = wallet.wallet_address;
-        let proportionate_amount = rake_amount
-            .checked_mul(Uint128::from(wallet.percentage))
-            .unwrap_or_default()
-            .checked_div(Uint128::from(100u128))
-            .unwrap_or_default();
-        // Transfer proportionate_amount to the corresponding rake wallet
-        let transfer_detail = WalletTransferDetails {
-            wallet_address: wallet_address.clone(),
-            amount: proportionate_amount,
-        };
-        wallet_transfer_details.push(transfer_detail);
-        println!(
-            "transferring {:?} to {:?}",
-            proportionate_amount,
-            wallet_address.clone()
-        );
+    let current_reward = CURRENT_REWARD_FOR_POOL.load(deps.storage, pool_id.to_string());
+    let reward_total;
+    match current_reward {
+        Ok(some) => {
+            let total_current = some.add(reward_given_so_far.clone());
+            CURRENT_REWARD_FOR_POOL.save(deps.storage, pool_id.to_string(), &total_current)?;
+            reward_total = total_current;
+        }
+        Err(_) => {
+            reward_total = reward_given_so_far;
+            CURRENT_REWARD_FOR_POOL.save(deps.storage, pool_id.to_string(), &reward_given_so_far)?;
+        }
     }
 
-    let rsp = _transfer_to_multiple_wallets(
-        wallet_transfer_details,
-        "rake_and_platform_fee".to_string(),
-        deps,
-        testing,
-    )?;
+    let rsp;
+    // Transfer rake_amount to all the rake wallets. Can also be only one rake wallet
+    if is_final_batch {
+        for wallet in pool_type_details.rake_list {
+            let wallet_address = wallet.wallet_address;
+            let proportionate_amount = reward_total
+                .checked_mul(Uint128::from(wallet.percentage))
+                .unwrap_or_default()
+                .checked_div(Uint128::from(100u128))
+                .unwrap_or_default();
+            // Transfer proportionate_amount to the corresponding rake wallet
+            let transfer_detail = WalletTransferDetails {
+                wallet_address: wallet_address.clone(),
+                amount: proportionate_amount,
+            };
+            wallet_transfer_details.push(transfer_detail);
+            println!(
+                "transferring {:?} to {:?}",
+                proportionate_amount,
+                wallet_address.clone()
+            );
+        }
+        rsp = _transfer_to_multiple_wallets(
+            wallet_transfer_details,
+            "rake_and_platform_fee".to_string(),
+            deps,
+            testing,
+        )?;
+    } else {
+        rsp = Response::new();
+    }
     return Ok(rsp
         .add_attribute("game_status", reward_status_string.to_string())
         .add_attribute("game_id", game_id.clone())
