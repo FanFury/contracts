@@ -1,10 +1,5 @@
-import {
-    GamingContractPath,
-    mint_wallet,
-    treasury_wallet,
-    walletTest1,
-} from './constants.js';
-import {executeContract, instantiateContract, queryContract, storeCode, migrateContract} from "./utils.js";
+import {GamingContractPath, mint_wallet, sleep_time, treasury_wallet, walletTest1} from './constants.js';
+import {executeContract, instantiateContract, migrateContract, queryContract, storeCode} from "./utils.js";
 
 import {promisify} from 'util';
 
@@ -22,11 +17,10 @@ const question = promisify(rl.question).bind(rl);
 
 const assert = chai.assert;
 // Init and Vars
-const sleep_time = 11000
 let gaming_contract_address = ""
-let proxy_contract_address = "terra17z8hs6xyfdpsyf564xkjwfwp423zkkam6hquh5"
-let fury_contract_address = "terra1zjthyw8e8jayngkvg5kddccwa9v46s4w9sq2pq"
-const gamer = treasury_wallet.key.accAddress
+let proxy_contract_address = "terra19zpyd046u4swqpksr3n44cej4j8pg6ah2y6dcg"
+let fury_contract_address = "terra18vd8fpwxzck93qlwghaj6arh4p7c5n896xzem5"
+const gamer = walletTest1.key.accAddress
 // const gamer_extra_1 = walletTest3.key.accAddress
 // const gamer_extra_2 = walletTest4.key.accAddress
 
@@ -247,6 +241,7 @@ const reward_distribution_for_locked_game_for_H2H = async function (time) {
     console.log("Reward Distribution for locked game")
     let response = await executeContract(walletTest1, gaming_contract_address, {
         "game_pool_reward_distribute": {
+            "is_final_batch": true,
             "game_id": "Gamer001",
             "pool_id": "1",
             "game_winners":

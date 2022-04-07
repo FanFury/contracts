@@ -71,6 +71,9 @@ pub enum ExecuteMsg {
 
     },
     Sweep { funds: Vec<Coin> },
+    Swap {
+        amount: Uint128
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
