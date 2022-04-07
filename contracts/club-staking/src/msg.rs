@@ -1,8 +1,9 @@
 use cosmwasm_std::{Binary, Uint128};
+use cosmwasm_std::{Coin, Timestamp};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use cosmwasm_std::{Coin, Timestamp};
-use cw20::{Cw20ReceiveMsg};
+
+use cw20::Cw20ReceiveMsg;
 
 use crate::state::ClubStakingDetails;
 
@@ -101,25 +102,23 @@ pub enum QueryMsg {
     ClubOwnershipDetailsForOwner {
         owner_address: String,
     },
-    AllClubOwnershipDetails {
-    },
-    AllPreviousClubOwnershipDetails {
-    },
+    AllClubOwnershipDetails {},
+    AllPreviousClubOwnershipDetails {},
     AllStakes {
         user_address_list: Vec<String>,
     },
-    AllStakesForUser { 
+    AllStakesForUser {
         user_address: String,
     },
     AllBonds {
         user_address_list: Vec<String>,
     },
-    ClubBondingDetailsForUser { 
+    ClubBondingDetailsForUser {
         club_name: String,
         user_address: String,
     },
     RewardAmount {},
-    QueryPlatformFees { 
+    QueryPlatformFees {
         msg: Binary,
     },
     QueryStakerRewards {
@@ -127,6 +126,7 @@ pub enum QueryMsg {
         club_name: String,
     },
 }
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ReceivedMsg {
@@ -137,6 +137,9 @@ pub enum ReceivedMsg {
 pub struct IncreaseRewardAmountCommand {
     pub reward_from: String,
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct MigrateMsg {}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub enum ProxyQueryMsgs {

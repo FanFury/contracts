@@ -157,18 +157,7 @@ pub fn execute(
 // This is the safe way of contract migration
 // We can add expose specific state properties to
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
-    let ver = cw2::get_contract_version(deps.storage)?;
-    println!("Contract: {}, Version: {}", ver.contract, ver.version);
-    // ensure we are migrating from an allowed contract
-    // if ver.contract != CONTRACT_NAME {
-    //     return Err(StdError::generic_err("Can only upgrade from same type").into());
-    // }
-    // // note: better to do proper semver compare, but string compare *usually* works
-    // if ver.version >= CONTRACT_VERSION.to_string() {
-    //     return Err(StdError::generic_err("Cannot upgrade from a newer version").into());
-    // }
-    cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
     Ok(Response::default())
 }
 

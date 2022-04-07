@@ -1,5 +1,3 @@
-import dotenv from "dotenv";
-dotenv.config();
 import {LocalTerra, LCDClient} from "@terra-money/terra.js";
 import {get_server_epoch_seconds} from "./utils.js";
 import {MnemonicKey} from '@terra-money/terra.js';
