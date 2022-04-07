@@ -1004,7 +1004,7 @@ pub fn game_pool_reward_distribute(
         reward_status_string = "GAME_NOT_COMPLETED";
         pool_status_string = "POOL_REWARD_DISTRIBUTED_INCOMPLETE";
         reward_status = false;
-        game_status = GAME_POOL_OPEN
+        game_status = GAME_POOL_CLOSED
     }
     GAME_DETAILS.save(
         deps.storage,
@@ -1063,7 +1063,7 @@ pub fn game_pool_reward_distribute(
 
     let pool_fee: Uint128 = pool_type_details.pool_fee;
 
-    let total_reward = pool_fee
+    let total_reward_in_pool = pool_fee
         .checked_mul(Uint128::from(pool_count))
         .unwrap_or_default();
 
@@ -1072,16 +1072,16 @@ pub fn game_pool_reward_distribute(
     for winner in winners {
         winner_rewards += winner.reward_amount;
     }
-    if total_reward <= winner_rewards {
+    if total_reward_in_pool <= winner_rewards {
         return Err(ContractError::Std(StdError::GenericErr {
             msg: String::from("reward amounts do not match"),
         }));
     }
 
-    let rake_amount = total_reward - winner_rewards;
+    let rake_amount = total_reward_in_pool - winner_rewards;
     println!(
         "total_reward {:?} winner_rewards {:?} rake_amount {:?}",
-        total_reward, winner_rewards, rake_amount
+        total_reward_in_pool, winner_rewards, rake_amount
     );
 
     let mut wallet_transfer_details: Vec<WalletTransferDetails> = Vec::new();
@@ -1141,7 +1141,14 @@ pub fn game_pool_reward_distribute(
                     && team.team_id == winner.team_id
                     && team.game_id == winner.game_id
                 {
-                    updated_team.reward_amount = winner.reward_amount;
+                    if winner.reward_amount.is_zero() && winner.refund_amount.is_zero() {
+                        return Err(ContractError::ErrorProcessingBatch {});
+                    }
+                    if winner.reward_amount.is_zero() {
+                        updated_team.refund_amount = winner.refund_amount;
+                    } else {
+                        updated_team.reward_amount = winner.reward_amount;
+                    }
                     updated_team.team_rank = winner.team_rank;
                     updated_team.team_points = winner.team_points;
                     reward_given_so_far += winner.reward_amount;
@@ -1174,7 +1181,7 @@ pub fn game_pool_reward_distribute(
     if is_final_batch {
         for wallet in pool_type_details.rake_list {
             let wallet_address = wallet.wallet_address;
-            let proportionate_amount = reward_total
+            let proportionate_amount = (total_reward_in_pool - reward_total)
                 .checked_mul(Uint128::from(wallet.percentage))
                 .unwrap_or_default()
                 .checked_div(Uint128::from(100u128))

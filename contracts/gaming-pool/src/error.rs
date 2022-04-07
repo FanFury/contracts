@@ -51,4 +51,6 @@ pub enum ContractError {
     #[error("Error Calcualting Plarform fee")]
     ErrorCalculatingPlatformFee {},
 
+    #[error("Error Processing Batch For Reward Distribute, Both reward and refund cannot be zero ")]
+    ErrorProcessingBatch {},
 }
