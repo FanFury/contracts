@@ -1,4 +1,4 @@
-import {GamingContractPath, mint_wallet, sleep_time, treasury_wallet, walletTest1} from './constants.js';
+import {GamingContractPath, mint_wallet, sleep_time, walletTest1} from './constants.js';
 import {executeContract, instantiateContract, migrateContract, queryContract, storeCode} from "./utils.js";
 
 import {promisify} from 'util';
@@ -14,7 +14,7 @@ const rl = readline.createInterface({
 });
 const question = promisify(rl.question).bind(rl);
 
-
+let new_pool_id = null;
 const assert = chai.assert;
 // Init and Vars
 let gaming_contract_address = ""
@@ -87,7 +87,7 @@ let test_create_and_query_pool = async function (time) {
         }
     })
     console.log(`Pool Create TX : ${response.txhash}`)
-    let new_pool_id = response.logs[0].events[1].attributes[1].value
+    new_pool_id = response.logs[0].events[1].attributes[1].value
     console.log(`New Pool ID  ${new_pool_id}`)
     response = await queryContract(gaming_contract_address, {
         pool_details: {
@@ -318,14 +318,28 @@ async function test_game_pool_reward_distribute(time) {
     console.log(response)
 }
 
+const swap_ust_balance_on_pool = async function (time) {
+    console.log("Testing  swap_on_pool")
+    let response = await executeContract(walletTest1, gaming_contract_address, {
+        swap: {
+            amount: "10000000",
+            pool_id: "1"
+        }
+    })
+    console.log(response)
+    console.log("Assert Success")
+    await sleep(time)
+}
+
 await test_create_and_query_game(sleep_time)
 await test_create_and_query_pool(sleep_time)
 // await test_get_team_count_for_user_in_pool_type(sleep_time)
 await set_pool_headers_for_H2H_pool_type(sleep_time)
 await test_game_pool_bid_submit_when_pool_team_in_range(sleep_time)
 await test_game_lock_once_pool_is_closed(sleep_time)
-await reward_distribution_for_locked_game_for_H2H(sleep_time)
-await claim(sleep_time)
+await swap_ust_balance_on_pool(sleep_time)
+// await reward_distribution_for_locked_game_for_H2H(sleep_time)
+// await claim(sleep_time)
 // // Claim
 // await test_migrate(sleep_time)
 // await test_create_and_query_game(sleep_time)
