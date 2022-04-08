@@ -784,8 +784,7 @@ pub fn claim_reward(
         return Err(ContractError::InsufficientFeesUst {});
     }
 
-    let transfer_msg = Cw20ExecuteMsg::TransferFrom {
-        owner: env.clone().contract.address.to_string(),
+    let transfer_msg = Cw20ExecuteMsg::Transfer {
         recipient: info.sender.into_string(),
         amount: user_reward,
     };

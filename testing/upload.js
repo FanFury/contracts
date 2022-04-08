@@ -47,6 +47,6 @@ upload_contract(GamingContractPath)
 //         ]
 //     }
 // })
-executeContract(migrate,"terra1x7s2l8n3q5jwmaaq3wmpc3f7erspy5q7pkqasu",{
-
-})
+// executeContract(migrate,"terra1x7s2l8n3q5jwmaaq3wmpc3f7erspy5q7pkqasu",{
+//
+// })
