@@ -783,6 +783,7 @@ pub fn claim_reward(
     if (funds_sent.denom != "uusd") || (funds_sent.amount < fee_details.platform_fee.add(fee_details.transaction_fee)) {
         return Err(ContractError::InsufficientFeesUst {});
     }
+
     let transfer_msg = Cw20ExecuteMsg::TransferFrom {
         owner: env.clone().contract.address.to_string(),
         recipient: info.sender.into_string(),
@@ -911,7 +912,7 @@ pub fn claim_refund(
     let swap_message = AstroPortExecute::Swap {
         offer_asset: ust_asset.clone(),
         belief_price: None,
-        max_spread: Option::from(Decimal::from_str("0.01")),
+        max_spread: Option::from(Decimal::from_str("0.01")?),
         to: Option::from(info.sender.to_string()),
     };
 
@@ -968,7 +969,7 @@ pub fn game_pool_reward_distribute(
     }
     let platform_fee_in_percentage = config.platform_fee;
     let platform_fee;
-    let game_id = config.game_id;
+    let game_id = config.game_id.clone();
 
     let gd = GAME_DETAILS.may_load(deps.storage, game_id.clone())?;
     let game;
@@ -1073,23 +1074,24 @@ pub fn game_pool_reward_distribute(
     for winner in winners {
         winner_rewards += winner.reward_amount;
     }
-    if total_reward_in_pool <= winner_rewards {
-        return Err(ContractError::Std(StdError::GenericErr {
-            msg: String::from("reward amounts do not match"),
-        }));
-    }
+    // if total_reward_in_pool <= winner_rewards {
+    //     return Err(ContractError::Std(StdError::GenericErr {
+    //         msg: String::from("reward amounts do not match"),
+    //     }));
+    // }
 
-    let rake_amount = total_reward_in_pool - winner_rewards;
-    println!(
-        "total_reward {:?} winner_rewards {:?} rake_amount {:?}",
-        total_reward_in_pool, winner_rewards, rake_amount
-    );
+    // let rake_amount = total_reward_in_pool - winner_rewards;
+    // println!(
+    //     "total_reward {:?} winner_rewards {:?} rake_amount {:?}",
+    //     total_reward_in_pool, winner_rewards, rake_amount
+    // );
 
     let mut wallet_transfer_details: Vec<WalletTransferDetails> = Vec::new();
 
     let total_platform_fee = platform_fee
         .checked_mul(Uint128::from(pool_count))
         .unwrap_or_default();
+
     // Transfer total_platform_fee to platform wallets
     // These are the refund and development wallets
     let all_wallet_names: Vec<String> = PLATFORM_WALLET_PERCENTAGES
@@ -1180,31 +1182,39 @@ pub fn game_pool_reward_distribute(
     let rsp;
     // Transfer rake_amount to all the rake wallets. Can also be only one rake wallet
     if is_final_batch {
-        for wallet in pool_type_details.rake_list {
-            let wallet_address = wallet.wallet_address;
-            let proportionate_amount = (total_reward_in_pool - reward_total)
-                .checked_mul(Uint128::from(wallet.percentage))
-                .unwrap_or_default()
-                .checked_div(Uint128::from(100u128))
-                .unwrap_or_default();
-            // Transfer proportionate_amount to the corresponding rake wallet
-            let transfer_detail = WalletTransferDetails {
-                wallet_address: wallet_address.clone(),
-                amount: proportionate_amount,
-            };
-            wallet_transfer_details.push(transfer_detail);
-            println!(
-                "transferring {:?} to {:?}",
-                proportionate_amount,
-                wallet_address.clone()
-            );
-        }
-        rsp = _transfer_to_multiple_wallets(
-            wallet_transfer_details,
-            "rake_and_platform_fee".to_string(),
-            deps,
-            testing,
-        )?;
+        // for wallet in pool_type_details.rake_list {
+        //     let wallet_address = wallet.wallet_address;
+        //     let total_reward_in_pool_in_fury:Uint128 = deps.querier.query_wasm_smart(
+        //         config.clone().astro_proxy_address,
+        //         &ProxyQueryMsgs::get_fury_equivalent_to_ust {
+        //             ust_count: total_reward_in_pool,
+        //         },
+        //     )?;
+        //
+        //     let proportionate_amount = (total_reward_in_pool_in_fury - reward_total)
+        //         .checked_mul(Uint128::from(wallet.percentage))
+        //         .unwrap_or_default()
+        //         .checked_div(Uint128::from(100u128))
+        //         .unwrap_or_default();
+        //     // Transfer proportionate_amount to the corresponding rake wallet
+        //     let transfer_detail = WalletTransferDetails {
+        //         wallet_address: wallet_address.clone(),
+        //         amount: proportionate_amount,
+        //     };
+        //     wallet_transfer_details.push(transfer_detail);
+        //     println!(
+        //         "transferring {:?} to {:?}",
+        //         proportionate_amount,
+        //         wallet_address.clone()
+        //     );
+        // }
+        // rsp = _transfer_to_multiple_wallets(
+        //     wallet_transfer_details,
+        //     "rake_and_platform_fee".to_string(),
+        //     deps,
+        //     testing,
+        // )?;
+        rsp = Response::new();
     } else {
         rsp = Response::new();
     }
@@ -1264,7 +1274,7 @@ pub fn swap(
     let swap_message = AstroPortExecute::Swap {
         offer_asset: ust_asset.clone(),
         belief_price: None,
-        max_spread: Option::from(Decimal::from_str("0.01")),
+        max_spread: Option::from(Decimal::from_str("0.01")?),
         to: Option::from(env.contract.address.to_string()),
     };
 
