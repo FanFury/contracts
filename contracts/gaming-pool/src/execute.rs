@@ -15,7 +15,7 @@ use crate::contract::{CLAIMED_REFUND, CLAIMED_REWARD, DUMMY_WALLET, GAME_CANCELL
                       INITIAL_TEAM_RANK, NINETY_NINE_NINE_PERCENT, REWARDS_DISTRIBUTED,
                       REWARDS_NOT_DISTRIBUTED, UNCLAIMED_REFUND, UNCLAIMED_REWARD};
 use crate::ContractError;
-use crate::msg::{ProxyQueryMsgs, QueryMsgSimulation, ReceivedMsg};
+use crate::msg::{BalanceResponse, ProxyQueryMsgs, QueryMsgSimulation, ReceivedMsg};
 use crate::query::{get_team_count_for_user_in_pool_type, query_pool_details, query_pool_type_details};
 use crate::state::{CONFIG, CONTRACT_POOL_COUNT, CURRENT_REWARD_FOR_POOL, FeeDetails, GAME_DETAILS, GameDetails, GameResult, PLATFORM_WALLET_PERCENTAGES, POOL_DETAILS, POOL_TEAM_DETAILS, POOL_TYPE_DETAILS, PoolDetails, PoolTeamDetails, PoolTypeDetails, SWAP_BALANCE_INFO, SwapBalanceDetails, WalletPercentage, WalletTransferDetails};
 
@@ -1262,7 +1262,7 @@ pub fn swap(
             invoker: info.sender.to_string(),
         });
     }
-    let current_fury_balance: Uint128 = deps.querier.query_wasm_smart(
+    let current_fury_balance: BalanceResponse = deps.querier.query_wasm_smart(
         config.clone().minting_contract_address,
         &Cw20QueryMsg::Balance {
             address: env.contract.address.clone().to_string()
@@ -1283,7 +1283,7 @@ pub fn swap(
             }
         }
     }
-    swap_info.balance_pre_swap = current_fury_balance;
+    swap_info.balance_pre_swap = current_fury_balance.balance;
     SWAP_BALANCE_INFO.save(deps.storage, pool_id.clone(), &swap_info)?;
     let ust_asset = Asset {
         info: AssetInfo::NativeToken {
@@ -1295,7 +1295,7 @@ pub fn swap(
     let swap_message = AstroPortExecute::Swap {
         offer_asset: ust_asset.clone(),
         belief_price: None,
-        max_spread: Option::from(Decimal::from_str("0.01")?),
+        max_spread: Option::from(Decimal::from_str("0.05")?),
         to: Option::from(env.contract.address.to_string()),
     };
 
@@ -1319,7 +1319,7 @@ pub fn swap(
         }),
         pool_id.parse::<u64>().unwrap(),
     );
-    return Ok(Response::new().add_submessage(submsg).add_attribute("fury_balance_pre_swap", current_fury_balance.to_string()));
+    return Ok(Response::new().add_submessage(submsg).add_attribute("fury_balance_pre_swap", current_fury_balance.balance.to_string()));
 }
 
 pub fn execute_sweep(

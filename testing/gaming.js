@@ -320,12 +320,13 @@ async function test_game_pool_reward_distribute(time) {
 
 const swap_ust_balance_on_pool = async function (time) {
     console.log("Testing  swap_on_pool")
-    let response = await executeContract(walletTest1, gaming_contract_address, {
-        swap: {
-            amount: "10000000",
-            pool_id: "1"
-        }
-    })
+    let response = await executeContract(walletTest1, gaming_contract_address,
+        {
+            "swap": {
+                "amount": "5000000",
+                "pool_id": "1"
+            }
+        })
     console.log(response)
     console.log("Assert Success")
     await sleep(time)

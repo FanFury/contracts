@@ -186,3 +186,9 @@ pub enum QueryMsgSimulation {
         msg: Binary,
     },
 }
+
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct BalanceResponse {
+    pub balance: Uint128,
+}

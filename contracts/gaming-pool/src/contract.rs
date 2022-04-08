@@ -11,7 +11,7 @@ use cw2::set_contract_version;
 
 use crate::error::ContractError;
 use crate::execute::{cancel_game, claim_refund, claim_reward, create_pool, execute_sweep, game_pool_bid_submit, game_pool_reward_distribute, lock_game, received_message, save_team_details, set_platform_fee_wallets, set_pool_type_params, swap};
-use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
+use crate::msg::{BalanceResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::query::{
     get_team_count_for_user_in_pool_type, query_all_pool_type_details, query_all_pools_in_game,
     query_all_teams, query_game_details, query_game_result, query_pool_collection,
@@ -210,18 +210,18 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let pool_id = msg.id.to_string();
-    let current_fury_balance: Uint128 = deps.querier.query_wasm_smart(
+    let current_fury_balance: BalanceResponse = deps.querier.query_wasm_smart(
         config.clone().minting_contract_address,
         &Cw20QueryMsg::Balance {
             address: _env.contract.address.clone().to_string()
         },
     )?;
     let mut balance_info = SWAP_BALANCE_INFO.load(deps.storage, pool_id.clone())?;
-    balance_info.balance_post_swap = current_fury_balance;
-    let balance_gained = balance_info.balance_pre_swap - balance_info.balance_post_swap;
+    balance_info.balance_post_swap = current_fury_balance.balance;
+    let balance_gained =  balance_info.balance_post_swap-balance_info.balance_pre_swap;
     // ((Balance gained * 10_000) / Amount In UST Swapped)
     // (poolcollection * exchange rate)/10_000 at time of use
-    balance_info.exchange_rate = balance_gained.checked_mul(Uint128::from_str("10_000").unwrap()).unwrap().checked_div(balance_info.ust_amount_swapped).unwrap();
+    // balance_info.exchange_rate = balance_gained.checked_mul(Uint128::from_str("10_000").unwrap()).unwrap().checked_div(balance_info.ust_amount_swapped).unwrap();
     SWAP_BALANCE_INFO.save(deps.storage, pool_id, &balance_info)?;
     return Ok(Response::default().add_attribute("fury_balance_gained", balance_gained.to_string()));
 }
