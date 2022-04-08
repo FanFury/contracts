@@ -2,9 +2,7 @@ use cosmwasm_std::{Deps, Order, StdError, StdResult, Storage, Uint128};
 
 use crate::contract::{DUMMY_WALLET, INITIAL_TEAM_POINTS, INITIAL_TEAM_RANK,
                       UNCLAIMED_REFUND, UNCLAIMED_REWARD};
-use crate::state::{CONFIG, GAME_DETAILS, GAME_RESULT_DUMMY, GameDetails, GameResult, POOL_DETAILS,
-                   POOL_TEAM_DETAILS, POOL_TYPE_DETAILS, PoolDetails,
-                   PoolTeamDetails, PoolTypeDetails};
+use crate::state::{CONFIG, GAME_DETAILS, GAME_RESULT_DUMMY, GameDetails, GameResult, POOL_DETAILS, POOL_TEAM_DETAILS, POOL_TYPE_DETAILS, PoolDetails, PoolTeamDetails, PoolTypeDetails, SWAP_BALANCE_INFO, SwapBalanceDetails};
 
 pub fn query_pool_type_details(
     storage: &dyn Storage,
@@ -276,4 +274,12 @@ pub fn query_pool_collection(storage: &dyn Storage, pool_id: String) -> StdResul
         .checked_mul(Uint128::from(pool.current_teams_count))
         .unwrap_or_default();
     return Ok(pool_collection);
+}
+
+pub fn query_swap_data_for_pool(
+    storage: &dyn Storage,
+    pool_id: String,
+) -> StdResult<SwapBalanceDetails> {
+    let info = SWAP_BALANCE_INFO.load(storage, pool_id)?;
+    return Ok(info)
 }

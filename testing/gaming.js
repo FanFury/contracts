@@ -238,19 +238,29 @@ const claim = async function (time) {
     await sleep(time)
 }
 const reward_distribution_for_locked_game_for_H2H = async function (time) {
+    let response = await queryContract(gaming_contract_address, {
+        swap_info: {
+            "pool_id": "1"
+        }
+    })
+    console.log(response)
+    let exchange_rate_at_swap = response.exchange_rate
+    console.log("Current Exchange Rate")
+    console.log(exchange_rate_at_swap)
     console.log("Reward Distribution for locked game")
-    let response = await executeContract(walletTest1, gaming_contract_address, {
+    response = await executeContract(walletTest1, gaming_contract_address, {
         "game_pool_reward_distribute": {
             "is_final_batch": true,
             "game_id": "Gamer001",
             "pool_id": "1",
+            "exchange_rate_at_swap": exchange_rate_at_swap,
             "game_winners":
                 [
                     {
                         "gamer_address": gamer,
                         "game_id": "Gamer001",
                         "team_id": "1",
-                        "reward_amount": "5000000", // This will be in ufury
+                        "reward_amount": "100", // This will be in ufury
                         "refund_amount": "0",
                         "team_rank": 1,
                         "team_points": 150
@@ -339,8 +349,9 @@ await set_pool_headers_for_H2H_pool_type(sleep_time)
 await test_game_pool_bid_submit_when_pool_team_in_range(sleep_time)
 await test_game_lock_once_pool_is_closed(sleep_time)
 await swap_ust_balance_on_pool(sleep_time)
-// await reward_distribution_for_locked_game_for_H2H(sleep_time)
-// await claim(sleep_time)
+await sleep(15000)
+await reward_distribution_for_locked_game_for_H2H(sleep_time)
+await claim(sleep_time)
 // // Claim
 // await test_migrate(sleep_time)
 // await test_create_and_query_game(sleep_time)

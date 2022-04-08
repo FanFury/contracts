@@ -1,4 +1,5 @@
-use std::ops::Add;
+use std::convert::TryFrom;
+use std::ops::{Add, Div, Mul};
 use std::str::FromStr;
 
 use astroport::asset::{Asset, AssetInfo};
@@ -16,7 +17,7 @@ use crate::contract::{CLAIMED_REFUND, CLAIMED_REWARD, DUMMY_WALLET, GAME_CANCELL
                       REWARDS_NOT_DISTRIBUTED, UNCLAIMED_REFUND, UNCLAIMED_REWARD};
 use crate::ContractError;
 use crate::msg::{BalanceResponse, ProxyQueryMsgs, QueryMsgSimulation, ReceivedMsg};
-use crate::query::{get_team_count_for_user_in_pool_type, query_pool_details, query_pool_type_details};
+use crate::query::{get_team_count_for_user_in_pool_type, query_pool_details, query_pool_type_details, query_swap_data_for_pool};
 use crate::state::{CONFIG, CONTRACT_POOL_COUNT, CURRENT_REWARD_FOR_POOL, FeeDetails, GAME_DETAILS, GameDetails, GameResult, PLATFORM_WALLET_PERCENTAGES, POOL_DETAILS, POOL_TEAM_DETAILS, POOL_TYPE_DETAILS, PoolDetails, PoolTeamDetails, PoolTypeDetails, SWAP_BALANCE_INFO, SwapBalanceDetails, WalletPercentage, WalletTransferDetails};
 
 pub fn received_message(
@@ -959,6 +960,7 @@ pub fn game_pool_reward_distribute(
     game_winners: Vec<GameResult>,
     is_final_batch: bool,
     testing: bool,
+    exchange_rate_at_swap: Uint128,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     if info.sender != config.admin_address {
@@ -1005,7 +1007,7 @@ pub fn game_pool_reward_distribute(
         reward_status_string = "GAME_NOT_COMPLETED";
         pool_status_string = "POOL_REWARD_DISTRIBUTED_INCOMPLETE";
         reward_status = false;
-        game_status = GAME_POOL_CLOSED
+        game_status = GAME_POOL_CLOSED;
     }
     GAME_DETAILS.save(
         deps.storage,
@@ -1098,26 +1100,28 @@ pub fn game_pool_reward_distribute(
         .map(|k| String::from_utf8(k).unwrap())
         .collect();
     let mut total_transfer_amount_in_fury = Uint128::zero();
-    for wallet_name in all_wallet_names {
-        let wallet = PLATFORM_WALLET_PERCENTAGES.load(deps.storage, wallet_name.clone())?;
-        let wallet_address = wallet.wallet_address;
-        let proportionate_amount = total_platform_fee
-            .checked_mul(Uint128::from(wallet.percentage))
-            .unwrap_or_default()
-            .checked_div(Uint128::from(100u128))
-            .unwrap_or_default();
-        let transfer_detail = WalletTransferDetails {
-            wallet_address: wallet_address.clone(),
-            amount: proportionate_amount,
-        };
-        total_transfer_amount_in_fury += proportionate_amount;
-        wallet_transfer_details.push(transfer_detail);
-        println!(
-            "transferring {:?} to {:?}",
-            proportionate_amount,
-            wallet_address.clone()
-        );
-    }
+    //  Since we send the platform and transaction fee in SWAP on bid submit to atroport
+    //   There is no Fee balance left to send to these wallets
+    // for wallet_name in all_wallet_names {
+    //     let wallet = PLATFORM_WALLET_PERCENTAGES.load(deps.storage, wallet_name.clone())?;
+    //     let wallet_address = wallet.wallet_address;
+    //     let proportionate_amount = total_platform_fee
+    //         .checked_mul(Uint128::from(wallet.percentage))
+    //         .unwrap_or_default()
+    //         .checked_div(Uint128::from(100u128))
+    //         .unwrap_or_default();
+    //     let transfer_detail = WalletTransferDetails {
+    //         wallet_address: wallet_address.clone(),
+    //         amount: proportionate_amount,
+    //     };
+    //     total_transfer_amount_in_fury += proportionate_amount;
+    //     wallet_transfer_details.push(transfer_detail);
+    //     println!(
+    //         "transferring {:?} to {:?}",
+    //         proportionate_amount,
+    //         wallet_address.clone()
+    //     );
+    // }
 
     // Get all teams for this pool
     let mut reward_given_so_far = Uint128::zero();
@@ -1164,33 +1168,34 @@ pub fn game_pool_reward_distribute(
         }
         POOL_TEAM_DETAILS.save(deps.storage, (&pool_id.clone(), winner.gamer_address.as_ref()), &updated_teams)?;
     }
-    let current_reward = CURRENT_REWARD_FOR_POOL.load(deps.storage, pool_id.to_string());
+    let current_reward = CURRENT_REWARD_FOR_POOL.load(deps.storage, pool_id.clone());
     let reward_total;
     match current_reward {
         Ok(some) => {
             let total_current = some.add(reward_given_so_far.clone());
-            CURRENT_REWARD_FOR_POOL.save(deps.storage, pool_id.to_string(), &total_current)?;
+            CURRENT_REWARD_FOR_POOL.save(deps.storage, pool_id.clone(), &total_current)?;
             reward_total = total_current;
         }
         Err(_) => {
             reward_total = reward_given_so_far;
-            CURRENT_REWARD_FOR_POOL.save(deps.storage, pool_id.to_string(), &reward_given_so_far)?;
+            CURRENT_REWARD_FOR_POOL.save(deps.storage, pool_id.clone(), &reward_given_so_far)?;
         }
     }
-
+    // let mut swap_info = query_swap_data_for_pool(deps.storage, "1".to_string().clone())?;
     let rsp;
     // Transfer rake_amount to all the rake wallets. Can also be only one rake wallet
     if is_final_batch {
         for wallet in pool_type_details.rake_list {
             let wallet_address = wallet.wallet_address;
-            let total_reward_in_pool_in_fury: Uint128 = deps.querier.query_wasm_smart(
-                config.clone().astro_proxy_address,
-                &ProxyQueryMsgs::get_fury_equivalent_to_ust {
-                    ust_count: total_reward_in_pool,
-                },
-            )?;
-
-            let proportionate_amount = (total_reward_in_pool_in_fury - reward_total)
+            let total_reward_in_pool_in_fury = total_reward_in_pool.checked_mul(exchange_rate_at_swap).unwrap().checked_div(Uint128::from(10000u128)).unwrap();
+            if total_reward_in_pool_in_fury <= reward_total {
+                return Err(ContractError::ValueMismatch {
+                    reward_in_fury: reward_total,
+                    reward_in_total: total_reward_in_pool_in_fury,
+                });
+            }
+            let rake_amount = total_reward_in_pool_in_fury - reward_total;
+            let proportionate_amount = rake_amount
                 .checked_mul(Uint128::from(wallet.percentage))
                 .unwrap_or_default()
                 .checked_div(Uint128::from(100u128))
@@ -1201,11 +1206,6 @@ pub fn game_pool_reward_distribute(
                 amount: proportionate_amount,
             };
             wallet_transfer_details.push(transfer_detail);
-            println!(
-                "transferring {:?} to {:?}",
-                proportionate_amount,
-                wallet_address.clone()
-            );
         }
         rsp = _transfer_to_multiple_wallets(
             wallet_transfer_details,
@@ -1213,6 +1213,8 @@ pub fn game_pool_reward_distribute(
             deps,
             testing,
         )?;
+        // rsp = Response::new();
+
     } else {
         rsp = Response::new();
     }
@@ -1229,18 +1231,20 @@ pub fn _transfer_to_multiple_wallets(
     deps: DepsMut,
     testing: bool,
 ) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
     let mut rsp = Response::new();
     if testing {
         return Ok(rsp);
     }
     for wallet in wallet_details {
-        let current_amt = wallet.amount;
-        let r = CosmosMsg::Bank(BankMsg::Send {
-            to_address: wallet.wallet_address,
-            amount: vec![Coin {
-                denom: "uusd".to_string(),
-                amount: current_amt,
-            }],
+        let transfer_msg = Cw20ExecuteMsg::Transfer {
+            recipient: wallet.wallet_address,
+            amount: wallet.amount,
+        };
+        let r = CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: config.minting_contract_address.to_string(),
+            msg: to_binary(&transfer_msg).unwrap(),
+            funds: vec![],
         });
         let send: SubMsg = SubMsg::new(r);
         rsp = rsp.add_submessage(send);
@@ -1332,7 +1336,7 @@ pub fn execute_sweep(
         return Err(ContractError::Unauthorized { invoker: info.sender.clone().to_string() });
     }
     let r = CosmosMsg::Bank(BankMsg::Send {
-        to_address: info.sender.to_string(),
+        to_address: state.platform_fees_collector_wallet.to_string(),
         amount: funds_to_send,
     });
     Ok(Response::new()

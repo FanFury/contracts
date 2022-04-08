@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use cw20::{Cw20ReceiveMsg, Logo};
 
 use crate::ContractError;
-use crate::state::{GameResult, WalletPercentage};
+use crate::state::{GameResult, SwapBalanceDetails, WalletPercentage};
 
 #[derive(Serialize, Deserialize, JsonSchema, Debug, Clone, PartialEq)]
 pub struct InstantiateMarketingInfo {
@@ -61,6 +61,7 @@ pub enum ExecuteMsg {
         pool_id: String,
         game_winners: Vec<GameResult>,
         is_final_batch: bool,
+        exchange_rate_at_swap: Uint128,
     },
     GamePoolBidSubmitCommand {
         gamer: String,
@@ -117,6 +118,9 @@ pub enum QueryMsg {
         gamer: String,
         game_id: String,
         pool_type: String,
+    },
+    SwapInfo {
+        pool_id: String
     },
 }
 

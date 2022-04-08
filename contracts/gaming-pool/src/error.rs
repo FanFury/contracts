@@ -1,4 +1,4 @@
-use cosmwasm_std::StdError;
+use cosmwasm_std::{StdError, Uint128};
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
@@ -56,4 +56,14 @@ pub enum ContractError {
 
     #[error("Invalid Reply ID ")]
     InvalidReplyId {},
+
+    #[error("Value Mismatch (reward_in_fury: {reward_in_fury:?}, reward_in_total: {reward_in_total:?}")]
+    ValueMismatch {
+        reward_in_fury: Uint128,
+        reward_in_total: Uint128,
+    },
+
+    #[error("Swap Info Not Found for Pool ")]
+    SwapInfoNotFound {},
+
 }
