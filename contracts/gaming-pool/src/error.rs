@@ -53,4 +53,7 @@ pub enum ContractError {
 
     #[error("Error Processing Batch For Reward Distribute, Both reward and refund cannot be zero ")]
     ErrorProcessingBatch {},
+
+    #[error("Invalid Reply ID ")]
+    InvalidReplyId {},
 }

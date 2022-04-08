@@ -72,7 +72,8 @@ pub enum ExecuteMsg {
     },
     Sweep { funds: Vec<Coin> },
     Swap {
-        amount: Uint128
+        amount: Uint128,
+        pool_id: String,
     },
 }
 

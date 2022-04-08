@@ -1,9 +1,12 @@
-use cosmwasm_std::{
-    Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, to_binary, Uint128,
-};
+use std::convert::TryFrom;
+use std::ops::{Div, Mul};
+use std::str::FromStr;
+
+use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult, to_binary, Uint128};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 
+use cw20::Cw20QueryMsg;
 use cw2::set_contract_version;
 
 use crate::error::ContractError;
@@ -15,7 +18,7 @@ use crate::query::{
     query_pool_details, query_pool_team_details, query_pool_type_details, query_refund,
     query_reward, query_team_details,
 };
-use crate::state::{Config, CONFIG, GAME_DETAILS, GAME_RESULT_DUMMY, GameDetails, GameResult};
+use crate::state::{Config, CONFIG, GAME_DETAILS, GAME_RESULT_DUMMY, GameDetails, GameResult, SWAP_BALANCE_INFO};
 
 // This is a comment
 // version info for migration info
@@ -150,7 +153,7 @@ pub fn execute(
             deps, env, info, gamer, pool_type, pool_id, team_id, amount, false,
         ),
         ExecuteMsg::Sweep { funds } => execute_sweep(deps, info, funds),
-        ExecuteMsg::Swap { amount } => swap(deps, env, info, amount),
+        ExecuteMsg::Swap { amount, pool_id } => swap(deps, env, info, amount, pool_id),
     }
 }
 
@@ -199,4 +202,26 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             pool_type,
         )?),
     }
+}
+
+
+#[allow(dead_code)]
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    let pool_id = msg.id.to_string();
+    let current_fury_balance: Uint128 = deps.querier.query_wasm_smart(
+        config.clone().minting_contract_address,
+        &Cw20QueryMsg::Balance {
+            address: _env.contract.address.clone().to_string()
+        },
+    )?;
+    let mut balance_info = SWAP_BALANCE_INFO.load(deps.storage, pool_id.clone())?;
+    balance_info.balance_post_swap = current_fury_balance;
+    let balance_gained = balance_info.balance_pre_swap - balance_info.balance_post_swap;
+    // ((Balance gained * 10_000) / Amount In UST Swapped)
+    // (poolcollection * exchange rate)/10_000 at time of use
+    balance_info.exchange_rate = balance_gained.checked_mul(Uint128::from_str("10_000").unwrap()).unwrap().checked_div(balance_info.ust_amount_swapped).unwrap();
+    SWAP_BALANCE_INFO.save(deps.storage, pool_id, &balance_info)?;
+    return Ok(Response::default().add_attribute("fury_balance_gained", balance_gained.to_string()));
 }
