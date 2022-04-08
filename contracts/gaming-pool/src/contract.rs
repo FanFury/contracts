@@ -221,7 +221,7 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
     let balance_gained =  balance_info.balance_post_swap-balance_info.balance_pre_swap;
     // ((Balance gained * 10_000) / Amount In UST Swapped)
     // (poolcollection * exchange rate)/10_000 at time of use
-    // balance_info.exchange_rate = balance_gained.checked_mul(Uint128::from_str("10_000").unwrap()).unwrap().checked_div(balance_info.ust_amount_swapped).unwrap();
+    balance_info.exchange_rate = balance_gained.checked_mul(Uint128::from(10000u128)).unwrap().checked_div(balance_info.ust_amount_swapped).unwrap();
     SWAP_BALANCE_INFO.save(deps.storage, pool_id, &balance_info)?;
     return Ok(Response::default().add_attribute("fury_balance_gained", balance_gained.to_string()));
 }
