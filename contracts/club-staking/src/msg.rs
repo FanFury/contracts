@@ -71,7 +71,6 @@ pub enum ExecuteMsg {
         amount: Uint128,
         immediate_withdrawal: bool,
     },
-    PeriodicallyRefundStakeouts {},
     CalculateAndDistributeRewards {
         staker_list: Vec<String>,
         club_name: String,
@@ -89,6 +88,7 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     ClubStakingDetails {
         club_name: String,
+        user_list: Vec<String>,
     },
     /// Returns the current state of withdrawn tokens that are locked for
     /// BONDING_DURATION = 7 days (before being credited back) for the given address.

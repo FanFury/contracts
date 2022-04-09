@@ -166,9 +166,6 @@ pub fn execute(
         ExecuteMsg::ClaimStakerRewards { staker, club_name } => {
             claim_staker_rewards(deps, info, staker, club_name)
         }
-        ExecuteMsg::PeriodicallyRefundStakeouts {} => {
-            periodically_refund_stakeouts(deps, env, info)
-        }
     }
 }
 
@@ -330,37 +327,7 @@ fn periodically_refund_stakeouts(
     info: MessageInfo,
 ) -> Result<Response, ContractError> {
     /*
-        Commenting out as this is no longer used, 6 Apr 2022... cannot do load without club and address
-
-        let config = CONFIG.load(deps.storage)?;
-        if info.sender != config.admin_address {
-            return Err(ContractError::Unauthorized {});
-        }
-
-        //capture the current system time
-        let now = env.block.time;
-
-        // Fetch all bonding details
-        let all_clubs: Vec<String> = CLUB_BONDING_DETAILS
-            .keys(deps.storage, None, None, Order::Ascending)
-            .map(|k| String::from_utf8(k).unwrap())
-            .collect();
-        for club_name in all_clubs {
-            let mut all_bonds = Vec::new();
-            let bonding_details = CLUB_BONDING_DETAILS.load(deps.storage, club_name.clone())?;
-            for mut bond in bonding_details {
-                let mut duration = bond.bonding_duration;
-                let now_minus_duration_timestamp = now.minus_seconds(duration);
-                if now_minus_duration_timestamp < bond.bonding_start_timestamp {
-                    all_bonds.push(bond);
-                } else {
-                    // transfer to bonder wallet
-                    // NOT reqd exdternally
-                    // transfer_from_contract_to_wallet(deps.storage, bond.bonder_address, bond.bonded_amount);
-                }
-            }
-            CLUB_BONDING_DETAILS.save(deps.storage, club_name, &all_bonds)?;
-        }
+        this is no longer used, 6 Apr 2022
     */
     return Ok(Response::default());
 }
@@ -1218,8 +1185,7 @@ fn withdraw_stake_from_a_club(
                 DECREASE_STAKE,
             )?;
 
-            // Move the withdrawn stakes to bonding list. The actual refunding of bonded
-            // amounts happens on a periodic basis in periodically_refund_stakeouts
+            // Move the withdrawn stakes to bonding list
             save_bonding_details(
                 deps.storage,
                 env.clone(),
@@ -1866,8 +1832,8 @@ fn transfer_from_contract_to_wallet(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::QueryPlatformFees { msg } => to_binary(&query_platform_fees(deps, msg)?),
-        QueryMsg::ClubStakingDetails { club_name } => {
-            to_binary(&query_club_staking_details(deps.storage, club_name)?)
+        QueryMsg::ClubStakingDetails { club_name, user_list } => {
+            to_binary(&query_club_staking_details(deps.storage, club_name, user_list)?)
         }
         QueryMsg::ClubOwnershipDetails { club_name } => {
             to_binary(&query_club_ownership_details(deps.storage, club_name)?)
@@ -1963,9 +1929,6 @@ pub fn query_platform_fees(deps: Deps, msg: Binary) -> StdResult<Uint128> {
             platform_fees_percentage = config.platform_fees + config.transaction_fees;
             fury_amount_provided = amount;
         }
-        Ok(ExecuteMsg::PeriodicallyRefundStakeouts {}) => {
-            return Ok(Uint128::zero());
-        }
         Ok(ExecuteMsg::CalculateAndDistributeRewards {
                staker_list: _,
                club_name: _,
@@ -1996,14 +1959,22 @@ pub fn query_platform_fees(deps: Deps, msg: Binary) -> StdResult<Uint128> {
 pub fn query_club_staking_details(
     storage: &dyn Storage,
     club_name: String,
+	user_list: Vec<String>
 ) -> StdResult<Vec<ClubStakingDetails>> {
-    let csd = CLUB_STAKING_DETAILS.may_load(storage, (&club_name.clone(), ""))?;
-    match csd {
-        Some(csd) => return Ok(csd),
-        None => return Err(StdError::generic_err("No staking details found")),
-    };
+    let mut all_stakes = Vec::new();
+	for user in user_list {
+		let csd = CLUB_STAKING_DETAILS.may_load(storage, (&club_name.clone(), &user.clone()))?;
+		match csd {
+			Some(staking_details) => {
+				for stake in staking_details {
+					all_stakes.push(stake);
+				}
+			}
+			None => {}
+		}
+    }
+    return Ok(all_stakes);
 }
-
 
 fn query_all_stakes(storage: &dyn Storage, user_address_list: Vec<String>) -> StdResult<Vec<ClubStakingDetails>> {
     let mut all_stakes = Vec::new();
