@@ -147,7 +147,7 @@ pub struct GameResult {
     pub game_id: String,
     pub team_id: String,
     pub reward_amount: Uint128,
-    // UST
+    // FURY
     pub refund_amount: Uint128,
     //  UST
     pub team_rank: u64,

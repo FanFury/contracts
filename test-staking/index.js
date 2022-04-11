@@ -2,7 +2,8 @@ import dotenv from "dotenv";
 dotenv.config();
 import * as readline from 'node:readline';
 import { promisify } from 'util';
-import { ajay_wallet, ClubStakingContractPath, liquidity_wallet, marketing_wallet, MintingContractPath, mintInitMessage, mint_wallet, nitin_wallet, sameer_wallet, team_wallet, terraClient, treasury_wallet } from './constants.js';
+import { ajay_wallet, ClubStakingContractPath, liquidity_wallet, marketing_wallet, MintingContractPath,
+    mintInitMessage, mint_wallet, nitin_wallet, sameer_wallet, team_wallet, terraClient, treasury_wallet } from './constants.js';
 import { primeAccountsWithFunds } from "./primeCustomAccounts.js";
 import { executeContract, getGasUsed, instantiateContract, queryContract, readArtifact, storeCode, 
     writeArtifact, queryBankUusd, queryContractInfo, readDistantArtifact,
