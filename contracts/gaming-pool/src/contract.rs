@@ -140,8 +140,8 @@ pub fn execute(
             pool_id,
             game_winners,
             is_final_batch,
-            exchange_rate_at_swap,
-        } => game_pool_reward_distribute(deps, env, info, pool_id, game_winners, is_final_batch, false,exchange_rate_at_swap),
+            ust_for_rake,
+        } => game_pool_reward_distribute(deps, env, info, pool_id, game_winners, is_final_batch, false,ust_for_rake),
         ExecuteMsg::GamePoolBidSubmitCommand {
             gamer,
             pool_type,

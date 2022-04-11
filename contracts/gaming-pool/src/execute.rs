@@ -960,7 +960,7 @@ pub fn game_pool_reward_distribute(
     game_winners: Vec<GameResult>,
     is_final_batch: bool,
     testing: bool,
-    exchange_rate_at_swap: Uint128,
+    ust_for_rake: Uint128,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     if info.sender != config.admin_address {
@@ -1187,14 +1187,7 @@ pub fn game_pool_reward_distribute(
     if is_final_batch {
         for wallet in pool_type_details.rake_list {
             let wallet_address = wallet.wallet_address;
-            let total_reward_in_pool_in_fury = total_reward_in_pool.checked_mul(exchange_rate_at_swap).unwrap().checked_div(Uint128::from(10000u128)).unwrap();
-            if total_reward_in_pool_in_fury <= reward_total {
-                return Err(ContractError::ValueMismatch {
-                    reward_in_fury: reward_total,
-                    reward_in_total: total_reward_in_pool_in_fury,
-                });
-            }
-            let rake_amount = total_reward_in_pool_in_fury - reward_total;
+            let rake_amount = ust_for_rake;
             let proportionate_amount = rake_amount
                 .checked_mul(Uint128::from(wallet.percentage))
                 .unwrap_or_default()
@@ -1214,7 +1207,6 @@ pub fn game_pool_reward_distribute(
             testing,
         )?;
         // rsp = Response::new();
-
     } else {
         rsp = Response::new();
     }
@@ -1237,17 +1229,16 @@ pub fn _transfer_to_multiple_wallets(
         return Ok(rsp);
     }
     for wallet in wallet_details {
-        let transfer_msg = Cw20ExecuteMsg::Transfer {
-            recipient: wallet.wallet_address,
+        let mut funds_to_send = vec![Coin {
+            denom: "uusd".to_string(),
             amount: wallet.amount,
-        };
-        let r = CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: config.minting_contract_address.to_string(),
-            msg: to_binary(&transfer_msg).unwrap(),
-            funds: vec![],
+        }];
+        let transfer_msg = CosmosMsg::Bank(BankMsg::Send {
+            to_address: wallet.wallet_address,
+            amount: funds_to_send,
         });
-        let send: SubMsg = SubMsg::new(r);
-        rsp = rsp.add_submessage(send);
+
+        rsp = rsp.add_message(transfer_msg);
     }
     let data_msg = format!("Amount transferred").into_bytes();
     Ok(rsp.add_attribute("action", action).set_data(data_msg))
@@ -1261,6 +1252,18 @@ pub fn swap(
     pool_id: String,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
+    let pool_details = query_pool_details(deps.storage, pool_id.clone())?;
+    let pool_type_details = POOL_TYPE_DETAILS.load(deps.storage, pool_details.pool_type.clone())?;
+    // This is the total funds we have in the pool as UST
+    let total_collection_in_pool = pool_type_details.pool_fee.checked_mul(Uint128::from(pool_details.current_teams_count)).unwrap_or_default();
+    //  We need the amount to be less else there is no funds left for rake
+    if amount >= total_collection_in_pool {
+        return Err(ContractError::InvalidSwap {
+            total_collection_in_pool,
+            amount_to_swap: amount,
+        });
+    }
+    let funds_for_rake = total_collection_in_pool - amount;
     if info.sender != config.admin_address {
         return Err(ContractError::Unauthorized {
             invoker: info.sender.to_string(),
@@ -1277,6 +1280,7 @@ pub fn swap(
         Ok(mut swap) => {
             swap_info = swap;
             swap_info.ust_amount_swapped = amount;
+            swap_info.ust_for_rake = funds_for_rake;
         }
         Err(_) => {
             swap_info = SwapBalanceDetails {
@@ -1284,6 +1288,7 @@ pub fn swap(
                 balance_post_swap: Default::default(),
                 exchange_rate: Default::default(),
                 ust_amount_swapped: amount.clone(),
+                ust_for_rake: funds_for_rake,
             }
         }
     }

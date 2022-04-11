@@ -200,6 +200,7 @@ pub struct SwapBalanceDetails {
     pub balance_post_swap: Uint128,
     pub exchange_rate: Uint128,
     pub ust_amount_swapped: Uint128,
+    pub ust_for_rake: Uint128,
 }
 
 // This is a simple store we use to save the balance of the contact

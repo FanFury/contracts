@@ -61,7 +61,7 @@ pub enum ExecuteMsg {
         pool_id: String,
         game_winners: Vec<GameResult>,
         is_final_batch: bool,
-        exchange_rate_at_swap: Uint128,
+        ust_for_rake: Uint128,
     },
     GamePoolBidSubmitCommand {
         gamer: String,

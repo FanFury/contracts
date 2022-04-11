@@ -57,7 +57,12 @@ pub enum ContractError {
     #[error("Invalid Reply ID ")]
     InvalidReplyId {},
 
-    #[error("Value Mismatch (reward_in_fury: {reward_in_fury:?}, reward_in_total: {reward_in_total:?}")]
+    #[error("Invalid Ammount to swap")]
+    InvalidSwap {
+        total_collection_in_pool: Uint128,
+        amount_to_swap: Uint128,
+    },
+    #[error("Value Mismatch ")]
     ValueMismatch {
         reward_in_fury: Uint128,
         reward_in_total: Uint128,
