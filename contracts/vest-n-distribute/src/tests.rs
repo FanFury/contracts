@@ -1,10 +1,10 @@
-
 #[cfg(test)]
 mod tests {
+    use cosmwasm_std::{Addr, Deps, Uint128};
+    use cosmwasm_std::testing::{mock_dependencies, mock_env};
+
     // use crate::msg::InstantiateMsg;
     use crate::execute::{calculate_tokens_for_this_period, distribute_vested};
-    use cosmwasm_std::testing::{mock_dependencies, mock_env};
-    use cosmwasm_std::{Addr, Deps, Uint128};
     use crate::query::query_balance;
     use crate::state::VestingDetails;
 
@@ -59,67 +59,6 @@ mod tests {
     //     meta
     // }
 
-    #[test]
-    fn transfer_to_categories() {
-        let mut deps = mock_dependencies(&[]);
-        let distribute_from = String::from("addr0001");
-        let distribute_to = String::from("addr0002");
-        let amount = Uint128::from(1000u128);
-
-        // do_instantiate(deps.as_mut(), &distribute_from, amount);
-
-        let init_from_balance = get_balance(deps.as_ref(), distribute_from.clone());
-        let init_to_balance = get_balance(deps.as_ref(), distribute_to.clone());
-
-        // Transfer the funds
-        let mut_deps = &mut deps.as_mut();
-        let _res = distribute_vested(
-            mut_deps,
-            distribute_from.clone(),
-            distribute_to.clone(),
-            amount,
-        );
-
-        let calc_new_from_balance = init_from_balance - amount;
-        let calc_new_to_balance = init_to_balance + amount;
-
-        let new_from_balance = get_balance(deps.as_ref(), distribute_from);
-        let new_to_balance = get_balance(deps.as_ref(), distribute_to);
-        // check that the transfer happened
-        assert_eq!(calc_new_from_balance, new_from_balance);
-        assert_eq!(calc_new_to_balance, new_to_balance);
-    }
-
-    #[test]
-    fn fail_transfer_to_categories() {
-        let mut deps = mock_dependencies(&[]);
-        let distribute_from = String::from("addr0001");
-        let distribute_to = String::from("addr0002");
-        let _amount1 = Uint128::from(1000u128);
-
-        // do_instantiate(deps.as_mut(), &distribute_from, amount1);
-
-        let init_from_balance = get_balance(deps.as_ref(), distribute_from.clone());
-        let init_to_balance = get_balance(deps.as_ref(), distribute_to.clone());
-
-        let amount = init_from_balance + Uint128::from(1000u128);
-
-        // Try to transfer more than the funds available - it should fail
-        let mut_deps = &mut deps.as_mut();
-        let _res = distribute_vested(
-            mut_deps,
-            distribute_from.clone(),
-            distribute_to.clone(),
-            amount,
-        );
-
-        let new_from_balance = get_balance(deps.as_ref(), distribute_from);
-        let new_to_balance = get_balance(deps.as_ref(), distribute_to);
-
-        // check that the transfer did not happen
-        assert_eq!(new_from_balance, init_from_balance);
-        assert_eq!(new_to_balance, init_to_balance);
-    }
 
     fn get_vesting_details() -> VestingDetails {
         let now = mock_env().block.time;
@@ -732,7 +671,7 @@ mod tests {
         vesting_details.cliff_period = 1;
         let vesting_start_timestamp = vesting_details
             .vesting_start_timestamp
-            .minus_seconds(30 * 24 * 60 * 60);
+            .minus_seconds(7 * 24 * 60 * 60);
         vesting_details.vesting_start_timestamp = vesting_start_timestamp;
         vesting_details.tokens_available_to_claim += vesting_details.vesting_count_per_period;
         let vested_amount = calculate_tokens_for_this_period(
@@ -763,7 +702,7 @@ mod tests {
         vesting_details.cliff_period = 1;
         let vesting_start_timestamp = vesting_details
             .vesting_start_timestamp
-            .minus_seconds(30 * 24 * 60 * 60);
+            .minus_seconds(7 * 24 * 60 * 60);
         vesting_details.vesting_start_timestamp = vesting_start_timestamp;
         vesting_details.initial_vesting_count = Uint128::from(1000u128);
         let vested_amount = calculate_tokens_for_this_period(
@@ -795,7 +734,7 @@ mod tests {
         vesting_details.cliff_period = 1;
         let vesting_start_timestamp = vesting_details
             .vesting_start_timestamp
-            .minus_seconds(30 * 24 * 60 * 60);
+            .minus_seconds(7 * 24 * 60 * 60);
         vesting_details.vesting_start_timestamp = vesting_start_timestamp;
         vesting_details.vesting_start_timestamp = vesting_details
             .vesting_start_timestamp
@@ -830,7 +769,7 @@ mod tests {
         vesting_details.cliff_period = 1;
         let vesting_start_timestamp = vesting_details
             .vesting_start_timestamp
-            .minus_seconds(30 * 24 * 60 * 60);
+            .minus_seconds(7 * 24 * 60 * 60);
         vesting_details.vesting_start_timestamp = vesting_start_timestamp;
         vesting_details.initial_vesting_count = Uint128::from(1000u128);
         vesting_details.vesting_start_timestamp = vesting_details
@@ -879,7 +818,7 @@ mod tests {
         );
         match vested_amount {
             Ok(va) => {
-                assert_eq!(va.amount, Uint128::from(20u128));
+                assert_eq!(va.amount, Uint128::from(2000u128));
             }
             Err(e) => {
                 println!("error = {:?}", e);
@@ -901,7 +840,7 @@ mod tests {
         vesting_details.cliff_period = 1;
         let vesting_start_timestamp = vesting_details
             .vesting_start_timestamp
-            .minus_seconds(30 * 24 * 60 * 60);
+            .minus_seconds(7 * 24 * 60 * 60);
         vesting_details.vesting_start_timestamp = vesting_start_timestamp;
         vesting_details.initial_vesting_count = Uint128::from(1000u128);
         vesting_details.vesting_start_timestamp = vesting_details
