@@ -1,13 +1,13 @@
 import {GamingContractPath, sleep_time, terraClient, walletTest1} from './constants.js';
 import {executeContract, instantiateContract, queryContract, storeCode} from "./utils.js";
+import {readFile} from 'fs/promises';
 
 import {promisify} from 'util';
 
 import * as readline from 'node:readline';
 
 import * as chai from 'chai';
-import {MsgSend} from "@terra-money/terra.js";
-import {deployer} from "../test-staking/constants";
+import {MnemonicKey, MsgSend} from "@terra-money/terra.js";
 
 
 const rl = readline.createInterface({
@@ -15,7 +15,8 @@ const rl = readline.createInterface({
     output: process.stdout
 });
 const question = promisify(rl.question).bind(rl);
-
+//------ change this value to manage the batch alloccation
+const max_batch_size = 3
 let new_pool_id = null;
 const assert = chai.assert;
 // Init and Vars
@@ -26,6 +27,16 @@ const gamer = walletTest1.key.accAddress
 // const gamer_extra_1 = walletTest3.key.accAddress
 // const gamer_extra_2 = walletTest4.key.accAddress
 //Deployer or wallet 1 Needs to have funds
+
+const wallets_json = JSON.parse(
+    await readFile(
+        new URL('wallets.json', import.meta.url)
+    )
+);
+
+
+const funding_wallet = walletTest1
+
 const gaming_init = {
 
     "minting_contract_address": fury_contract_address, //  This should be a contract But We passed wallet so it wont raise error on addr validate
@@ -116,7 +127,7 @@ const set_pool_headers_for_H2H_pool_type = async function (time) {
     if (time) await sleep(time)
 }
 
-// This method will return all the wallets we would need for the test run
+// This method will return new wallets_json for test
 function get_wallets(count) {
     let wallets = []
     for (let i = 0; i < count; i++) {
@@ -126,14 +137,28 @@ function get_wallets(count) {
 }
 
 //This will load the defined UST in all the accounts
+// We do this in bathces but since the max sub per client is 5 more than 5 cocurrent request will cause this process
+// exit so the safest batch limit is 4 this can be same or lower for test-net
 async function load_funds(wallets, funds_per_wallet) {
+    let promises_to_fulfill = []
     for (const wallet of wallets) {
-        await bankTransferFund(deployer, wallet, 10);
+        promises_to_fulfill.push(bankTransferFund(funding_wallet, wallet, 10));
+        if (promises_to_fulfill.length > max_batch_size) {
+            await Promise.all(promises_to_fulfill).catch(async () => {
+                await sleep(10000)
+                await Promise.all(promises_to_fulfill)
+                promises_to_fulfill = []
+            })
+            promises_to_fulfill = []
+        }
     }
 }
 
-async function execute_from_all(wallets,message,funds_to_send) {
-
+// This will make all the wallets execute a given message
+async function execute_from_all(wallets, contract_address, message, funds_to_send) {
+    for (const wallet in wallets) {
+        await executeContract(wallet, contract_address, message, funds_to_send)
+    }
 }
 
 function bankTransferFund(wallet_from, wallet_to, uusd_amount) {
@@ -159,7 +184,25 @@ function bankTransferFund(wallet_from, wallet_to, uusd_amount) {
     })
 }
 
-await test_create_and_query_game(sleep_time)
-await test_create_and_query_pool(sleep_time)
-await set_pool_headers_for_H2H_pool_type(sleep_time)
+async function wallets_to_obj(wallets) {
+    let wallet_objects = []
+    for (const wallet in wallets) {
+        const mk = new MnemonicKey({mnemonic: wallet});
+        wallet_objects.push(terraClient.wallet(mk))
+    }
+    console.log("Wallets Ready....")
+    return wallet_objects
+}
+
+//
+// await test_create_and_query_game(sleep_time)
+// await test_create_and_query_pool(sleep_time)
+// await set_pool_headers_for_H2H_pool_type(sleep_time)
+//
+// Gaming Load Testing
+// We will load and prefund all the wallets_json
+// We will start with the setup for gaming
+let wallets_for_test = await wallets_to_obj(wallets_json)
+await load_funds(wallets_for_test, 100)
+// Setup A Given
 
