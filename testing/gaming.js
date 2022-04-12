@@ -18,19 +18,18 @@ let new_pool_id = null;
 const assert = chai.assert;
 // Init and Vars
 let gaming_contract_address = ""
-let proxy_contract_address = "terra19zpyd046u4swqpksr3n44cej4j8pg6ah2y6dcg"
-let fury_contract_address = "terra18vd8fpwxzck93qlwghaj6arh4p7c5n896xzem5"
+let proxy_contract_address = "terra1pcknsatx5ceyfu6zvtmz3yr8auumzrdts4ax4a"
+let fury_contract_address = "terra10pyejy66429refv3g35g2t7am0was7ya7kz2a4"
 const gamer = walletTest1.key.accAddress
 // const gamer_extra_1 = walletTest3.key.accAddress
 // const gamer_extra_2 = walletTest4.key.accAddress
-
+let game_id = "Game001"
 const gaming_init = {
-
     "minting_contract_address": fury_contract_address, //  This should be a contract But We passed wallet so it wont raise error on addr validate
     "admin_address": walletTest1.key.accAddress,
     "platform_fee": "1",
     "transaction_fee": "1",
-    "game_id": "Game001",
+    "game_id": game_id,
     "platform_fees_collector_wallet": walletTest1.key.accAddress,
     "astro_proxy_address": proxy_contract_address,
 }
@@ -95,7 +94,7 @@ let test_create_and_query_pool = async function (time) {
         }
     })
     assert.isTrue(response['pool_id'] === new_pool_id)
-    assert.isTrue(response['game_id'] === "Game001")
+    assert.isTrue(response['game_id'] === game_id)
     assert.isTrue(response['pool_type'] === "H2H")
     assert.isTrue(response['current_teams_count'] === 0)
     assert.isTrue(response['rewards_distributed'] === false)
@@ -107,10 +106,10 @@ const set_pool_headers_for_H2H_pool_type = async function (time) {
     const response = await executeContract(walletTest1, gaming_contract_address, {
         set_pool_type_params: {
             'pool_type': "H2H",
-            'pool_fee': "10000000",
+            'pool_fee': `${10}000000`,
             'min_teams_for_pool': 1,
-            'max_teams_for_pool': 2,
-            'max_teams_for_gamer': 2,
+            'max_teams_for_pool': 1,
+            'max_teams_for_gamer': 1,
             'wallet_percentages': [
                 {
                     "wallet_address": "terra1uyuy363rzun7e6txdjdemqj9zua9j7wxl2lp0m",
@@ -183,7 +182,7 @@ let test_game_pool_bid_submit_when_pool_team_in_range = async function (time) {
         console.log("Re-Executing")
         let some = await executeContract(walletTest1, gaming_contract_address, {
             game_pool_bid_submit_command: {
-                gamer: gamer,
+                gamer: walletTest1.key.accAddress,
                 pool_type: "H2H",
                 pool_id: "1",
                 team_id: "Team001",
@@ -225,7 +224,7 @@ const test_game_lock_once_pool_is_canceled = async function (time) {
 //     ExecuteMsg::ClaimRefund { gamer } => claim_refund(deps, info, gamer, env),
 const claim = async function (time) {
     let expected_reward = await queryContract(gaming_contract_address, {
-            query_reward: {"gamer": gamer}
+            query_reward: {"gamer": walletTest1.key.accAddress}
         }
     )
     console.log(`Expected Reward Amount  ${expected_reward}`)
@@ -251,16 +250,17 @@ const reward_distribution_for_locked_game_for_H2H = async function (time) {
     response = await executeContract(walletTest1, gaming_contract_address, {
         "game_pool_reward_distribute": {
             "is_final_batch": true,
-            "game_id": "Gamer001",
+            "game_id": game_id,
             "pool_id": "1",
+            "ust_for_rake": response.ust_for_rake,
             "exchange_rate_at_swap": exchange_rate_at_swap,
             "game_winners":
                 [
                     {
-                        "gamer_address": gamer,
-                        "game_id": "Gamer001",
+                        "gamer_address": walletTest1.key.accAddress,
+                        "game_id": game_id,
                         "team_id": "1",
-                        "reward_amount": "100", // This will be in ufury
+                        "reward_amount": `${10}00000`, // This will be in ufury
                         "refund_amount": "0",
                         "team_rank": 1,
                         "team_points": 150
@@ -287,46 +287,6 @@ async function test_migrate(time) {
 
 }
 
-async function test_game_pool_reward_distribute(time) {
-    console.log("Game Pool Reward Distribute")
-    let game_winners = [
-        {
-            gamer_address: gamer,
-            game_id: "Game001",
-            team_id: "Team001",
-            team_rank: 1,
-            team_points: 100,
-            reward_amount: 100,
-            refund_amount: ""
-        }, {
-            gamer_address: walletTest1.key.accAddress,
-            game_id: "Game001",
-            team_id: "Team001",
-            team_rank: 2,
-            team_points: 200,
-            reward_amount: 100,
-            refund_amount: ""
-        },
-        {
-            gamer_address: walletTest1.key.accAddress,
-            game_id: "Game001",
-            team_id: "Team001",
-            team_rank: 2,
-            team_points: 300,
-            reward_amount: 100,
-            refund_amount: ""
-        }
-    ]
-    console.log("Executing Reward Distribute")
-
-    let response = await executeContract(walletTest1, gaming_contract_address, {
-        game_pool_reward_distribute: {
-            pool_id: "1",
-            game_winners: game_winners
-        }
-    })
-    console.log(response)
-}
 
 const swap_ust_balance_on_pool = async function (time) {
     console.log("Testing  swap_on_pool")
@@ -349,7 +309,6 @@ await set_pool_headers_for_H2H_pool_type(sleep_time)
 await test_game_pool_bid_submit_when_pool_team_in_range(sleep_time)
 await test_game_lock_once_pool_is_closed(sleep_time)
 await swap_ust_balance_on_pool(sleep_time)
-await sleep(15000)
 await reward_distribution_for_locked_game_for_H2H(sleep_time)
 await claim(sleep_time)
 // // Claim
