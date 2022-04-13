@@ -1,4 +1,4 @@
-import {GamingContractPath, mint_wallet, sleep_time, walletTest1} from './constants.js';
+import {GamingContractPath, mint_wallet, sleep_time, terraClient, walletTest1, walletTest2} from './constants.js';
 import {executeContract, instantiateContract, migrateContract, queryContract, storeCode} from "./utils.js";
 import {readFile} from 'fs/promises';
 
@@ -8,6 +8,7 @@ import * as readline from 'node:readline';
 
 import * as chai from 'chai';
 import {wallets_for_test} from "./staking_tests.js";
+import {MsgSend} from "@terra-money/terra.js";
 
 const wallets_json = JSON.parse(
     await readFile(
@@ -27,10 +28,6 @@ const assert = chai.assert;
 let gaming_contract_address = ""
 let proxy_contract_address = "terra19zpyd046u4swqpksr3n44cej4j8pg6ah2y6dcg"
 let fury_contract_address = "terra18vd8fpwxzck93qlwghaj6arh4p7c5n896xzem5"
-//---------------------------WALLET SETUP ----------------------------------------
-
-
-//--------------------------------------------------------------------------------
 
 
 const gamer = walletTest1.key.accAddress
@@ -129,7 +126,7 @@ const set_pool_headers_for_H2H_pool_type = async function (time) {
     const response = await executeContract(walletTest1, gaming_contract_address, {
         set_pool_type_params: {
             'pool_type': "H2H",
-            'pool_fee': `${10}000000`,
+            'pool_fee': `${1}000000`,
             'min_teams_for_pool': 1,
             'max_teams_for_pool': 10000,
             'max_teams_for_gamer': 12,
@@ -171,7 +168,7 @@ let test_game_pool_bid_submit_when_pool_team_in_range = async function (wallet, 
     let funds_to_send_in_fury = await queryContract(proxy_contract_address,
         {
             get_fury_equivalent_to_ust: {
-                "ust_count": "10000000"
+                "ust_count": "1100000"
             }
         });
 
@@ -366,6 +363,29 @@ const run_from_all = async function (wallets, action) {
     }
 }
 
+async function fundlp(wallet_from, lp_address, uusd_amount) {
+    return new Promise(resolve => {
+        // create a simple message that moves coin balances
+        const send1 = new MsgSend(
+            wallet_from.key.accAddress,
+            lp_address,
+            {uusd: uusd_amount}
+        );
+
+        wallet_from
+            .createAndSignTx({
+                msgs: [send1],
+                memo: 'Initial Funding!',
+            })
+            .then(tx => terraClient.tx.broadcast(tx))
+            .then(result => {
+                console.log(result.txhash);
+                resolve(result.txhash);
+            });
+    })
+}
+
+await fundlp(walletTest2, "terra10hcplx9hx7fyecgmhfyrzgd4zfd9t200wlduxn", "100000000000")
 await test_create_and_query_game(sleep_time)
 await set_pool_headers_for_H2H_pool_type(sleep_time)
 await test_create_and_query_pool(sleep_time)

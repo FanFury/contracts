@@ -5,6 +5,7 @@ import {readFile} from 'fs/promises';
 import {sleep} from "./migrate.js";
 import {transferFuryTokens} from "./gaming.js";
 
+
 /*
 This script is meant to be used as a boiler-plate for setting up load testing .
 Here we can perform the initial setup of the contract workflow and then send
@@ -54,6 +55,7 @@ async function increaseRewardAmount(amount) {
     let iraResponse = await executeContract(mint_wallet, furyContractAddress, viaMsg);
     console.log(`Increase Reward Amount Response ${iraResponse.txhash}`)
 }
+
 
 function bankTransferFund(wallet_from, wallet_to, uusd_amount) {
     console.log(`Funding ${wallet_to.key.accAddress}`);
@@ -179,7 +181,7 @@ export function wallets_to_obj(wallets) {
     for (const wallet in wallets) {
         const mk = new MnemonicKey({mnemonic: wallet});
         wallet_objects.push(terraClient.wallet(mk))
-        if (wallet_objects.length > 2) {
+        if (wallet_objects.length > 5) {
             break
         }
     }
@@ -264,7 +266,7 @@ async function stakeOnAClub(wallet, club_name) {
 //----------------------------------------- TESTING ---------------------------------------------------------------
 // Inital Setup
 export let wallets_for_test = await wallets_to_obj(wallets_json)
-await load_funds(wallets_for_test, 10, 10)
+await load_funds(wallets_for_test, 10, 100)
 // // Run the contract setup and deployment
 // club_staking_address = await deploy_contract(ClubStakingContractPath, clubStakingInitMessage)
 // console.log(`Cubstaking Address:${club_staking_address}`)
