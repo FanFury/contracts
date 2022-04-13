@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "ExecuteMsg",
-  "anyOf": [
+  "oneOf": [
     {
       "type": "object",
       "required": [
@@ -15,6 +15,7 @@
       "additionalProperties": false
     },
     {
+      "description": "to Buy a Club , when some club is available for purchase by generic public",
       "type": "object",
       "required": [
         "buy_a_club"
@@ -49,6 +50,7 @@
       "additionalProperties": false
     },
     {
+      "description": "Administrator Assigns Club Ownership",
       "type": "object",
       "required": [
         "assign_a_club"
@@ -83,6 +85,7 @@
       "additionalProperties": false
     },
     {
+      "description": "to Stake Tokens on a Club by generic public",
       "type": "object",
       "required": [
         "stake_on_a_club"
@@ -115,6 +118,7 @@
       "additionalProperties": false
     },
     {
+      "description": "to Stake Tokens on a Club on behalf of a Staker by Administrator",
       "type": "object",
       "required": [
         "assign_stakes_to_a_club"
@@ -142,6 +146,7 @@
       "additionalProperties": false
     },
     {
+      "description": "to Release Ownership of a Club, for a potential new purchaser",
       "type": "object",
       "required": [
         "release_club"
@@ -166,6 +171,7 @@
       "additionalProperties": false
     },
     {
+      "description": "to Claim Rewards accumulated for a Club Owner",
       "type": "object",
       "required": [
         "claim_owner_rewards"
@@ -190,6 +196,7 @@
       "additionalProperties": false
     },
     {
+      "description": "to Claim Rewards accumulated for a wallet which was previously a Club Owner",
       "type": "object",
       "required": [
         "claim_previous_owner_rewards"
@@ -210,6 +217,7 @@
       "additionalProperties": false
     },
     {
+      "description": "to Un-stake Tokens , in two steps - 1) to a Bonded Stake and then 2) to Claim it after maturity",
       "type": "object",
       "required": [
         "stake_withdraw_from_a_club"
@@ -242,30 +250,43 @@
       "additionalProperties": false
     },
     {
-      "type": "object",
-      "required": [
-        "periodically_refund_stakeouts"
-      ],
-      "properties": {
-        "periodically_refund_stakeouts": {
-          "type": "object"
-        }
-      },
-      "additionalProperties": false
-    },
-    {
+      "description": "To Distribute Rewards to Stakers and Owners based on Club Ranking by Administrator in Batches",
       "type": "object",
       "required": [
         "calculate_and_distribute_rewards"
       ],
       "properties": {
         "calculate_and_distribute_rewards": {
-          "type": "object"
+          "type": "object",
+          "required": [
+            "club_name",
+            "is_final_batch",
+            "is_first_batch",
+            "staker_list"
+          ],
+          "properties": {
+            "club_name": {
+              "type": "string"
+            },
+            "is_final_batch": {
+              "type": "boolean"
+            },
+            "is_first_batch": {
+              "type": "boolean"
+            },
+            "staker_list": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
         }
       },
       "additionalProperties": false
     },
     {
+      "description": "to Claim Rewards accumulated for a wallet of a Staker",
       "type": "object",
       "required": [
         "claim_staker_rewards"
