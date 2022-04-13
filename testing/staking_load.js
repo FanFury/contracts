@@ -1,5 +1,5 @@
-import {ClubStakingContractPath, sleep_time, terraClient, walletTest1} from './constants.js';
-import {executeContract, instantiateContract, queryContract, storeCode} from "./utils.js";
+import {ClubStakingContractPath, sleep_time, terraClient, walletTest1, nitin_wallet} from './constants.js';
+import {getGasUsed, instantiateContract, executeContract, queryContract, readArtifact, storeCode, writeArtifact } from './utils.js';
 import {readFile} from 'fs/promises';
 
 import {promisify} from 'util';
@@ -184,19 +184,6 @@ function bankTransferFund(wallet_from, wallet_to, uusd_amount) {
     })
 }
 
-async function transferFuryToWallets(wallets, fury_amount) {
-	for (const wallet in wallets) {
-		let transferFuryMsg = {
-			transfer: {
-				recipient: wallet.key.accAddress,
-				amount: fury_amount.toString()
-			}
-		};
-		//console.log(`transferFuryMsg = ${JSON.stringify(transferFuryMsg)}`);
-		let response = await executeContract(mint_wallet, deploymentDetails.furyContractAddress, transferFuryMsg);
-		//console.log(`transferFuryMsg Response - ${response['txhash']}`);
-	}
-}
 
 async function wallets_to_obj(wallets) {
     let wallet_objects = []
@@ -222,15 +209,50 @@ async function transferFuryToWallet(wallet_from, wallet_to, fury_amount) {
 		console.log(`transferFuryMsg Response - ${response['txhash']}`);
 }
 
+async function fundAllMainWallets(deploymentDetails) {
+    await transferFuryToNitin(deploymentDetails);
+}
 
-console.log("funding all wallets");
-// We will load and prefund all the wallets_json
-let wallets_for_test = await wallets_to_obj(wallets_json);
-wallets_for_test.forEach(wallet_to => {
-	console.log(`got wallet = ${wallet_to.key.accAddress}`);
-	bankTransferFund(funding_wallet, wallet_to, 100);
-	transferFuryToWallet(funding_wallet, wallet_to, 100);
-})
+async function transferFuryToNitin(deploymentDetails) {
+    let transferFuryToNitinMsg = {
+        transfer: {
+            recipient: nitin_wallet.key.accAddress,
+            amount: "50000000"
+        }
+    };
+    console.log(`transferFuryToNitinMsg = ${JSON.stringify(transferFuryToNitinMsg)}`);
+    let response = await executeContract(walletTest1, fury_contract_address, transferFuryToNitinMsg);
+    console.log(`transferFuryToNitinMsg Response - ${response['txhash']}`);
+}
 
-console.log("end of execution");
-process.exit();
+
+async function uploadClubStaking(deploymentDetails) {
+    if (!deploymentDetails.clubStakingId) {
+        console.log("Uploading Club Staking...");
+        let contractId = await storeCode(mint_wallet, ClubStakingContractPath); // Getting the contract id from local terra
+        console.log(`Club Staking Contract ID: ${contractId}`);
+        deploymentDetails.clubStakingId = contractId;
+        writeArtifact(deploymentDetails, terraClient.chainID);
+    }
+}
+
+
+async function main() {
+	console.log("funding all main wallets");
+    terraClient.chainID = "localterra";
+    let deploymentDetails = readArtifact(terraClient.chainID);
+	await fundAllMainWallets(deploymentDetails);
+	console.log("now funding all json wallets");
+	// We will load and prefund all the wallets_json
+	let wallets_for_test = await wallets_to_obj(wallets_json);
+	wallets_for_test.forEach(wallet_to => {
+		console.log(`wallet = ${wallet_to.key.accAddress}`);
+		bankTransferFund(funding_wallet, wallet_to, 1000000);
+		transferFuryToWallet(funding_wallet, wallet_to, 1000000);
+	})
+	console.log("end of execution");
+	process.exit();
+}
+
+
+main();
