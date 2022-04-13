@@ -138,7 +138,7 @@ const set_pool_headers_for_H2H_pool_type = async function (time) {
 export async function transferFuryTokens(toAddress, amount) {
     let transferFuryToTreasuryMsg = {
         transfer: {
-            recipient: toAddress.key.accAddress,
+            recipient: toAddress,
             amount: amount
         }
     };
@@ -153,7 +153,7 @@ let test_game_pool_bid_submit_when_pool_team_in_range = async function (time) {
 
     // Add method to provide the wallet one fury token
     console.log("Sending 5k fury Tokens from Minter to gamer")
-    let response = await transferFuryTokens(walletTest1, "5000000000")
+    let response = await transferFuryTokens(walletTest1.key.accAddress, "5000000000")
     console.log(response)
     console.log("Getting Funds To Send In Fury")
     let funds_to_send_in_fury = await queryContract(proxy_contract_address,
@@ -240,6 +240,8 @@ const test_game_lock_once_pool_is_canceled = async function (time) {
 * */
 
 const claim = async function (time) {
+    await transferFuryTokens(gaming_contract_address, "5000000000")
+
     let expected_reward = await queryContract(gaming_contract_address, {
             query_reward: {"gamer": walletTest1.key.accAddress}
         }

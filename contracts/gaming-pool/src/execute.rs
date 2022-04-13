@@ -758,12 +758,13 @@ pub fn claim_reward(
     // Do the transfer of reward to the actual gamer_addr from the contract
     let config = CONFIG.load(deps.storage)?;
     let mut messages = Vec::new();
-    let fee_details = query_platform_fees(user_reward, config.platform_fee, config.transaction_fee)?;
-    // We only take the first coin object since we only expect UST here
-    let funds_sent = info.funds[0].clone();
-    if (funds_sent.denom != "uusd") || (funds_sent.amount < fee_details.platform_fee.add(fee_details.transaction_fee)) {
-        return Err(ContractError::InsufficientFeesUst {});
-    }
+    // TODO Review 
+    // let fee_details = query_platform_fees(user_reward, config.platform_fee, config.transaction_fee)?;
+    // // We only take the first coin object since we only expect UST here
+    // let funds_sent = info.funds[0].clone();
+    // if (funds_sent.denom != "uusd") || (funds_sent.amount < fee_details.platform_fee.add(fee_details.transaction_fee)) {
+    //     return Err(ContractError::InsufficientFeesUst {});
+    // }
 
     let transfer_msg = Cw20ExecuteMsg::Transfer {
         recipient: info.sender.into_string(),
@@ -771,7 +772,7 @@ pub fn claim_reward(
     };
     messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: config.minting_contract_address.to_string(),
-        msg: to_binary(&transfer_msg).unwrap(),
+        msg: to_binary(&transfer_msg)?,
         funds: vec![],
     }));
     return Ok(Response::new()
@@ -842,35 +843,8 @@ pub fn claim_refund(
         if !updated_details.is_empty() {
             POOL_TEAM_DETAILS.save(deps.storage, (pool_id.as_ref(), info.sender.as_ref()), &updated_details)?
         }
-        // Get the existing teams for this pool
-        // let mut teams = Vec::new();
-        // let all_teams = POOL_TEAM_DETAILS.may_load(deps.storage, (&*pool_id.clone(), info.sender.as_ref()))?;
-        // match all_teams {
-        //     Some(some_teams) => {
-        //         teams = some_teams;
-        //     }
-        //     None => {}
-        // }
-        //
-        // let existing_teams = teams.clone();
-        // let mut updated_teams = Vec::new();
-        //
-        // for team in existing_teams {
-        //     let mut updated_team = team.clone();
-        //     println!("Gamer {:?} gamer_address {:?} ", gamer, team.gamer_address);
-        //     if gamer == team.gamer_address && team.claimed_refund == UNCLAIMED_REFUND {
-        //         user_refund += team.refund_amount;
-        //         updated_team.claimed_refund = CLAIMED_REFUND;
-        //         let pool_details = query_pool_type_details(deps.storage, team.pool_type)?;
-        //         let refund_details = query_platform_fees(pool_details.pool_fee, config.platform_fee, config.transaction_fee)?;
-        //         refund_in_ust_fees += refund_details.transaction_fee.add(refund_details.platform_fee);
-        //     }
-        //     updated_teams.push(updated_team);
-        // }
-        // POOL_TEAM_DETAILS.save(deps.storage, (&*pool_id.clone(), info.sender.as_ref()), &updated_teams)?;
     }
 
-    println!("refund amount is {:?}", total_refund_amount);
 
     if total_refund_amount == Uint128::zero() {
         return Err(ContractError::Std(StdError::GenericErr {
