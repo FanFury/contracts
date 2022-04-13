@@ -204,26 +204,33 @@ async function wallets_to_obj(wallets) {
     for (const wallet in wallets) {
         const mk = new MnemonicKey({mnemonic: wallet});
 		wallet_obj = terraClient.wallet(mk);
-		console.log(`wallet = ${wallet_obj.key.accAddress}`);
         wallet_objects.push(wallet_obj);
     }
     console.log("Wallets Ready....");
+	return wallet_objects;
 }
 
-//
-// await test_create_and_query_game(sleep_time)
-// await test_create_and_query_pool(sleep_time)
-// await set_pool_headers_for_H2H_pool_type(sleep_time)
-//
-// Gaming Load Testing
+async function transferFuryToWallet(wallet_from, wallet_to, fury_amount) {
+		let transferFuryMsg = {
+			transfer: {
+				recipient: wallet_to.key.accAddress,
+				amount: fury_amount.toString()
+			}
+		};
+		console.log(`transferFuryMsg = ${JSON.stringify(transferFuryMsg)}`);
+		let response = await executeContract(wallet_from, fury_contract_address, transferFuryMsg);
+		console.log(`transferFuryMsg Response - ${response['txhash']}`);
+}
+
+
+console.log("funding all wallets");
 // We will load and prefund all the wallets_json
-// We will start with the setup for gaming
-let wallets_for_test = await wallets_to_obj(wallets_json)
+let wallets_for_test = await wallets_to_obj(wallets_json);
+wallets_for_test.forEach(wallet_to => {
+	console.log(`got wallet = ${wallet_to.key.accAddress}`);
+	bankTransferFund(funding_wallet, wallet_to, 100);
+	transferFuryToWallet(funding_wallet, wallet_to, 100);
+})
 
-await load_funds(wallets_for_test, 100)
-await transferFuryToWallets(wallets_for_test, 10000000)
-// Setup A Given
-
-console.log("hello");
-
+console.log("end of execution");
 process.exit();
