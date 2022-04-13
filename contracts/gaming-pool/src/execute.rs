@@ -749,30 +749,6 @@ pub fn claim_reward(
         }
     }
 
-    // let mut teams = Vec::new();
-    //   let all_teams = POOL_TEAM_DETAILS.may_load(deps.storage, (&*pool_id.clone(), info.sender.as_ref()))?;
-    //   match all_teams {
-    //       Some(some_teams) => {
-    //           teams = some_teams;
-    //       }
-    //       None => {}
-    //   }
-    //
-    //   let existing_teams = teams.clone();
-    //   let mut updated_teams = Vec::new();
-    //   for team in existing_teams {
-    //       let mut updated_team = team.clone();
-    //       println!("Gamer {:?} gamer_address {:?} ", gamer, team.gamer_address);
-    //       if gamer == team.gamer_address && team.claimed_reward == UNCLAIMED_REWARD {
-    //           user_reward += team.reward_amount;
-    //           updated_team.claimed_reward = CLAIMED_REWARD;
-    //       }
-    //       updated_teams.push(updated_team);
-    //   }
-    //   POOL_TEAM_DETAILS.save(deps.storage, (&*pool_id.clone(), info.sender.as_ref()), &updated_teams)?;
-
-    println!("reward amount is {:?}", user_reward);
-
     if user_reward == Uint128::zero() {
         return Err(ContractError::Std(StdError::GenericErr {
             msg: String::from("No reward for this user"),
@@ -1060,74 +1036,17 @@ pub fn game_pool_reward_distribute(
     }
     platform_fee = query_platform_fees(pool_type_details.pool_fee, platform_fee_in_percentage, config.transaction_fee.clone())?.platform_fee;
 
-
-    // let pool_fee: Uint128 = deps.querier.query_wasm_smart(
-    //     config.astro_proxy_address,
-    //     &ProxyQueryMsgs::get_fury_equivalent_to_ust {
-    //         ust_count: pool_type_details.pool_fee,
-    //     },
-    // )?;
-
     let pool_fee: Uint128 = pool_type_details.pool_fee;
 
-    let total_reward_in_pool = pool_fee
-        .checked_mul(Uint128::from(pool_count))
-        .unwrap_or_default();
 
     let mut winner_rewards = Uint128::zero();
     let winners = game_winners.clone();
     for winner in winners {
         winner_rewards += winner.reward_amount;
     }
-    // if total_reward_in_pool <= winner_rewards {
-    //     return Err(ContractError::Std(StdError::GenericErr {
-    //         msg: String::from("reward amounts do not match"),
-    //     }));
-    // }
-
-    // let rake_amount = total_reward_in_pool - winner_rewards;
-    // println!(
-    //     "total_reward {:?} winner_rewards {:?} rake_amount {:?}",
-    //     total_reward_in_pool, winner_rewards, rake_amount
-    // );
 
     let mut wallet_transfer_details: Vec<WalletTransferDetails> = Vec::new();
 
-    let total_platform_fee = platform_fee
-        .checked_mul(Uint128::from(pool_count))
-        .unwrap_or_default();
-
-    // Transfer total_platform_fee to platform wallets
-    // These are the refund and development wallets
-    let all_wallet_names: Vec<String> = PLATFORM_WALLET_PERCENTAGES
-        .keys(deps.storage, None, None, Order::Ascending)
-        .map(|k| String::from_utf8(k).unwrap())
-        .collect();
-    let mut total_transfer_amount_in_fury = Uint128::zero();
-    //  Since we send the platform and transaction fee in SWAP on bid submit to atroport
-    //   There is no Fee balance left to send to these wallets
-    // for wallet_name in all_wallet_names {
-    //     let wallet = PLATFORM_WALLET_PERCENTAGES.load(deps.storage, wallet_name.clone())?;
-    //     let wallet_address = wallet.wallet_address;
-    //     let proportionate_amount = total_platform_fee
-    //         .checked_mul(Uint128::from(wallet.percentage))
-    //         .unwrap_or_default()
-    //         .checked_div(Uint128::from(100u128))
-    //         .unwrap_or_default();
-    //     let transfer_detail = WalletTransferDetails {
-    //         wallet_address: wallet_address.clone(),
-    //         amount: proportionate_amount,
-    //     };
-    //     total_transfer_amount_in_fury += proportionate_amount;
-    //     wallet_transfer_details.push(transfer_detail);
-    //     println!(
-    //         "transferring {:?} to {:?}",
-    //         proportionate_amount,
-    //         wallet_address.clone()
-    //     );
-    // }
-
-    // Get all teams for this pool
     let mut reward_given_so_far = Uint128::zero();
     let mut all_teams: Vec<PoolTeamDetails> = Vec::new();
     for winner in game_winners.clone().into_iter() {

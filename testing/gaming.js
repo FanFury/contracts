@@ -1,5 +1,6 @@
 import {GamingContractPath, mint_wallet, sleep_time, walletTest1} from './constants.js';
 import {executeContract, instantiateContract, migrateContract, queryContract, storeCode} from "./utils.js";
+import {readFile} from 'fs/promises';
 
 import {promisify} from 'util';
 
@@ -158,7 +159,7 @@ let test_game_pool_bid_submit_when_pool_team_in_range = async function (time) {
     let funds_to_send_in_fury = await queryContract(proxy_contract_address,
         {
             get_fury_equivalent_to_ust: {
-                "ust_count": "130000"
+                "ust_count": "10000000"
             }
         });
 
@@ -179,7 +180,7 @@ let test_game_pool_bid_submit_when_pool_team_in_range = async function (time) {
             game_pool_bid_submit_command: {
                 gamer: walletTest1.key.accAddress,
                 pool_type: "H2H",
-                pool_id: "9",
+                pool_id: "1",
                 team_id: "Team001",
                 amount: `${funds_to_send_in_fury}`
             }
@@ -232,6 +233,12 @@ const test_game_lock_once_pool_is_canceled = async function (time) {
 }
 //     ExecuteMsg::ClaimReward { gamer } => claim_reward(deps, info, gamer, env),
 //     ExecuteMsg::ClaimRefund { gamer } => claim_refund(deps, info, gamer, env),
+/*
+*
+*
+*
+* */
+
 const claim = async function (time) {
     let expected_reward = await queryContract(gaming_contract_address, {
             query_reward: {"gamer": walletTest1.key.accAddress}
@@ -258,35 +265,29 @@ const reward_distribution_for_locked_game_for_H2H = async function (time) {
     console.log(exchange_rate_at_swap)
     console.log("Reward Distribution for locked game")
     response = await executeContract(walletTest1, gaming_contract_address, {
-        "game_pool_reward_distribute": {
-            "is_final_batch": true,
-            "game_id": game_id,
-            "pool_id": "1",
-            "ust_for_rake": response.ust_for_rake,
-            "exchange_rate_at_swap": exchange_rate_at_swap,
-            "game_winners":
-                [
-                    {
-                        "gamer_address": walletTest1.key.accAddress,
-                        "game_id": game_id,
-                        "team_id": "1",
-                        "reward_amount": `${10}000`, // This will be in ufury
-                        "refund_amount": "0",
-                        "team_rank": 1,
-                        "team_points": 150
-                    },
-                    {
-                        "gamer_address": walletTest1.key.accAddress,
-                        "game_id": game_id,
-                        "team_id": "1",
-                        "reward_amount": `${10}000`, // This will be in ufury
-                        "refund_amount": "0",
-                        "team_rank": 1,
-                        "team_points": 150
-                    },
-                ]
-        }
-    })
+            "game_pool_reward_distribute": {
+                "is_final_batch": true,
+                "game_id": game_id,
+                "pool_id": "1",
+                "ust_for_rake": response.ust_for_rake,
+                "exchange_rate_at_swap": exchange_rate_at_swap,
+                "game_winners":
+                    [
+                        {
+                            "gamer_address": walletTest1.key.accAddress,
+                            "game_id": game_id,
+                            "team_id": "Team001",
+                            "reward_amount": `${10}`, // This will be in ufury
+                            "refund_amount": "0",
+                            "team_rank": 1,
+                            "team_points": 150
+                        },
+                    ]
+            }
+        },
+        {
+            "uusd": "10000000"
+        })
     console.log(response)
     console.log("Assert Success")
     ///check if the game is concluded and status is updated to 4/reward distributed
@@ -322,10 +323,10 @@ const swap_ust_balance_on_pool = async function (time) {
 }
 
 await test_create_and_query_game(sleep_time)
+await set_pool_headers_for_H2H_pool_type(sleep_time)
 await test_create_and_query_pool(sleep_time)
-await setup_msgs()
+// await setup_msgs()
 // // await test_get_team_count_for_user_in_pool_type(sleep_time)
-// await set_pool_headers_for_H2H_pool_type(sleep_time)
 await test_game_pool_bid_submit_when_pool_team_in_range(sleep_time)
 await test_game_lock_once_pool_is_closed(sleep_time)
 await swap_ust_balance_on_pool(sleep_time)
