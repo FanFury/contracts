@@ -1,7 +1,4 @@
-import {
-    VnDContractPath,
-    minting_wallet,
-} from './constants.js';
+
 import {
     storeCode,
     migrateContract
@@ -13,7 +10,3 @@ export function sleep(time) {
     return new Promise((resolve) => setTimeout(resolve, time));
 }
 
-let new_code_id = await storeCode(minting_wallet, VnDContractPath);
-await sleep(15000)
-let response = await migrateContract(minting_wallet, current_address, new_code_id, {})
-console.log(response)

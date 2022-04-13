@@ -1,8 +1,7 @@
-import {MnemonicKey, MsgSend} from "@terra-money/terra.js";
+import {MnemonicKey} from "@terra-money/terra.js";
 import {terraClient, walletTest1} from "./constants.js";
 import {executeContract} from "./utils";
 import {readFile} from 'fs/promises';
-import {sleep} from "./migrate.js";
 
 /*
 This script is meant to be used as a boiler-plate for setting up load testing .
@@ -12,29 +11,6 @@ the main endpoint for bulk_testing to execute_from_all
 //This is the wallet that will fund all the new wallets
 const funding_wallet = walletTest1
 
-function bankTransferFund(wallet_from, wallet_to, uusd_amount) {
-    console.log(`Funding ${wallet_to.key.accAddress}`);
-    return new Promise(resolve => {
-        // create a simple message that moves coin balances
-        const send1 = new MsgSend(
-            wallet_from.key.accAddress,
-            wallet_to.key.accAddress,
-            {uusd: uusd_amount}
-        );
-
-        wallet_from
-            .createAndSignTx({
-                msgs: [send1],
-                memo: 'Initial Funding!',
-            })
-            .then(tx => terraClient.tx.broadcast(tx))
-            .then(result => {
-                console.log(result.txhash);
-                resolve(result.txhash);
-            });
-    })
-}
-``
 const wallets_json = JSON.parse(
     await readFile(
         new URL('wallets.json', import.meta.url)
@@ -71,8 +47,7 @@ async function execute_from_all(wallets, contract_address, message, funds_to_sen
         await executeContract(wallet, contract_address, message, funds_to_send)
     }
 }
-//----------------------------------------- TESTING ---------------------------------------------------------------
-//
+
 // Inital Setup
 let wallets_for_test = await wallets_to_obj(wallets_json)
 await load_funds(wallets_for_test, 100)

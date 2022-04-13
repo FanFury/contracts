@@ -1,5 +1,5 @@
-import {ClubStakingContractPath, sleep_time, terraClient, walletTest1, nitin_wallet} from './constants.js';
-import {getGasUsed, instantiateContract, executeContract, queryContract, readArtifact, storeCode, writeArtifact } from './utils.js';
+import {ClubStakingContractPath, nitin_wallet, sleep_time, terraClient, walletTest1} from './constants.js';
+import {executeContract, instantiateContract, queryContract, readArtifact, storeCode, writeArtifact} from './utils.js';
 import {readFile} from 'fs/promises';
 
 import {promisify} from 'util';
@@ -8,6 +8,7 @@ import * as readline from 'node:readline';
 
 import * as chai from 'chai';
 import {MnemonicKey, MsgSend} from "@terra-money/terra.js";
+import {mint_wallet} from "../test-staking/constants";
 
 
 const rl = readline.createInterface({
@@ -187,26 +188,26 @@ function bankTransferFund(wallet_from, wallet_to, uusd_amount) {
 
 async function wallets_to_obj(wallets) {
     let wallet_objects = []
-	let wallet_obj;
+    let wallet_obj;
     for (const wallet in wallets) {
         const mk = new MnemonicKey({mnemonic: wallet});
-		wallet_obj = terraClient.wallet(mk);
+        wallet_obj = terraClient.wallet(mk);
         wallet_objects.push(wallet_obj);
     }
     console.log("Wallets Ready....");
-	return wallet_objects;
+    return wallet_objects;
 }
 
 async function transferFuryToWallet(wallet_from, wallet_to, fury_amount) {
-		let transferFuryMsg = {
-			transfer: {
-				recipient: wallet_to.key.accAddress,
-				amount: fury_amount.toString()
-			}
-		};
-		console.log(`transferFuryMsg = ${JSON.stringify(transferFuryMsg)}`);
-		let response = await executeContract(wallet_from, fury_contract_address, transferFuryMsg);
-		console.log(`transferFuryMsg Response - ${response['txhash']}`);
+    let transferFuryMsg = {
+        transfer: {
+            recipient: wallet_to.key.accAddress,
+            amount: fury_amount.toString()
+        }
+    };
+    console.log(`transferFuryMsg = ${JSON.stringify(transferFuryMsg)}`);
+    let response = await executeContract(wallet_from, fury_contract_address, transferFuryMsg);
+    console.log(`transferFuryMsg Response - ${response['txhash']}`);
 }
 
 async function fundAllMainWallets(deploymentDetails) {
@@ -238,32 +239,32 @@ async function uploadClubStaking(deploymentDetails) {
 
 
 async function main() {
-	console.log("funding all main wallets");
+    console.log("funding all main wallets");
     terraClient.chainID = "localterra";
     let deploymentDetails = readArtifact(terraClient.chainID);
-	await fundAllMainWallets(deploymentDetails);
-	console.log("now funding all json wallets");
-	// We will load and prefund all the wallets_json
-	let wallets_for_test = await wallets_to_obj(wallets_json);
-	wallets_for_test.forEach(wallet_to => {
-		console.log(`wallet = ${wallet_to.key.accAddress}`);
-		bankTransferFund(funding_wallet, wallet_to, 1000000);
-		transferFuryToWallet(funding_wallet, wallet_to, 1000000);
-	})
-	console.log("end of execution");
-	process.exit();
+    await fundAllMainWallets(deploymentDetails);
+    console.log("now funding all json wallets");
+    // We will load and prefund all the wallets_json
+    let wallets_for_test = await wallets_to_obj(wallets_json);
+    wallets_for_test.forEach(wallet_to => {
+        console.log(`wallet = ${wallet_to.key.accAddress}`);
+        bankTransferFund(funding_wallet, wallet_to, 1000000);
+        transferFuryToWallet(funding_wallet, wallet_to, 1000000);
+    })
+    console.log("end of execution");
+    process.exit();
 }
 
 
-async function uploadClubStaking(deploymentDetails) {
-    if (!deploymentDetails.clubStakingId) {
-        console.log("Uploading Club Staking...");
-        let contractId = await storeCode(mint_wallet, ClubStakingContractPath); // Getting the contract id from local terra
-        console.log(`Club Staking Contract ID: ${contractId}`);
-        deploymentDetails.clubStakingId = contractId;
-        writeArtifact(deploymentDetails, terraClient.chainID);
-    }
-}
+// async function uploadClubStaking(deploymentDetails) {
+//     if (!deploymentDetails.clubStakingId) {
+//         console.log("Uploading Club Staking...");
+//         let contractId = await storeCode(mint_wallet, ClubStakingContractPath); // Getting the contract id from local terra
+//         console.log(`Club Staking Contract ID: ${contractId}`);
+//         deploymentDetails.clubStakingId = contractId;
+//         writeArtifact(deploymentDetails, terraClient.chainID);
+//     }
+// }
 
 async function instantiateClubStaking(deploymentDetails) {
     if (!deploymentDetails.clubStakingAddress) {
@@ -303,8 +304,9 @@ async function performOperationsOnClubStaking(deploymentDetails) {
     console.log("Balances of buyer before buy club");
     await buyAClub(deploymentDetails);
     await stakeOnAClub(deploymentDetails);
-	await queryAllClubStakes(deploymentDetails);
-	await distributeRewards(deploymentDetails);
+    await queryAllClubStakes(deploymentDetails);
+    // Run this in batchsizing 100 times
+    await distributeRewards(deploymentDetails);
 }
 
 async function queryAllClubOwnerships(deploymentDetails) {
@@ -316,6 +318,7 @@ async function queryAllClubOwnerships(deploymentDetails) {
 
 }
 
+// Perform this operation once more 100x
 async function queryAllClubStakes(deploymentDetails) {
     //Fetch club Stakes details for all clubs
     let csResponse = await queryContract(deploymentDetails.clubStakingAddress, {
@@ -346,15 +349,16 @@ async function buyAClub(deploymentDetails) {
                 club_name: "ClubB"
             }
         };
-        let platformFees = await queryContract(deploymentDetails.clubStakingAddress, { query_platform_fees: { msg: Buffer.from(JSON.stringify(bacRequest)).toString('base64') } });
+        let platformFees = await queryContract(deploymentDetails.clubStakingAddress, {query_platform_fees: {msg: Buffer.from(JSON.stringify(bacRequest)).toString('base64')}});
         console.log(`platformFees = ${JSON.stringify(platformFees)}`);
-        let bacResponse = await executeContract(nitin_wallet, deploymentDetails.clubStakingAddress, bacRequest, { 'uusd': Number(platformFees) });
+        let bacResponse = await executeContract(nitin_wallet, deploymentDetails.clubStakingAddress, bacRequest, {'uusd': Number(platformFees)});
         console.log("Buy a club transaction hash = " + bacResponse['txhash']);
         deploymentDetails.clubBought = true;
-		writeArtifact(deploymentDetails, terraClient.chainID);
+        writeArtifact(deploymentDetails, terraClient.chainID);
     }
 }
 
+// This method needs to be executed 10k Times
 async function stakeOnAClub(deploymentDetails) {
     //let Sameer stakeOn a club
     // first increase allowance for club staking contract on Sameer wallet to let it move fury
@@ -374,9 +378,9 @@ async function stakeOnAClub(deploymentDetails) {
             amount: "100000"
         }
     };
-    let platformFees = await queryContract(deploymentDetails.clubStakingAddress, { query_platform_fees: { msg: Buffer.from(JSON.stringify(soacRequest)).toString('base64') } });
+    let platformFees = await queryContract(deploymentDetails.clubStakingAddress, {query_platform_fees: {msg: Buffer.from(JSON.stringify(soacRequest)).toString('base64')}});
     console.log(`platformFees = ${JSON.stringify(platformFees)}`);
-    let soacResponse = await executeContract(sameer_wallet, deploymentDetails.clubStakingAddress, soacRequest, { 'uusd': Number(platformFees) });
+    let soacResponse = await executeContract(sameer_wallet, deploymentDetails.clubStakingAddress, soacRequest, {'uusd': Number(platformFees)});
     console.log("Stake on a club transaction hash = " + soacResponse['txhash']);
 }
 
@@ -389,10 +393,10 @@ async function withdrawStakeFromAClub(deploymentDetails) {
             immediate_withdrawal: false
         }
     };
-    let platformFees = await queryContract(deploymentDetails.clubStakingAddress, { query_platform_fees: { msg: Buffer.from(JSON.stringify(wsfacRequest)).toString('base64') } });
+    let platformFees = await queryContract(deploymentDetails.clubStakingAddress, {query_platform_fees: {msg: Buffer.from(JSON.stringify(wsfacRequest)).toString('base64')}});
     console.log(`platformFees = ${JSON.stringify(platformFees)}`);
 
-    let wsfacResponse = await executeContract(sameer_wallet, deploymentDetails.clubStakingAddress, wsfacRequest, { 'uusd': Number(platformFees) });
+    let wsfacResponse = await executeContract(sameer_wallet, deploymentDetails.clubStakingAddress, wsfacRequest, {'uusd': Number(platformFees)});
     console.log("Withdraw Stake on a club transaction hash = " + wsfacResponse['txhash']);
 
     console.log("Waiting for 30sec to try early Withdraw - would fail");
@@ -408,7 +412,7 @@ async function withdrawStakeFromAClub(deploymentDetails) {
         }
     };
     try {
-        wsfacResponse = await executeContract(sameer_wallet, deploymentDetails.clubStakingAddress, wsfacRequest, { 'uusd': Number(platformFees) });
+        wsfacResponse = await executeContract(sameer_wallet, deploymentDetails.clubStakingAddress, wsfacRequest, {'uusd': Number(platformFees)});
         console.log("Not expected to reach here");
         console.log("Withdraw Stake on a club transaction hash = " + wsfacResponse['txhash']);
     } catch (error) {
@@ -417,7 +421,7 @@ async function withdrawStakeFromAClub(deploymentDetails) {
         //ADD DELAY to reach beyond the bonding duration - 2min
         await new Promise(resolve => setTimeout(resolve, 100000));
 
-        wsfacResponse = await executeContract(sameer_wallet, deploymentDetails.clubStakingAddress, wsfacRequest, { 'uusd': Number(platformFees) });
+        wsfacResponse = await executeContract(sameer_wallet, deploymentDetails.clubStakingAddress, wsfacRequest, {'uusd': Number(platformFees)});
         console.log("Withdraw Stake on a club transaction hash = " + wsfacResponse['txhash']);
     } finally {
         console.log("Withdraw Complete");
@@ -425,20 +429,21 @@ async function withdrawStakeFromAClub(deploymentDetails) {
 }
 
 async function distributeRewards(deploymentDetails) {
+    // Here IRArequest needs to be called one and distribute reward needs to be called 100x
     let iraRequest = {
         increase_reward_amount: {
             reward_from: mint_wallet.key.accAddress
         }
     };
-	let msgString = Buffer.from(JSON.stringify(iraRequest)).toString('base64');
+    let msgString = Buffer.from(JSON.stringify(iraRequest)).toString('base64');
 
-	let viaMsg = {
-		send : {
-			contract: deploymentDetails.clubStakingAddress,
-			amount: "1000",
-			msg: msgString
-		}
-	};
+    let viaMsg = {
+        send: {
+            contract: deploymentDetails.clubStakingAddress,
+            amount: "1000",
+            msg: msgString
+        }
+    };
 
     let iraResponse = await executeContract(mint_wallet, deploymentDetails.furyContractAddress, viaMsg);
 
@@ -446,18 +451,18 @@ async function distributeRewards(deploymentDetails) {
     await new Promise(resolve => setTimeout(resolve, 30000));
 
     let cadrRequest = {
-        calculate_and_distribute_rewards: {
-        }
+        calculate_and_distribute_rewards: {}
     };
 
-	let cadrResponse = await executeContract(mint_wallet, deploymentDetails.clubStakingAddress, cadrRequest);
-	console.log("distribute reward transaction hash = " + cadrResponse['txhash']);
+    let cadrResponse = await executeContract(mint_wallet, deploymentDetails.clubStakingAddress, cadrRequest);
+    console.log("distribute reward transaction hash = " + cadrResponse['txhash']);
 }
 
 async function queryBalances(deploymentDetails, accAddress) {
     let bankBalances = await terraClient.bank.balance(accAddress);
     console.log(JSON.stringify(bankBalances));
-    let furyBalance = await queryContract(deploymentDetails.furyContractAddress, { balance: { address: accAddress } });
+    let furyBalance = await queryContract(deploymentDetails.furyContractAddress, {balance: {address: accAddress}});
     console.log(JSON.stringify(furyBalance));
 }
-main();
+
+await main();
