@@ -10,6 +10,7 @@
     "club_price",
     "club_reward_next_timestamp",
     "control_fees",
+    "max_bonding_limit_per_user",
     "minting_contract_address",
     "owner_release_locking_duration",
     "platform_fees",
@@ -19,43 +20,64 @@
   ],
   "properties": {
     "admin_address": {
+      "description": "Administrator privilege wallet address",
       "type": "string"
     },
     "astro_proxy_address": {
+      "description": "Proxy Contract for Astroport Liquidity Pool",
       "type": "string"
     },
     "bonding_duration": {
+      "description": "Bonding duration (in seconds) applicable when Un-staking is initiated",
       "type": "integer",
       "format": "uint64",
       "minimum": 0.0
     },
     "club_fee_collector_wallet": {
+      "description": "Wallet where the Club Fee from Buy a Club is transferred",
       "type": "string"
     },
     "club_price": {
-      "$ref": "#/definitions/Uint128"
-    },
-    "club_reward_next_timestamp": {
-      "$ref": "#/definitions/Timestamp"
-    },
-    "control_fees": {
-      "description": "Specified in percentage multiplied by 100, i.e. 100% = 10000 and 0.01% = 1",
+      "description": "Price in Fury for Buying a Club",
       "allOf": [
         {
           "$ref": "#/definitions/Uint128"
         }
       ]
     },
+    "club_reward_next_timestamp": {
+      "description": "Next timestamp when the next reward distribution shall take place",
+      "allOf": [
+        {
+          "$ref": "#/definitions/Timestamp"
+        }
+      ]
+    },
+    "control_fees": {
+      "description": "Control Fee Specified in percentage multiplied by 100, i.e. 100% = 10000 and 0.01% = 1",
+      "allOf": [
+        {
+          "$ref": "#/definitions/Uint128"
+        }
+      ]
+    },
+    "max_bonding_limit_per_user": {
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0.0
+    },
     "minting_contract_address": {
+      "description": "Fury Token Miniting Contract address",
       "type": "string"
     },
     "owner_release_locking_duration": {
+      "description": "Duration (in seconds) for which a club is released by an Owner for potential Buy a Club by a new owner",
       "type": "integer",
       "format": "uint64",
       "minimum": 0.0
     },
     "platform_fees": {
-      "description": "Specified in percentage multiplied by 100, i.e. 100% = 10000 and 0.01% = 1",
+      "description": "Plastform Fee Specified in percentage multiplied by 100, i.e. 100% = 10000 and 0.01% = 1",
       "allOf": [
         {
           "$ref": "#/definitions/Uint128"
@@ -63,15 +85,17 @@
       ]
     },
     "platform_fees_collector_wallet": {
+      "description": "Wallet where Platform Fees (other than the fee used towards Swap) would transfered",
       "type": "string"
     },
     "reward_periodicity": {
+      "description": "Periodicity for reward distribution (in seconds)",
       "type": "integer",
       "format": "uint64",
       "minimum": 0.0
     },
     "transaction_fees": {
-      "description": "Specified in percentage multiplied by 100, i.e. 100% = 10000 and 0.01% = 1",
+      "description": "Transaction Fee Specified in percentage multiplied by 100, i.e. 100% = 10000 and 0.01% = 1",
       "allOf": [
         {
           "$ref": "#/definitions/Uint128"
