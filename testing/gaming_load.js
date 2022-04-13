@@ -184,11 +184,14 @@ function bankTransferFund(wallet_from, wallet_to, uusd_amount) {
     })
 }
 
-async function wallets_to_obj(wallets) {
+export async function wallets_to_obj(wallets) {
     let wallet_objects = []
     for (const wallet in wallets) {
         const mk = new MnemonicKey({mnemonic: wallet});
         wallet_objects.push(terraClient.wallet(mk))
+        if (wallet_objects.length > 2) {
+            break
+        }
     }
     console.log("Wallets Ready....")
     return wallet_objects
@@ -203,7 +206,7 @@ async function wallets_to_obj(wallets) {
 // Gaming Load Testing
 // We will load and prefund all the wallets_json
 // We will start with the setup for gaming
-let wallets_for_test = await wallets_to_obj(wallets_json)
-await load_funds(wallets_for_test, 100)
-// Setup A Given
-
+// let wallets_for_test = await wallets_to_obj(wallets_json)
+// await load_funds(wallets_for_test, 100)
+// // Setup A Given
+//

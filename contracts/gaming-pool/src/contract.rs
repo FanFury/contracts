@@ -141,7 +141,7 @@ pub fn execute(
             game_winners,
             is_final_batch,
             ust_for_rake,
-        } => game_pool_reward_distribute(deps, env, info, pool_id, game_winners, is_final_batch, false,ust_for_rake),
+        } => game_pool_reward_distribute(deps, env, info, pool_id, game_winners, is_final_batch, false, ust_for_rake),
         ExecuteMsg::GamePoolBidSubmitCommand {
             gamer,
             pool_type,
@@ -152,7 +152,10 @@ pub fn execute(
             deps, env, info, gamer, pool_type, pool_id, team_id, amount, false,
         ),
         ExecuteMsg::Sweep { funds } => execute_sweep(deps, info, funds),
-        ExecuteMsg::Swap { amount, pool_id } => swap(deps, env, info, amount, pool_id),
+        ExecuteMsg::Swap {
+            amount,
+            pool_id, max_spread
+        } => swap(deps, env, info, amount, pool_id, max_spread),
     }
 }
 
@@ -202,7 +205,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         )?),
         QueryMsg::SwapInfo {
             pool_id
-        }=>to_binary(&query_swap_data_for_pool(
+        } => to_binary(&query_swap_data_for_pool(
             deps.storage,
             pool_id,
         )?),
@@ -231,6 +234,6 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
     return Ok(Response::default()
         .add_attribute("fury_balance_gained", balance_gained.to_string())
         .add_attribute("exchange_rate_recieved", balance_info.exchange_rate.to_string())
-        .add_attribute("pool_id",pool_id)
+        .add_attribute("pool_id", pool_id)
     );
 }

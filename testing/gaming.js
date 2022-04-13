@@ -7,7 +7,13 @@ import {promisify} from 'util';
 import * as readline from 'node:readline';
 
 import * as chai from 'chai';
+import {wallets_for_test} from "./staking_tests.js";
 
+const wallets_json = JSON.parse(
+    await readFile(
+        new URL('wallets.json', import.meta.url)
+    )
+);
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -21,6 +27,12 @@ const assert = chai.assert;
 let gaming_contract_address = ""
 let proxy_contract_address = "terra19zpyd046u4swqpksr3n44cej4j8pg6ah2y6dcg"
 let fury_contract_address = "terra18vd8fpwxzck93qlwghaj6arh4p7c5n896xzem5"
+//---------------------------WALLET SETUP ----------------------------------------
+
+
+//--------------------------------------------------------------------------------
+
+
 const gamer = walletTest1.key.accAddress
 // const gamer_extra_1 = walletTest3.key.accAddress
 // const gamer_extra_2 = walletTest4.key.accAddress
@@ -119,8 +131,8 @@ const set_pool_headers_for_H2H_pool_type = async function (time) {
             'pool_type': "H2H",
             'pool_fee': `${10}000000`,
             'min_teams_for_pool': 1,
-            'max_teams_for_pool': 1,
-            'max_teams_for_gamer': 1,
+            'max_teams_for_pool': 10000,
+            'max_teams_for_gamer': 12,
             'wallet_percentages': [
                 {
                     "wallet_address": "terra1uyuy363rzun7e6txdjdemqj9zua9j7wxl2lp0m",
@@ -143,17 +155,17 @@ export async function transferFuryTokens(toAddress, amount) {
         }
     };
     console.log(`transferFuryToTreasuryMsg = ${JSON.stringify(transferFuryToTreasuryMsg)}`);
-    let response = await executeContract(mint_wallet, fury_contract_address, transferFuryToTreasuryMsg);
+    let response = await executeContract(mint_wallet, "terra18vd8fpwxzck93qlwghaj6arh4p7c5n896xzem5", transferFuryToTreasuryMsg);
     console.log(`transferFuryToTreasuryMsg Response - ${response['txhash']}`);
 }
 
 
-let test_game_pool_bid_submit_when_pool_team_in_range = async function (time) {
+let test_game_pool_bid_submit_when_pool_team_in_range = async function (wallet, time) {
     console.log("Placing a bid submit in H2H pool for 10UST worth of Fury!")
 
     // Add method to provide the wallet one fury token
     console.log("Sending 5k fury Tokens from Minter to gamer")
-    let response = await transferFuryTokens(walletTest1.key.accAddress, "5000000000")
+    let response = await transferFuryTokens(wallet.key.accAddress, "5000000000")
     console.log(response)
     console.log("Getting Funds To Send In Fury")
     let funds_to_send_in_fury = await queryContract(proxy_contract_address,
@@ -171,14 +183,14 @@ let test_game_pool_bid_submit_when_pool_team_in_range = async function (time) {
         }
     };
     console.log("Increasing Allowance For the Gaming Pool Contract ")
-    let incrAllowResp = await executeContract(walletTest1, fury_contract_address, increaseAllowanceMsg);
+    let incrAllowResp = await executeContract(wallet, fury_contract_address, increaseAllowanceMsg);
     console.log(incrAllowResp)
     console.log("Submitting Game Pool Bid")
     await sleep(sleep_time);
     try {
-        response = await executeContract(walletTest1, gaming_contract_address, {
+        response = await executeContract(wallet, gaming_contract_address, {
             game_pool_bid_submit_command: {
-                gamer: walletTest1.key.accAddress,
+                gamer: wallet.key.accAddress,
                 pool_type: "H2H",
                 pool_id: "1",
                 team_id: "Team001",
@@ -239,16 +251,16 @@ const test_game_lock_once_pool_is_canceled = async function (time) {
 *
 * */
 
-const claim = async function (time) {
-    await transferFuryTokens(gaming_contract_address, "5000000000")
+const claim = async function (wallet, time) {
+    await transferFuryTokens(gaming_contract_address, "50000000")
 
     let expected_reward = await queryContract(gaming_contract_address, {
-            query_reward: {"gamer": walletTest1.key.accAddress}
+            query_reward: {"gamer": wallet.key.accAddress}
         }
     )
     console.log(`Expected Reward Amount  ${expected_reward}`)
-    let response = await executeContract(walletTest1, gaming_contract_address, {
-        claim_reward: {"gamer": walletTest1.key.accAddress}
+    let response = await executeContract(wallet, gaming_contract_address, {
+        claim_reward: {"gamer": wallet.key.accAddress}
     })
     console.log(response)
     //check if the distributed amount is eq to claim amount
@@ -256,43 +268,10 @@ const claim = async function (time) {
     await sleep(time)
 }
 const reward_distribution_for_locked_game_for_H2H = async function (time) {
-    let response = await queryContract(gaming_contract_address, {
-        swap_info: {
-            "pool_id": "1"
-        }
-    })
-    console.log(response)
-    let exchange_rate_at_swap = response.exchange_rate
-    console.log("Current Exchange Rate")
-    console.log(exchange_rate_at_swap)
-    console.log("Reward Distribution for locked game")
-    response = await executeContract(walletTest1, gaming_contract_address, {
-            "game_pool_reward_distribute": {
-                "is_final_batch": true,
-                "game_id": game_id,
-                "pool_id": "1",
-                "ust_for_rake": response.ust_for_rake,
-                "exchange_rate_at_swap": exchange_rate_at_swap,
-                "game_winners":
-                    [
-                        {
-                            "gamer_address": walletTest1.key.accAddress,
-                            "game_id": game_id,
-                            "team_id": "Team001",
-                            "reward_amount": `${10}`, // This will be in ufury
-                            "refund_amount": "0",
-                            "team_rank": 1,
-                            "team_points": 150
-                        },
-                    ]
-            }
-        },
-        {
-            "uusd": "10000000"
-        })
+    let reward_msg = await get_reward_distribute_info("1", game_id, "Team001", wallets_for_test)
+    let response = await executeContract(walletTest1, gaming_contract_address, reward_msg, {"uusd": "10000000"})
     console.log(response)
     console.log("Assert Success")
-    ///check if the game is concluded and status is updated to 4/reward distributed
     await sleep(time)
 }
 
@@ -309,6 +288,61 @@ async function test_migrate(time) {
 
 }
 
+// {
+//             "game_pool_reward_distribute": {
+//                 "is_final_batch": true,
+//                 "game_id": game_id,
+//                 "pool_id": "1",
+//                 "ust_for_rake": response.ust_for_rake,
+//                 "exchange_rate_at_swap": exchange_rate_at_swap,
+//                 "game_winners":
+//                     [
+//                         {
+//                             "gamer_address": wallet.key.accAddress,
+//                             "game_id": game_id,
+//                             "team_id": "Team001",
+//                             "reward_amount": `${10}`, // This will be in ufury
+//                             "refund_amount": "0",
+//                             "team_rank": 1,
+//                             "team_points": 150
+//                         },
+//                     ]
+//             }
+//         }
+async function get_reward_distribute_info(pool_id, game_id, team_id, users) {
+    let response = await queryContract(gaming_contract_address, {
+        swap_info: {
+            "pool_id": "1"
+        }
+    })
+    console.log(response)
+    let winners = []
+    for (let i = 0; i < users.length; i++) {
+        let user = users[i]
+        winners.push({
+            "gamer_address": user.key.accAddress,
+            "game_id": game_id,
+            "team_id": team_id,
+            "reward_amount": `${10}`, // This will be in ufury
+            "refund_amount": "0",
+            "team_rank": 1,
+            "team_points": 150
+        })
+
+    }
+
+    return {
+        "game_pool_reward_distribute": {
+            "is_final_batch": true,
+            "game_id": game_id,
+            "pool_id": pool_id,
+            "ust_for_rake": response.ust_for_rake,
+            "game_winners": winners,
+        }
+    }
+
+}
+
 
 const swap_ust_balance_on_pool = async function (time) {
     console.log("Testing  swap_on_pool")
@@ -316,7 +350,8 @@ const swap_ust_balance_on_pool = async function (time) {
         {
             "swap": {
                 "amount": "5000000",
-                "pool_id": "1"
+                "pool_id": "1",
+                "max_spread": "3"
             }
         })
     console.log(response)
@@ -324,16 +359,25 @@ const swap_ust_balance_on_pool = async function (time) {
     await sleep(time)
 }
 
+const run_from_all = async function (wallets, action) {
+    for (let i = 0; i < wallets.length; i++) {
+        let wallet = wallets[i]
+        await action(wallet, sleep_time)
+    }
+}
+
 await test_create_and_query_game(sleep_time)
 await set_pool_headers_for_H2H_pool_type(sleep_time)
 await test_create_and_query_pool(sleep_time)
 // await setup_msgs()
 // // await test_get_team_count_for_user_in_pool_type(sleep_time)
-await test_game_pool_bid_submit_when_pool_team_in_range(sleep_time)
+await test_game_pool_bid_submit_when_pool_team_in_range(walletTest1, sleep_time)
+await run_from_all(wallets_for_test, test_game_pool_bid_submit_when_pool_team_in_range)
 await test_game_lock_once_pool_is_closed(sleep_time)
 await swap_ust_balance_on_pool(sleep_time)
 await reward_distribution_for_locked_game_for_H2H(sleep_time)
-await claim(sleep_time)
+// await claim(walletTest1, sleep_time)
+await run_from_all(wallets_for_test, claim)
 // // Claim
 // await test_migrate(sleep_time)
 // await test_create_and_query_game(sleep_time)

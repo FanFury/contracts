@@ -1,12 +1,5 @@
 import {MnemonicKey, MsgSend} from "@terra-money/terra.js";
-import {
-    ClubStakingContractPath,
-    mint_wallet,
-    nitin_wallet,
-    sameer_wallet,
-    terraClient,
-    walletTest1
-} from "./constants.js";
+import {mint_wallet, terraClient, walletTest1} from "./constants.js";
 import {executeContract, instantiateContract, queryContract, storeCode} from "./utils.js";
 import {readFile} from 'fs/promises';
 import {sleep} from "./migrate.js";
@@ -92,11 +85,11 @@ const wallets_json = JSON.parse(
     )
 );
 
-async function load_funds(wallets, ust_funds, fury_funds) {
+export async function load_funds(wallets, ust_funds, fury_funds) {
     let promises_to_fulfill = []
     for (const wallet of wallets) {
         await bankTransferFund(funding_wallet, wallet, `${ust_funds}000000`)
-        await transferFuryTokens(wallet, `${fury_funds}000000`)
+        await transferFuryTokens(wallet.key.accAddress, `${fury_funds}000000`)
     }
 }
 
@@ -180,13 +173,13 @@ async function distribute_reward_perbatch(club_name, users, is_first_def = true)
 
 }
 
-async function wallets_to_obj(wallets) {
+export function wallets_to_obj(wallets) {
     console.log("Test Initiated")
     let wallet_objects = []
     for (const wallet in wallets) {
         const mk = new MnemonicKey({mnemonic: wallet});
         wallet_objects.push(terraClient.wallet(mk))
-        if (wallet_objects.length > 100) {
+        if (wallet_objects.length > 2) {
             break
         }
     }
@@ -270,31 +263,31 @@ async function stakeOnAClub(wallet, club_name) {
 
 //----------------------------------------- TESTING ---------------------------------------------------------------
 // Inital Setup
-let wallets_for_test = await wallets_to_obj(wallets_json)
+export let wallets_for_test = await wallets_to_obj(wallets_json)
 await load_funds(wallets_for_test, 10, 10)
-// Run the contract setup and deployment
-club_staking_address = await deploy_contract(ClubStakingContractPath, clubStakingInitMessage)
-console.log(`Cubstaking Address:${club_staking_address}`)
-//Fund the wallets
-await fund(nitin_wallet)
-await fund(sameer_wallet)
-// Buy a club
-await buy_a_club(nitin_wallet, "clubA")
-await buy_a_club(sameer_wallet, "clubB")
-//-----------------------
-// Now 5k
-await stake_from_all("clubA", wallets_for_test)
-await stake_from_all("clubB", wallets_for_test)
-wallets_for_test.push(nitin_wallet)
-wallets_for_test.push(sameer_wallet)
-// Query stakes
-await query_club_staking("clubA", wallets_for_test)
-await query_club_staking("clubB", wallets_for_test)
-// Increase Reward Amount
-await increaseRewardAmount(1000000)
-// Distribute Rewards
-await distribute_reward_perbatch("clubA", wallets_for_test)
-await distribute_reward_perbatch("clubB", wallets_for_test, false)
-// Query stakes Again to check if balances have increased
-await query_club_staking("clubA", wallets_for_test)
-await query_club_staking("clubB", wallets_for_test)
+// // Run the contract setup and deployment
+// club_staking_address = await deploy_contract(ClubStakingContractPath, clubStakingInitMessage)
+// console.log(`Cubstaking Address:${club_staking_address}`)
+// //Fund the wallets
+// await fund(nitin_wallet)
+// await fund(sameer_wallet)
+// // Buy a club
+// await buy_a_club(nitin_wallet, "clubA")
+// await buy_a_club(sameer_wallet, "clubB")
+// //-----------------------
+// // Now 5k
+// await stake_from_all("clubA", wallets_for_test)
+// await stake_from_all("clubB", wallets_for_test)
+// wallets_for_test.push(nitin_wallet)
+// wallets_for_test.push(sameer_wallet)
+// // Query stakes
+// await query_club_staking("clubA", wallets_for_test)
+// await query_club_staking("clubB", wallets_for_test)
+// // Increase Reward Amount
+// await increaseRewardAmount(1000000)
+// // Distribute Rewards
+// await distribute_reward_perbatch("clubA", wallets_for_test)
+// await distribute_reward_perbatch("clubB", wallets_for_test, false)
+// // Query stakes Again to check if balances have increased
+// await query_club_staking("clubA", wallets_for_test)
+// await query_club_staking("clubB", wallets_for_test)

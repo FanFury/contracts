@@ -75,6 +75,7 @@ pub enum ExecuteMsg {
     Swap {
         amount: Uint128,
         pool_id: String,
+        max_spread: Option<Decimal>,
     },
 }
 

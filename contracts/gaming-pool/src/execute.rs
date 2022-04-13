@@ -758,7 +758,7 @@ pub fn claim_reward(
     // Do the transfer of reward to the actual gamer_addr from the contract
     let config = CONFIG.load(deps.storage)?;
     let mut messages = Vec::new();
-    // TODO Review 
+    // TODO Review
     // let fee_details = query_platform_fees(user_reward, config.platform_fee, config.transaction_fee)?;
     // // We only take the first coin object since we only expect UST here
     // let funds_sent = info.funds[0].clone();
@@ -1147,6 +1147,7 @@ pub fn swap(
     info: MessageInfo,
     amount: Uint128,
     pool_id: String,
+    max_spread: Option<Decimal>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let pool_details = query_pool_details(deps.storage, pool_id.clone())?;
