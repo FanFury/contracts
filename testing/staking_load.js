@@ -221,7 +221,7 @@ async function transferFuryToNitin(deploymentDetails) {
         }
     };
     console.log(`transferFuryToNitinMsg = ${JSON.stringify(transferFuryToNitinMsg)}`);
-    let response = await executeContract(walletTest1, fury_contract_address, transferFuryToNitinMsg);
+    let response = await executeContract(funding_wallet, fury_contract_address, transferFuryToNitinMsg);
     console.log(`transferFuryToNitinMsg Response - ${response['txhash']}`);
 }
 
