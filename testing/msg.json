@@ -1,0 +1,257 @@
+[
+  {
+    "set_pool_type_params": {
+      "pool_fee": "10000000",
+      "pool_type": "MP5",
+      "max_teams_for_pool": 5,
+      "min_teams_for_pool": 5,
+      "wallet_percentages": [
+        {
+          "percentage": 40,
+          "wallet_name": "staking_wallet",
+          "wallet_address": "terra1xs3a0e5xyt2f7ea4ah4kg8tlerdn8fpuyhpul3"
+        },
+        {
+          "percentage": 40,
+          "wallet_name": "burn_wallet",
+          "wallet_address": "terra1wvn40uj4hanwd8drlza4m623eamundexcu0v6e"
+        },
+        {
+          "percentage": 4,
+          "wallet_name": "marketing_wallet",
+          "wallet_address": "terra1ws0uyysfzkxz2wphqpp9per2fsp455gf7jcmwq"
+        },
+        {
+          "percentage": 4,
+          "wallet_name": "development_wallet",
+          "wallet_address": "terra1f060m0x9xs2cjecr82pq7n4zjae2ey477cymhn"
+        },
+        {
+          "percentage": 10,
+          "wallet_name": "platform_wallet",
+          "wallet_address": "terra1kps49twu6wlsg5g30z8jykuwcl808xmf2xqgct"
+        },
+        {
+          "percentage": 2,
+          "wallet_name": "angel_wallet",
+          "wallet_address": "terra1pppk6nc6pmuas5rkjfcuvyrqc3rd7fwmuvlvys"
+        }
+      ],
+      "max_teams_for_gamer": 2
+    }
+  },
+  {
+    "create_pool": {
+      "pool_type": "MP5"
+    }
+  },
+  {
+    "set_pool_type_params": {
+      "pool_fee": "40000000",
+      "pool_type": "MP3",
+      "max_teams_for_pool": 3,
+      "min_teams_for_pool": 3,
+      "wallet_percentages": [
+        {
+          "percentage": 40,
+          "wallet_name": "staking_wallet",
+          "wallet_address": "terra1xs3a0e5xyt2f7ea4ah4kg8tlerdn8fpuyhpul3"
+        },
+        {
+          "percentage": 40,
+          "wallet_name": "burn_wallet",
+          "wallet_address": "terra1wvn40uj4hanwd8drlza4m623eamundexcu0v6e"
+        },
+        {
+          "percentage": 4,
+          "wallet_name": "marketing_wallet",
+          "wallet_address": "terra1ws0uyysfzkxz2wphqpp9per2fsp455gf7jcmwq"
+        },
+        {
+          "percentage": 4,
+          "wallet_name": "development_wallet",
+          "wallet_address": "terra1f060m0x9xs2cjecr82pq7n4zjae2ey477cymhn"
+        },
+        {
+          "percentage": 10,
+          "wallet_name": "platform_wallet",
+          "wallet_address": "terra1kps49twu6wlsg5g30z8jykuwcl808xmf2xqgct"
+        },
+        {
+          "percentage": 2,
+          "wallet_name": "angel_wallet",
+          "wallet_address": "terra1pppk6nc6pmuas5rkjfcuvyrqc3rd7fwmuvlvys"
+        }
+      ],
+      "max_teams_for_gamer": 1
+    }
+  },
+  {
+    "create_pool": {
+      "pool_type": "MP3"
+    }
+  },
+  {
+    "set_pool_type_params": {
+      "pool_fee": "10000000",
+      "pool_type": "MP2",
+      "max_teams_for_pool": 3,
+      "min_teams_for_pool": 3,
+      "wallet_percentages": [
+        {
+          "percentage": 40,
+          "wallet_name": "staking_wallet",
+          "wallet_address": "terra1xs3a0e5xyt2f7ea4ah4kg8tlerdn8fpuyhpul3"
+        },
+        {
+          "percentage": 40,
+          "wallet_name": "burn_wallet",
+          "wallet_address": "terra1wvn40uj4hanwd8drlza4m623eamundexcu0v6e"
+        },
+        {
+          "percentage": 4,
+          "wallet_name": "marketing_wallet",
+          "wallet_address": "terra1ws0uyysfzkxz2wphqpp9per2fsp455gf7jcmwq"
+        },
+        {
+          "percentage": 4,
+          "wallet_name": "development_wallet",
+          "wallet_address": "terra1f060m0x9xs2cjecr82pq7n4zjae2ey477cymhn"
+        },
+        {
+          "percentage": 10,
+          "wallet_name": "platform_wallet",
+          "wallet_address": "terra1kps49twu6wlsg5g30z8jykuwcl808xmf2xqgct"
+        },
+        {
+          "percentage": 2,
+          "wallet_name": "angel_wallet",
+          "wallet_address": "terra1pppk6nc6pmuas5rkjfcuvyrqc3rd7fwmuvlvys"
+        }
+      ],
+      "max_teams_for_gamer": 1
+    }
+  },
+  {
+    "create_pool": {
+      "pool_type": "MP2"
+    }
+  },
+  {
+    "set_pool_type_params": {
+      "pool_fee": "40000000",
+      "pool_type": "MP1",
+      "max_teams_for_pool": 5,
+      "min_teams_for_pool": 5,
+      "wallet_percentages": [
+        {
+          "percentage": 40,
+          "wallet_name": "staking_wallet",
+          "wallet_address": "terra1xs3a0e5xyt2f7ea4ah4kg8tlerdn8fpuyhpul3"
+        },
+        {
+          "percentage": 40,
+          "wallet_name": "burn_wallet",
+          "wallet_address": "terra1wvn40uj4hanwd8drlza4m623eamundexcu0v6e"
+        },
+        {
+          "percentage": 4,
+          "wallet_name": "marketing_wallet",
+          "wallet_address": "terra1ws0uyysfzkxz2wphqpp9per2fsp455gf7jcmwq"
+        },
+        {
+          "percentage": 4,
+          "wallet_name": "development_wallet",
+          "wallet_address": "terra1f060m0x9xs2cjecr82pq7n4zjae2ey477cymhn"
+        },
+        {
+          "percentage": 10,
+          "wallet_name": "platform_wallet",
+          "wallet_address": "terra1kps49twu6wlsg5g30z8jykuwcl808xmf2xqgct"
+        },
+        {
+          "percentage": 2,
+          "wallet_name": "angel_wallet",
+          "wallet_address": "terra1pppk6nc6pmuas5rkjfcuvyrqc3rd7fwmuvlvys"
+        }
+      ],
+      "max_teams_for_gamer": 2
+    }
+  },
+  {
+    "create_pool": {
+      "pool_type": "MP1"
+    }
+  },
+  {
+    "set_pool_type_params": {
+      "pool_fee": "10000000",
+      "pool_type": "H2H2",
+      "max_teams_for_pool": 2,
+      "min_teams_for_pool": 2,
+      "wallet_percentages": [
+        {
+          "percentage": 40,
+          "wallet_name": "staking_wallet",
+          "wallet_address": "terra1xs3a0e5xyt2f7ea4ah4kg8tlerdn8fpuyhpul3"
+        },
+        {
+          "percentage": 40,
+          "wallet_name": "burn_wallet",
+          "wallet_address": "terra1wvn40uj4hanwd8drlza4m623eamundexcu0v6e"
+        },
+        {
+          "percentage": 4,
+          "wallet_name": "marketing_wallet",
+          "wallet_address": "terra1ws0uyysfzkxz2wphqpp9per2fsp455gf7jcmwq"
+        },
+        {
+          "percentage": 4,
+          "wallet_name": "development_wallet",
+          "wallet_address": "terra1f060m0x9xs2cjecr82pq7n4zjae2ey477cymhn"
+        },
+        {
+          "percentage": 10,
+          "wallet_name": "platform_wallet",
+          "wallet_address": "terra1kps49twu6wlsg5g30z8jykuwcl808xmf2xqgct"
+        },
+        {
+          "percentage": 2,
+          "wallet_name": "angel_wallet",
+          "wallet_address": "terra1pppk6nc6pmuas5rkjfcuvyrqc3rd7fwmuvlvys"
+        }
+      ],
+      "max_teams_for_gamer": 1
+    }
+  },
+  {
+    "create_pool": {
+      "pool_type": "H2H2"
+    }
+  },
+  {
+    "create_pool": {
+      "pool_type": "H2H2"
+    }
+  },
+  {
+    "create_pool": {
+      "pool_type": "H2H2"
+    }
+  },
+  {
+    "create_pool": {
+      "pool_type": "H2H2"
+    }
+  },
+  {
+    "create_pool": {
+      "pool_type": "H2H2"
+    }
+  },
+  {
+    "create_pool": {
+      "pool_type": "H2H2"
+    }
+  }
+]

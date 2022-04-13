@@ -17,8 +17,13 @@ use crate::contract::{CLAIMED_REFUND, CLAIMED_REWARD, DUMMY_WALLET, GAME_CANCELL
                       REWARDS_NOT_DISTRIBUTED, UNCLAIMED_REFUND, UNCLAIMED_REWARD};
 use crate::ContractError;
 use crate::msg::{BalanceResponse, ProxyQueryMsgs, QueryMsgSimulation, ReceivedMsg};
-use crate::query::{get_team_count_for_user_in_pool_type, query_pool_details, query_pool_type_details, query_swap_data_for_pool};
-use crate::state::{CONFIG, CONTRACT_POOL_COUNT, CURRENT_REWARD_FOR_POOL, FeeDetails, GAME_DETAILS, GameDetails, GameResult, PLATFORM_WALLET_PERCENTAGES, POOL_DETAILS, POOL_TEAM_DETAILS, POOL_TYPE_DETAILS, PoolDetails, PoolTeamDetails, PoolTypeDetails, SWAP_BALANCE_INFO, SwapBalanceDetails, WalletPercentage, WalletTransferDetails};
+use crate::query::{get_team_count_for_user_in_pool_type,
+                   query_pool_details, query_pool_type_details, query_swap_data_for_pool};
+use crate::state::{CONFIG, CONTRACT_POOL_COUNT, CURRENT_REWARD_FOR_POOL, FeeDetails,
+                   GAME_DETAILS, GameDetails, GameResult, PLATFORM_WALLET_PERCENTAGES,
+                   POOL_DETAILS, POOL_TEAM_DETAILS, POOL_TYPE_DETAILS, PoolDetails, PoolTeamDetails,
+                   PoolTypeDetails, SWAP_BALANCE_INFO, SwapBalanceDetails,
+                   WalletPercentage, WalletTransferDetails};
 
 pub fn received_message(
     deps: DepsMut,
@@ -535,7 +540,6 @@ pub fn game_pool_bid_submit(
         }
         None => {}
     }
-    println!("user team count = {:?}", user_team_count);
     if user_team_count >= max_teams_for_gamer {
         return Err(ContractError::Std(StdError::GenericErr {
             msg: String::from("User max team limit reached "),

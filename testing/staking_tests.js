@@ -274,7 +274,7 @@ let wallets_for_test = await wallets_to_obj(wallets_json)
 await load_funds(wallets_for_test, 10, 10)
 // Run the contract setup and deployment
 club_staking_address = await deploy_contract(ClubStakingContractPath, clubStakingInitMessage)
-console.log(`Cubstaking Address:${club_staking_address} `)
+console.log(`Cubstaking Address:${club_staking_address}`)
 //Fund the wallets
 await fund(nitin_wallet)
 await fund(sameer_wallet)
@@ -295,3 +295,6 @@ await increaseRewardAmount(1000000)
 // Distribute Rewards
 await distribute_reward_perbatch("clubA", wallets_for_test)
 await distribute_reward_perbatch("clubB", wallets_for_test, false)
+// Query stakes Again to check if balances have increased
+await query_club_staking("clubA", wallets_for_test)
+await query_club_staking("clubB", wallets_for_test)
