@@ -250,6 +250,7 @@ async function instantiateClubStaking(deploymentDetails) {
             platform_fees: "100",
             transaction_fees: "30",
             control_fees: "50",
+            max_bonding_limit_per_user: 100,
         }
         console.log(JSON.stringify(clubStakingInitMessage, null, 2));
         let result = await instantiateContract(mint_wallet, deploymentDetails.clubStakingId, clubStakingInitMessage);
