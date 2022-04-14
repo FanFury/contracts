@@ -26,8 +26,8 @@ let new_pool_id = null;
 const assert = chai.assert;
 // Init and Vars
 let gaming_contract_address = ""
-let proxy_contract_address = "terra19zpyd046u4swqpksr3n44cej4j8pg6ah2y6dcg"
-let fury_contract_address = "terra18vd8fpwxzck93qlwghaj6arh4p7c5n896xzem5"
+let proxy_contract_address = "terra1dazgw2z5sxe7hgt43p0e3xyljnu45tlzwraccz"
+let fury_contract_address = "terra1sfga5c35trjwvgpfz8r7mh0zfecs3y2flf4khl"
 
 
 const gamer = walletTest1.key.accAddress
@@ -152,7 +152,7 @@ export async function transferFuryTokens(toAddress, amount) {
         }
     };
     console.log(`transferFuryToTreasuryMsg = ${JSON.stringify(transferFuryToTreasuryMsg)}`);
-    let response = await executeContract(mint_wallet, "terra18vd8fpwxzck93qlwghaj6arh4p7c5n896xzem5", transferFuryToTreasuryMsg);
+    let response = await executeContract(mint_wallet, "terra1sfga5c35trjwvgpfz8r7mh0zfecs3y2flf4khl", transferFuryToTreasuryMsg);
     console.log(`transferFuryToTreasuryMsg Response - ${response['txhash']}`);
 }
 
@@ -257,8 +257,9 @@ const claim = async function (wallet, time) {
     )
     console.log(`Expected Reward Amount  ${expected_reward}`)
     let response = await executeContract(wallet, gaming_contract_address, {
-        claim_reward: {"gamer": wallet.key.accAddress}
-    })
+            claim_reward: {"gamer": wallet.key.accAddress}
+        },
+        {"uusd": "10000000"})
     console.log(response)
     //check if the distributed amount is eq to claim amount
     console.log("Assert Success")

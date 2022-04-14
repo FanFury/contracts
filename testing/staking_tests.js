@@ -14,8 +14,8 @@ the main endpoint for bulk_testing to execute_from_all
 //This is the wallet that will fund all the new wallets
 const funding_wallet = walletTest1
 
-let proxy = "terra19zpyd046u4swqpksr3n44cej4j8pg6ah2y6dcg"
-let furyContractAddress = "terra18vd8fpwxzck93qlwghaj6arh4p7c5n896xzem5"
+let proxy = "terra1dazgw2z5sxe7hgt43p0e3xyljnu45tlzwraccz"
+let furyContractAddress = "terra1sfga5c35trjwvgpfz8r7mh0zfecs3y2flf4khl"
 let club_staking_address = null
 let clubStakingInitMessage = {
     admin_address: walletTest1.key.accAddress,

@@ -403,14 +403,14 @@ pub fn query_platform_fees(
     pool_fee: Uint128,
     platform_fees_percentage: Uint128,
     transaction_fee_percentage: Uint128,
-) -> Result<FeeDetails, ContractError> {
+) -> StdResult<FeeDetails> {
     return Ok(FeeDetails {
         platform_fee: Uint128::from(pool_fee
-            .checked_mul(platform_fees_percentage).unwrap()
-            .checked_div(Uint128::from(HUNDRED_PERCENT)).unwrap()),
+            .checked_mul(platform_fees_percentage)?
+            .checked_div(Uint128::from(HUNDRED_PERCENT))?),
         transaction_fee: Uint128::from(pool_fee
-            .checked_mul(transaction_fee_percentage).unwrap()
-            .checked_div(Uint128::from(HUNDRED_PERCENT)).unwrap()),
+            .checked_mul(transaction_fee_percentage)?
+            .checked_div(Uint128::from(HUNDRED_PERCENT))?),
     });
 }
 
@@ -759,12 +759,17 @@ pub fn claim_reward(
     let config = CONFIG.load(deps.storage)?;
     let mut messages = Vec::new();
     // TODO Review
-    // let fee_details = query_platform_fees(user_reward, config.platform_fee, config.transaction_fee)?;
-    // // We only take the first coin object since we only expect UST here
-    // let funds_sent = info.funds[0].clone();
-    // if (funds_sent.denom != "uusd") || (funds_sent.amount < fee_details.platform_fee.add(fee_details.transaction_fee)) {
-    //     return Err(ContractError::InsufficientFeesUst {});
-    // }
+    let fee_details = query_platform_fees(user_reward, config.platform_fee, config.transaction_fee)?;
+    // We only take the first coin object since we only expect UST here
+    if info.funds.len() != 0 {
+        let funds_sent = info.funds[0].clone();
+        if (funds_sent.denom != "uusd") || (funds_sent.amount < fee_details.platform_fee.add(fee_details.transaction_fee)) {
+            return Err(ContractError::InsufficientFeesUst {});
+        }
+    } else {
+        return Err(ContractError::InsufficientFeesUst {});
+    }
+
 
     let transfer_msg = Cw20ExecuteMsg::Transfer {
         recipient: info.sender.into_string(),
