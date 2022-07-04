@@ -1,0 +1,41 @@
+{
+  "terra145zesap788dr25egncd0xnnvgy8tvj4d08fm99": {
+    "user": "terra145zesap788dr25egncd0xnnvgy8tvj4d08fm99",
+    "furyTx": {
+      "withdrawal": [
+        "51512444081"
+      ],
+      "deposit": []
+    },
+    "uusdTx": {
+      "withdrawal": [],
+      "deposit": []
+    }
+  },
+  "terra14tnt2l0qep7x45j5apntaqagdss5vsp2ytcf8w": {
+    "user": "terra14tnt2l0qep7x45j5apntaqagdss5vsp2ytcf8w",
+    "furyTx": {
+      "withdrawal": [],
+      "deposit": []
+    },
+    "uusdTx": {
+      "withdrawal": [],
+      "deposit": [
+        "154013572"
+      ]
+    }
+  },
+  "": {
+    "user": "",
+    "furyTx": {
+      "withdrawal": [],
+      "deposit": []
+    },
+    "uusdTx": {
+      "withdrawal": [
+        null
+      ],
+      "deposit": []
+    }
+  }
+}

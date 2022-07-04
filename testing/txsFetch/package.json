@@ -1,0 +1,14 @@
+{
+    "name": "testing",
+    "version": "1.0.0",
+    "description": "For fecthing tx details from forge contract",
+    "main": "test_txs.js",
+    "scripts": {},
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "axios": "^0.21.1"
+    },
+    "devDependencies": {},
+    "type": "module"
+}
