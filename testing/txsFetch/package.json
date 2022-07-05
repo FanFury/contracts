@@ -7,8 +7,8 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "axios": "^0.21.1"
+        "axios": "^0.21.1",
+        "json-2-csv": "^3.17.1"
     },
-    "devDependencies": {},
     "type": "module"
 }

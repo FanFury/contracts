@@ -1,4 +1,247 @@
 {
+  "terra1gtpgu85f3q6muumm0pmv0u403m9m5fmjn98qag": {
+    "user": "terra1gtpgu85f3q6muumm0pmv0u403m9m5fmjn98qag",
+    "furyTx": {
+      "withdrawal": [
+        "234115650"
+      ],
+      "deposit": []
+    },
+    "uusdTx": {
+      "withdrawal": [],
+      "deposit": [
+        "10000000"
+      ]
+    },
+    "txHash": [
+      "63B213DF854A5A6C40F2356FDB912E32551DBF88DA5B2080B62A1C2D2D88FBAE",
+      "201B1D5006607181DF78B9436FF97F8DE7EC0D9B475637BFC1DDD65F70773D14"
+    ]
+  },
+  "terra1d3vv03sghfj9lyjrwn76a5kla085mn8wl22jl7": {
+    "user": "terra1d3vv03sghfj9lyjrwn76a5kla085mn8wl22jl7",
+    "furyTx": {
+      "withdrawal": [
+        "1404693903"
+      ],
+      "deposit": []
+    },
+    "uusdTx": {
+      "withdrawal": [],
+      "deposit": [
+        "10000000",
+        "50000000"
+      ]
+    },
+    "txHash": [
+      "FE9E137C87EE32979E8C4E73406FD81735F57B3A4AC1940EA644127ABD5F0B35",
+      "A2BB2D3873BA890BAFB605F60D1660C2C4FBD7BA7F2EAF54E71B5D2CBE089C6C",
+      "FA4743A06FB208FE24B13405EEA621B2A56E16F3133017AEAD7F28DB4D0F9D3D"
+    ]
+  },
+  "terra1xdsxvujz4d9nf4vzesp6anfljw2uav0q8vax7t": {
+    "user": "terra1xdsxvujz4d9nf4vzesp6anfljw2uav0q8vax7t",
+    "furyTx": {
+      "withdrawal": [
+        "4617752156"
+      ],
+      "deposit": []
+    },
+    "uusdTx": {
+      "withdrawal": [],
+      "deposit": [
+        "197242352"
+      ]
+    },
+    "txHash": [
+      "7B1BF1FE3B4505A58E7396F980A0DD73EDA030AE246F40A5E706A632929263D7",
+      "153F77B6C15AE834B15576990C4CD9E7584E56E65FEE9D24C21BC7F67236020D"
+    ]
+  },
+  "terra1vztallwvxzrk0fgnuypwxn565j25tja7q8ypxl": {
+    "user": "terra1vztallwvxzrk0fgnuypwxn565j25tja7q8ypxl",
+    "furyTx": {
+      "withdrawal": [
+        "538465996"
+      ],
+      "deposit": []
+    },
+    "uusdTx": {
+      "withdrawal": [],
+      "deposit": [
+        "20000000",
+        "3000000"
+      ]
+    },
+    "txHash": [
+      "38BF6E82D214D1E6BE7638F12E150A164C90CB837F47B7409B1AA42FCA162618",
+      "7AF65E63EE27584C66F1D9F4912A75B2F9BC2156E16E21C912ED2BCFDAA4CCF2",
+      "7400AD9B6147E5485999976FF34C1C4E743DB72A38F82DF2BFF66D5B1B6B8CCA"
+    ]
+  },
+  "terra12l8lmql9jrmjtze6428yyxvjwjv8qzx229djmm": {
+    "user": "terra12l8lmql9jrmjtze6428yyxvjwjv8qzx229djmm",
+    "furyTx": {
+      "withdrawal": [
+        "4819176927"
+      ],
+      "deposit": []
+    },
+    "uusdTx": {
+      "withdrawal": [],
+      "deposit": [
+        "39731604",
+        "166114392"
+      ]
+    },
+    "txHash": [
+      "C5AFECC4B6735FC9A257D5E3CAF00BC93AFD13F54AB1139EB87F1981BB17DDDF",
+      "AA75522FFB5E52EC8BEAC9504AB5D922CDFFD34803468812B469B210A3C8396D",
+      "10CC7E3DFD521B43615F9C73955E4B9007280786615C1B3E913231A23E137029"
+    ]
+  },
+  "terra1wn59sjrwzulkq0m6tzkz6k52knm5hhxwm4ngyu": {
+    "user": "terra1wn59sjrwzulkq0m6tzkz6k52knm5hhxwm4ngyu",
+    "furyTx": {
+      "withdrawal": [
+        "46823130121"
+      ],
+      "deposit": []
+    },
+    "uusdTx": {
+      "withdrawal": [],
+      "deposit": [
+        "400000000",
+        "1600000000"
+      ]
+    },
+    "txHash": [
+      "F0CD2AD335D34BA50E6259A9098732D6DE99137DAAF9066A22A0B15B12D42AD9",
+      "67757CB0FEE228B120DA3EE3B3636699540C3870CB6C5ECA30C25A84CA08C35B",
+      "63CBE1130C998BC800B6EF6D012A3F05C841EDA2CE921FF4A290D3A0E420C24F"
+    ]
+  },
+  "terra1dc4rlm6fc0af5kr958utzxmtzk56ek5fztd59g": {
+    "user": "terra1dc4rlm6fc0af5kr958utzxmtzk56ek5fztd59g",
+    "furyTx": {
+      "withdrawal": [
+        "31703161027"
+      ],
+      "deposit": []
+    },
+    "uusdTx": {
+      "withdrawal": [
+        "1145833333"
+      ],
+      "deposit": [
+        "2500000000"
+      ]
+    },
+    "txHash": [
+      "E21CBDD5123C5FAEE44631E94952A1972B52FF33987BA02E491801A0F0F89CA8",
+      "66C5FB39CAF2CD2E0BB46760DBB2D6BEB465E0BF4E0E5BF645F4A3698042D128",
+      "BB5A4CE38E537F7747F8B855AA1BB74A514BCDE01DFFE858E552C3E3432156C1"
+    ]
+  },
+  "terra16ansa9t3nvxunc78pxxtq8ev7ypkr6wkdvttjl": {
+    "user": "terra16ansa9t3nvxunc78pxxtq8ev7ypkr6wkdvttjl",
+    "furyTx": {
+      "withdrawal": [
+        "4682313012"
+      ],
+      "deposit": []
+    },
+    "uusdTx": {
+      "withdrawal": [],
+      "deposit": [
+        "200000000"
+      ]
+    },
+    "txHash": [
+      "8FBD2869D690E4606F4F7D36ECCD2AE0A388728478C28C7CC005A31739892F89",
+      "D15242C6BCE78C652784DDFE30A9301620E849E681F202FB0964F662EFEE9CE0"
+    ]
+  },
+  "terra1yguh7dmeh5nw7cek6sljktwkscdgx9het0y6e0": {
+    "user": "terra1yguh7dmeh5nw7cek6sljktwkscdgx9het0y6e0",
+    "furyTx": {
+      "withdrawal": [
+        "4682313012"
+      ],
+      "deposit": []
+    },
+    "uusdTx": {
+      "withdrawal": [],
+      "deposit": [
+        "200000000"
+      ]
+    },
+    "txHash": [
+      "3F9DA2D2992AEA052DCA1ECBD9A471709C939F41B1D07517BB8246150C5835C5",
+      "E9AC26A3ED5218EDF4E765E3BB0F956DF57275F3AC99210E811CFD8569923B87"
+    ]
+  },
+  "terra19fwd2tllnth9yp7nf2y6cxvppewfhujcd3d080": {
+    "user": "terra19fwd2tllnth9yp7nf2y6cxvppewfhujcd3d080",
+    "furyTx": {
+      "withdrawal": [
+        "4682313012"
+      ],
+      "deposit": []
+    },
+    "uusdTx": {
+      "withdrawal": [],
+      "deposit": [
+        "200000000"
+      ]
+    },
+    "txHash": [
+      "9433ACDAFBDE9BD5A7F4E81B6CE9A034ED9A751C5AEC0D998174D3A4E64C021B",
+      "5755E790243299E8D891ACCB23220A8DD82E425263F282654E68C89A88EAC11B"
+    ]
+  },
+  "terra1886kym4755df2rl0y3ejcttxmkjt7wegtafla4": {
+    "user": "terra1886kym4755df2rl0y3ejcttxmkjt7wegtafla4",
+    "furyTx": {
+      "withdrawal": [
+        "6087006915"
+      ],
+      "deposit": []
+    },
+    "uusdTx": {
+      "withdrawal": [],
+      "deposit": [
+        "250000000",
+        "10000000"
+      ]
+    },
+    "txHash": [
+      "B2B42199162D7F0862B8FE6911295152037D4E440F13A114050343C2BCB5554D",
+      "F77AD7C4C2822E773FC96DDB783AAAAACDCA8A47C542573C6467B46C87578107",
+      "41E3893CFEB52C4A61E32729A9B25B28F197C779128A5A0D75C40401925F0BC4"
+    ]
+  },
+  "terra1v4jwc4prqzy7dzvylxlxw234uxffq4lxl6rhse": {
+    "user": "terra1v4jwc4prqzy7dzvylxlxw234uxffq4lxl6rhse",
+    "furyTx": {
+      "withdrawal": [
+        "18729252048"
+      ],
+      "deposit": []
+    },
+    "uusdTx": {
+      "withdrawal": [],
+      "deposit": [
+        "450000000",
+        "350000000"
+      ]
+    },
+    "txHash": [
+      "98D96A1A75CFFE400DFC2E8B3A48ADA39402813781D5D0485C733BD5ED69C281",
+      "C72595C48D7630D0D820888969A27C11E3C62A8ECE391BC7411A2DB3FD02E989",
+      "4E18F38DDA5113EFB75CF3CE48F76CBBA521BA4FA905F1C8F8E29BDF35E5194C"
+    ]
+  },
   "terra1dkdvv4qw9uzyp8t0n9kgkgp3wrcs8wg0aa9tsk": {
     "user": "terra1dkdvv4qw9uzyp8t0n9kgkgp3wrcs8wg0aa9tsk",
     "furyTx": {
@@ -6709,25 +6952,6 @@
       "9CE59A417B03D07C7EB15C476B2D06C7907AAFB8A1DF7C1EDDB65F3DB8BF9AEC"
     ]
   },
-  "terra1dc4rlm6fc0af5kr958utzxmtzk56ek5fztd59g": {
-    "user": "terra1dc4rlm6fc0af5kr958utzxmtzk56ek5fztd59g",
-    "furyTx": {
-      "withdrawal": [],
-      "deposit": []
-    },
-    "uusdTx": {
-      "withdrawal": [
-        "1145833333"
-      ],
-      "deposit": [
-        "2500000000"
-      ]
-    },
-    "txHash": [
-      "66C5FB39CAF2CD2E0BB46760DBB2D6BEB465E0BF4E0E5BF645F4A3698042D128",
-      "BB5A4CE38E537F7747F8B855AA1BB74A514BCDE01DFFE858E552C3E3432156C1"
-    ]
-  },
   "terra1pwjf94z4swqk6lkqs75gmpujlcvhmu20g8ac5p": {
     "user": "terra1pwjf94z4swqk6lkqs75gmpujlcvhmu20g8ac5p",
     "furyTx": {
@@ -6844,24 +7068,6 @@
     "txHash": [
       "56455F7EA033307920851A5EB0E8F71AE6513C63276F883F80DBBAEE6F306E68",
       "8D1FCE3F7B220FA38BE9AD5D57E20C75A5D5F4C9BB88E951F36938138AB4D679"
-    ]
-  },
-  "terra12l8lmql9jrmjtze6428yyxvjwjv8qzx229djmm": {
-    "user": "terra12l8lmql9jrmjtze6428yyxvjwjv8qzx229djmm",
-    "furyTx": {
-      "withdrawal": [],
-      "deposit": []
-    },
-    "uusdTx": {
-      "withdrawal": [],
-      "deposit": [
-        "39731604",
-        "166114392"
-      ]
-    },
-    "txHash": [
-      "AA75522FFB5E52EC8BEAC9504AB5D922CDFFD34803468812B469B210A3C8396D",
-      "10CC7E3DFD521B43615F9C73955E4B9007280786615C1B3E913231A23E137029"
     ]
   },
   "terra1zsv5gm2dfuaqsurnzh4nn4wmylsj9thkdvrxfl": {
@@ -7065,42 +7271,6 @@
     },
     "txHash": [
       "0F97137B2CAD1F18DFAF414E81BFA16FA3BDA9AEC72138FD1AAC9D141198BEF3"
-    ]
-  },
-  "terra1886kym4755df2rl0y3ejcttxmkjt7wegtafla4": {
-    "user": "terra1886kym4755df2rl0y3ejcttxmkjt7wegtafla4",
-    "furyTx": {
-      "withdrawal": [],
-      "deposit": []
-    },
-    "uusdTx": {
-      "withdrawal": [],
-      "deposit": [
-        "250000000",
-        "10000000"
-      ]
-    },
-    "txHash": [
-      "F77AD7C4C2822E773FC96DDB783AAAAACDCA8A47C542573C6467B46C87578107",
-      "41E3893CFEB52C4A61E32729A9B25B28F197C779128A5A0D75C40401925F0BC4"
-    ]
-  },
-  "terra1d3vv03sghfj9lyjrwn76a5kla085mn8wl22jl7": {
-    "user": "terra1d3vv03sghfj9lyjrwn76a5kla085mn8wl22jl7",
-    "furyTx": {
-      "withdrawal": [],
-      "deposit": []
-    },
-    "uusdTx": {
-      "withdrawal": [],
-      "deposit": [
-        "10000000",
-        "50000000"
-      ]
-    },
-    "txHash": [
-      "A2BB2D3873BA890BAFB605F60D1660C2C4FBD7BA7F2EAF54E71B5D2CBE089C6C",
-      "FA4743A06FB208FE24B13405EEA621B2A56E16F3133017AEAD7F28DB4D0F9D3D"
     ]
   },
   "terra1q32v9wvsqva9ut02ke2q0jljl50wywkacrtzal": {
@@ -7307,22 +7477,6 @@
       "560115ED0B28963DA8A9A7A2A42A2277074DE38B784476766795567816E640D2"
     ]
   },
-  "terra1xdsxvujz4d9nf4vzesp6anfljw2uav0q8vax7t": {
-    "user": "terra1xdsxvujz4d9nf4vzesp6anfljw2uav0q8vax7t",
-    "furyTx": {
-      "withdrawal": [],
-      "deposit": []
-    },
-    "uusdTx": {
-      "withdrawal": [],
-      "deposit": [
-        "197242352"
-      ]
-    },
-    "txHash": [
-      "153F77B6C15AE834B15576990C4CD9E7584E56E65FEE9D24C21BC7F67236020D"
-    ]
-  },
   "terra1ywcj0qmuvfv6v97esqd6qyptsw2cqzya8fx4kf": {
     "user": "terra1ywcj0qmuvfv6v97esqd6qyptsw2cqzya8fx4kf",
     "furyTx": {
@@ -7419,22 +7573,6 @@
       "452C004E9AA4E2CC311022C332AC7CADF218FAC6DDEC07FC09FB8F2F56CBEFE0"
     ]
   },
-  "terra19fwd2tllnth9yp7nf2y6cxvppewfhujcd3d080": {
-    "user": "terra19fwd2tllnth9yp7nf2y6cxvppewfhujcd3d080",
-    "furyTx": {
-      "withdrawal": [],
-      "deposit": []
-    },
-    "uusdTx": {
-      "withdrawal": [],
-      "deposit": [
-        "200000000"
-      ]
-    },
-    "txHash": [
-      "5755E790243299E8D891ACCB23220A8DD82E425263F282654E68C89A88EAC11B"
-    ]
-  },
   "terra1cm2w06lc2egp238menlz0nt8gtvmktcyrpv4eg": {
     "user": "terra1cm2w06lc2egp238menlz0nt8gtvmktcyrpv4eg",
     "furyTx": {
@@ -7467,22 +7605,6 @@
       "27AB9E8D50566E61F7A00FAF660BEEBD67DA8CDFCA9252E8819EB81FD21E4B69"
     ]
   },
-  "terra16ansa9t3nvxunc78pxxtq8ev7ypkr6wkdvttjl": {
-    "user": "terra16ansa9t3nvxunc78pxxtq8ev7ypkr6wkdvttjl",
-    "furyTx": {
-      "withdrawal": [],
-      "deposit": []
-    },
-    "uusdTx": {
-      "withdrawal": [],
-      "deposit": [
-        "200000000"
-      ]
-    },
-    "txHash": [
-      "D15242C6BCE78C652784DDFE30A9301620E849E681F202FB0964F662EFEE9CE0"
-    ]
-  },
   "terra1wef7fprchertja0uqvhfay9h0nts287e4xzv4z": {
     "user": "terra1wef7fprchertja0uqvhfay9h0nts287e4xzv4z",
     "furyTx": {
@@ -7497,24 +7619,6 @@
     },
     "txHash": [
       "D993FEFF5DF7BD20484AC938C3D3288C5F1B572F3506D08D5C7CBFE2DE08060E"
-    ]
-  },
-  "terra1v4jwc4prqzy7dzvylxlxw234uxffq4lxl6rhse": {
-    "user": "terra1v4jwc4prqzy7dzvylxlxw234uxffq4lxl6rhse",
-    "furyTx": {
-      "withdrawal": [],
-      "deposit": []
-    },
-    "uusdTx": {
-      "withdrawal": [],
-      "deposit": [
-        "450000000",
-        "350000000"
-      ]
-    },
-    "txHash": [
-      "C72595C48D7630D0D820888969A27C11E3C62A8ECE391BC7411A2DB3FD02E989",
-      "4E18F38DDA5113EFB75CF3CE48F76CBBA521BA4FA905F1C8F8E29BDF35E5194C"
     ]
   },
   "terra1zw9rxtdm47rrqdmcmk7lrnxl0s5h2sengthfru": {
@@ -7630,24 +7734,6 @@
     },
     "txHash": [
       "936A8B1AD2068BE6ED4EF63C1D9F4F8B309E9CDD06291A686A8F60515D0CE4FD"
-    ]
-  },
-  "terra1vztallwvxzrk0fgnuypwxn565j25tja7q8ypxl": {
-    "user": "terra1vztallwvxzrk0fgnuypwxn565j25tja7q8ypxl",
-    "furyTx": {
-      "withdrawal": [],
-      "deposit": []
-    },
-    "uusdTx": {
-      "withdrawal": [],
-      "deposit": [
-        "20000000",
-        "3000000"
-      ]
-    },
-    "txHash": [
-      "7AF65E63EE27584C66F1D9F4912A75B2F9BC2156E16E21C912ED2BCFDAA4CCF2",
-      "7400AD9B6147E5485999976FF34C1C4E743DB72A38F82DF2BFF66D5B1B6B8CCA"
     ]
   },
   "terra1m09a6h6rc4ez4sfwnj3svzmv97gw8rdl7ep80v": {
@@ -7817,24 +7903,6 @@
       "2F2559795A693087113E9F4CF84B712A9E51B10F04F350F4D1048418F278120C"
     ]
   },
-  "terra1wn59sjrwzulkq0m6tzkz6k52knm5hhxwm4ngyu": {
-    "user": "terra1wn59sjrwzulkq0m6tzkz6k52knm5hhxwm4ngyu",
-    "furyTx": {
-      "withdrawal": [],
-      "deposit": []
-    },
-    "uusdTx": {
-      "withdrawal": [],
-      "deposit": [
-        "400000000",
-        "1600000000"
-      ]
-    },
-    "txHash": [
-      "67757CB0FEE228B120DA3EE3B3636699540C3870CB6C5ECA30C25A84CA08C35B",
-      "63CBE1130C998BC800B6EF6D012A3F05C841EDA2CE921FF4A290D3A0E420C24F"
-    ]
-  },
   "terra14ncvxzmf2e6cz8lrecnsl5e5dfw7e97fyp5f27": {
     "user": "terra14ncvxzmf2e6cz8lrecnsl5e5dfw7e97fyp5f27",
     "furyTx": {
@@ -7947,22 +8015,6 @@
     },
     "txHash": [
       "AEC6019DD42884968C56416CE5DCCF1E3F92989E9DF54B57E3718B9AE4EFC31E"
-    ]
-  },
-  "terra1yguh7dmeh5nw7cek6sljktwkscdgx9het0y6e0": {
-    "user": "terra1yguh7dmeh5nw7cek6sljktwkscdgx9het0y6e0",
-    "furyTx": {
-      "withdrawal": [],
-      "deposit": []
-    },
-    "uusdTx": {
-      "withdrawal": [],
-      "deposit": [
-        "200000000"
-      ]
-    },
-    "txHash": [
-      "E9AC26A3ED5218EDF4E765E3BB0F956DF57275F3AC99210E811CFD8569923B87"
     ]
   },
   "terra1tsa9whxqtyd7wk4064v7y64437he0q40d90uz6": {
@@ -8144,22 +8196,6 @@
       "99AEBA19414B9BE16186544AEE4958A49E8817378FE3F17BFB4839437F8EA282",
       "551A74476225A1230728A59E42BC48E553E09A8F862595D03E2EC88BF3B2B5C7",
       "3E58ABB22BB2106C027A965A92EC26144E626D82EE6AF05BA8ECB86E8D8E0594"
-    ]
-  },
-  "terra1gtpgu85f3q6muumm0pmv0u403m9m5fmjn98qag": {
-    "user": "terra1gtpgu85f3q6muumm0pmv0u403m9m5fmjn98qag",
-    "furyTx": {
-      "withdrawal": [],
-      "deposit": []
-    },
-    "uusdTx": {
-      "withdrawal": [],
-      "deposit": [
-        "10000000"
-      ]
-    },
-    "txHash": [
-      "201B1D5006607181DF78B9436FF97F8DE7EC0D9B475637BFC1DDD65F70773D14"
     ]
   },
   "terra1ersc76egy5taq9wfwc4nrjfu0phujefadmn3xr": {

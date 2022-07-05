@@ -1,5 +1,10 @@
 import config from './config.js'
 import { IsNotNullAndUndefined, promiseRequest, readArtifact, writeArtifact } from './util.js'
+import pkg from 'json-2-csv';
+const { json2csv } = pkg;
+import {writeFile} from "fs";
+
+
 
 const acMap = new Map()
 // const spenderList = []
@@ -18,16 +23,20 @@ const userTxMap = {}
 const userBalanceList = []
 
 async function checkTxList() {
+  let txCount = 0
   for (const tx of config.values()) {
     let url = "https://columbus-fcd.terra.dev/v1/tx/" + tx
     let resp = await promiseRequest("GET", url)
     txList.push(resp.data)
+    txCount ++;
   }
+  console.log("Tx Count from file : " + txCount)
   return txList
 }
 
 function createUserTxInfo() {
   txList = readArtifact("alltx.json")
+  let txCount =0
   txList.forEach(tx => {
     let action = checkActionType(tx.tx.value.msg)
     processAction(tx, action)
@@ -188,14 +197,38 @@ async function processTxs() {
   // await writeArtifact(txList)
   
   // Process all txs existing in alltx.json & crcreate userTx.json containing details of userTx as per userTxDetail structure
-  // await createUserTxInfo()
-  // writeArtifact(userTxMap, "userTx")
+  await createUserTxInfo()
+  writeArtifact(userTxMap, "userTx")
 
   processUserTxs()
   let count = 1
+  let furyCount = 0
+  let uusdCount = 0
   userBalanceList.forEach(elem => {
     console.log(count++ + "." + elem.user + " : furyBalance : " + elem.furyBalance + " , uusdBalance : " + elem.uusdBalance )
+    furyCount+= elem.furyBalance
+    uusdCount+= elem.uusdBalance
   })
+
+  console.log("total furycount " + furyCount)
+  console.log("total uusdcount " + uusdCount)
+
+
+  let json2csvCallback = function (err, csv) {
+    if (err) throw err;
+      writeFile('usertx.csv', csv, 'utf8', function(err) {
+      if (err) {
+        console.log('Some error occured - file either not saved or corrupted file saved.');
+      } else {
+        // console.log('It\'s saved!');
+      }
+    });
+};
+
+  json2csv(userBalanceList, json2csvCallback, {
+  prependHeader: false      // removes the generated header of "value1,value2,value3,value4" (in case you don't want it)
+});
+
   console.log("completed..")
 }
 
