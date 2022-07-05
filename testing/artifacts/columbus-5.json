@@ -1,3 +1,4 @@
 {
-    "adminWallet": "terra1ttjw6nscdmkrx3zhxqx3md37phldgwhggm345k"
+    "poolLpTokenAddress" : "terra1xjl8xqg2ahjg5yfslg4n6lyl7qam0jne0440ps",
+    "proxyContractAddress": "terra14lzyqc5x0emg57jq5dr47fzg0fu8u8fq06frhx"
 }

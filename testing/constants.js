@@ -12,7 +12,7 @@ export const sleep_time = (debug) ? 0 : 31000; // Sleep Time For All Test Proces
 // Terra Clients
 export const terraTestnetClient = new LCDClient({
     URL: 'https://lcd.terra.dev/',
-    chainID: 'columbus-5f',
+    chainID: 'columbus-5',
 });
 
 
@@ -30,7 +30,8 @@ console.log("terraClient.chainID = " + terraClient.chainID);
 const mk1 = new MnemonicKey({mnemonic: "awesome festival volume rifle diagram suffer rhythm knock unlock reveal marine transfer lumber faint walnut love hover beach amazing robust oppose moon west will",});
 export const mint_wallet = terraClient.wallet(mk1);
 
-const mk2 = new MnemonicKey({mnemonic: "kiwi habit donor choice control fruit fame hamster trip aerobic juice lens lawn popular fossil taste venture furnace october income advice window opera helmet",});
+// const mk2 = new MnemonicKey({mnemonic: "kiwi habit donor choice control fruit fame hamster trip aerobic juice lens lawn popular fossil taste venture furnace october income advice window opera helmet",});
+const mk2 = new MnemonicKey({mnemonic: "toilet wink aim lyrics promote chief become spring problem crane shield custom midnight autumn direct mystery average claw kind glad wear tail acid cotton"});
 export const treasury_wallet = terraClient.wallet(mk2);
 
 const mk3 = new MnemonicKey({mnemonic: "job dilemma fold hurry solar strong solar priority lawsuit pass demise senior purpose useless outdoor jaguar identify enhance dirt vehicle fun nasty dragon still",});

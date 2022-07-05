@@ -82,15 +82,15 @@ async function proceedToSetup(deploymentDetails) {
     // if (startFresh === 'Y' || startFresh === 'y') {
     //     deploymentDetails = {};
     // }
-    if (!deploymentDetails.adminWallet) {
-        deploymentDetails.adminWallet = mint_wallet.key.accAddress;
-    }
+    // if (!deploymentDetails.adminWallet) {
+    //     deploymentDetails.adminWallet = mint_wallet.key.accAddress;
+    // }
     if (!deploymentDetails.authLiquidityProvider) {
         deploymentDetails.authLiquidityProvider = treasury_wallet.key.accAddress;
     }
-    if (!deploymentDetails.defaultLPTokenHolder) {
-        deploymentDetails.defaultLPTokenHolder = liquidity_wallet.key.accAddress;
-    }
+    // if (!deploymentDetails.defaultLPTokenHolder) {
+    //     deploymentDetails.defaultLPTokenHolder = liquidity_wallet.key.accAddress;
+    // }
     const sleep_time = (process.env.TERRA_CLIENT === "localTerra") ? 31 : 15000;
 
     // await uploadFuryTokenContract(deploymentDetails);
@@ -128,7 +128,7 @@ async function proceedToSetup(deploymentDetails) {
     // await queryProxyConfiguration(deploymentDetails);
     // await new Promise(resolve => setTimeout(resolve, sleep_time));
     console.log("deploymentDetails = " + JSON.stringify(deploymentDetails, null, ' '));
-    rl.close();
+    // rl.close();
     await performOperations(deploymentDetails);
 }
 
@@ -446,7 +446,7 @@ async function savePairAddressToProxy(deploymentDetails) {
 }
 
 async function performOperations(deploymentDetails) {
-    // const sleep_time = (process.env.TERRA_CLIENT === "localTerra") ? 31 : 15000;
+    const sleep_time = (process.env.TERRA_CLIENT === "localTerra") ? 31 : 15000;
     // await checkLPTokenDetails(deploymentDetails);
     // await new Promise(resolve => setTimeout(resolve, sleep_time));
     //
@@ -459,8 +459,8 @@ async function performOperations(deploymentDetails) {
     // await transferFuryTokens(deploymentDetails, bonded_lp_reward_wallet, "5000000000");
     // await new Promise(resolve => setTimeout(resolve, sleep_time));
 
-    await provideLiquidityAuthorised(deploymentDetails);
-    await new Promise(resolve => setTimeout(resolve, sleep_time));
+    // await provideLiquidityAuthorised(deploymentDetails);
+     //await new Promise(resolve => setTimeout(resolve, sleep_time));
 
     // await checkLPTokenBalances(deploymentDetails);
     // await new Promise(resolve => setTimeout(resolve, sleep_time));
@@ -481,8 +481,8 @@ async function performOperations(deploymentDetails) {
     // await sellFuryTokens(deploymentDetails);
     // await new Promise(resolve => setTimeout(resolve, sleep_time));
     //
-    // await withdrawLiquidityAutorized(deploymentDetails);
-    // await new Promise(resolve => setTimeout(resolve, sleep_time));
+    await withdrawLiquidityAutorized(deploymentDetails);
+    await new Promise(resolve => setTimeout(resolve, sleep_time));
     //
     // await checkLPTokenBalances(deploymentDetails);
     // await new Promise(resolve => setTimeout(resolve, sleep_time));
@@ -573,18 +573,19 @@ async function withdrawLiquidityAutorized(deploymentDetails) {
     let withdrawMsg = {
         withdraw_liquidity: {
             sender: deploymentDetails.authLiquidityProvider,
-            amount: "1000000000"
+            amount: "33581160620"
         }
     };
     let base64Msg = Buffer.from(JSON.stringify(withdrawMsg)).toString('base64');
     let executeMsg = {
         send: {
             contract: deploymentDetails.proxyContractAddress,
-            amount: "1000000000",
+            amount: "33581160620",
             msg: base64Msg,
         }
     };
     let qResp = await executeContract(treasury_wallet, deploymentDetails.poolLpTokenAddress, executeMsg);
+    console.log("response : " + JSON.stringify(qResp))
     console.log(`withdraw Liquidity (from treasury) Response - ${qResp['txhash']}`);
 }
 
