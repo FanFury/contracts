@@ -4,7 +4,7 @@ dotenv.config();
 import {
     mintInitMessage,
     MintingContractPath,
-    PairContractPath,
+    //PairContractPath,
     walletTest1,
     walletTest2,
     walletTest3,
@@ -12,13 +12,13 @@ import {
     treasury_wallet,
     liquidity_wallet,
     marketing_wallet,
-    bonded_lp_reward_wallet,
+    //bonded_lp_reward_wallet,
     terraTestnetClient,
     localTerraClient,
     terraClient,
-    StakingContractPath,
-    FactoryContractPath,
-    ProxyContractPath
+    // StakingContractPath,
+    // FactoryContractPath,
+    //ProxyContractPath
 } from './constants.js';
 import {
     storeCode,
@@ -78,10 +78,10 @@ export const astroport_setup = async () => {
 }
 
 async function proceedToSetup(deploymentDetails) {
-    const startFresh = await question('Do you want to upload and deploy fresh? (y/N)');
-    if (startFresh === 'Y' || startFresh === 'y') {
-        deploymentDetails = {};
-    }
+    // const startFresh = await question('Do you want to upload and deploy fresh? (y/N)');
+    // if (startFresh === 'Y' || startFresh === 'y') {
+    //     deploymentDetails = {};
+    // }
     if (!deploymentDetails.adminWallet) {
         deploymentDetails.adminWallet = mint_wallet.key.accAddress;
     }
@@ -103,30 +103,30 @@ async function proceedToSetup(deploymentDetails) {
     // await new Promise(resolve => setTimeout(resolve, sleep_time));
     // await transferFuryToLiquidity(deploymentDetails);
     // await new Promise(resolve => setTimeout(resolve, sleep_time));
-    await uploadPairContract(deploymentDetails);
-    await new Promise(resolve => setTimeout(resolve, sleep_time));
-    await uploadStakingContract(deploymentDetails);
-    await new Promise(resolve => setTimeout(resolve, sleep_time));
-    await instantiateStaking(deploymentDetails);
-    await new Promise(resolve => setTimeout(resolve, sleep_time));
-    await uploadWhiteListContract(deploymentDetails);
-    await new Promise(resolve => setTimeout(resolve, sleep_time));
-    await uploadFactoryContract(deploymentDetails);
-    await new Promise(resolve => setTimeout(resolve, sleep_time));
-    await instantiateFactory(deploymentDetails);
-    await new Promise(resolve => setTimeout(resolve, sleep_time));
-    await uploadProxyContract(deploymentDetails);
-    await new Promise(resolve => setTimeout(resolve, sleep_time));
-    await instantiateProxyContract(deploymentDetails);
-    await new Promise(resolve => setTimeout(resolve, sleep_time));
-    await queryProxyConfiguration(deploymentDetails);
-    await new Promise(resolve => setTimeout(resolve, sleep_time));
-    await createPoolPairs(deploymentDetails);
-    await new Promise(resolve => setTimeout(resolve, sleep_time));
-    await savePairAddressToProxy(deploymentDetails);
-    await new Promise(resolve => setTimeout(resolve, sleep_time));
-    await queryProxyConfiguration(deploymentDetails);
-    await new Promise(resolve => setTimeout(resolve, sleep_time));
+    // await uploadPairContract(deploymentDetails);
+    // await new Promise(resolve => setTimeout(resolve, sleep_time));
+    // await uploadStakingContract(deploymentDetails);
+    // await new Promise(resolve => setTimeout(resolve, sleep_time));
+    // await instantiateStaking(deploymentDetails);
+    // await new Promise(resolve => setTimeout(resolve, sleep_time));
+    // await uploadWhiteListContract(deploymentDetails);
+    // await new Promise(resolve => setTimeout(resolve, sleep_time));
+    // await uploadFactoryContract(deploymentDetails);
+    // await new Promise(resolve => setTimeout(resolve, sleep_time));
+    // await instantiateFactory(deploymentDetails);
+    // await new Promise(resolve => setTimeout(resolve, sleep_time));
+    // await uploadProxyContract(deploymentDetails);
+    // await new Promise(resolve => setTimeout(resolve, sleep_time));
+    // await instantiateProxyContract(deploymentDetails);
+    // await new Promise(resolve => setTimeout(resolve, sleep_time));
+    // await queryProxyConfiguration(deploymentDetails);
+    // await new Promise(resolve => setTimeout(resolve, sleep_time));
+    // await createPoolPairs(deploymentDetails);
+    // await new Promise(resolve => setTimeout(resolve, sleep_time));
+    // await savePairAddressToProxy(deploymentDetails);
+    // await new Promise(resolve => setTimeout(resolve, sleep_time));
+    // await queryProxyConfiguration(deploymentDetails);
+    // await new Promise(resolve => setTimeout(resolve, sleep_time));
     console.log("deploymentDetails = " + JSON.stringify(deploymentDetails, null, ' '));
     rl.close();
     await performOperations(deploymentDetails);
@@ -1006,4 +1006,6 @@ async function queryInvestmentReward(deploymentDetails) {
     });
     console.log(`bonded reward query response ${JSON.stringify(qRes)}`);
 }
+
+astroport_setup()
 
