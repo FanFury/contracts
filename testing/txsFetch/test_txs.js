@@ -188,8 +188,8 @@ async function processTxs() {
   // await writeArtifact(txList)
   
   // Process all txs existing in alltx.json & crcreate userTx.json containing details of userTx as per userTxDetail structure
-  await createUserTxInfo()
-  writeArtifact(userTxMap, "userTx")
+  // await createUserTxInfo()
+  // writeArtifact(userTxMap, "userTx")
 
   processUserTxs()
   let count = 1
