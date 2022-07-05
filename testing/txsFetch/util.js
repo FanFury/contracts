@@ -18,10 +18,10 @@ export function writeArtifact(data, name = 'alltx') {
   writeFileSync(path.join(LOC, `${name}.json`), JSON.stringify(data, null, 2))
 }
 
-export function readArtifact(name = 'alltx') {
+export function readArtifact(name = '/home/ashwkuma/for_juno/contracts/testing/txsFetch/alltx.json') {
   try {
       // const data = readFileSync(path.join(LOC, `${name}.json`), 'utf8')
-      const data = readFileSync("/home/ashwkuma/for_juno/contracts/testing/txsFetch/alltx.json", 'utf8')
+      const data = readFileSync(name, 'utf8')
       return JSON.parse(data)
   } catch (e) {
       return {}
