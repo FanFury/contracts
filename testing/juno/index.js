@@ -13,7 +13,8 @@ import {
     StakingContractPath,
     terraClient,
     treasury_wallet,
-    VnDContractPath
+    VnDContractPath,
+    IBCContractPath
 } from './constants.js';
 import {executeContract, instantiateContract, queryContract, readArtifact, storeCode, writeArtifact} from "./utils.js";
 
@@ -42,22 +43,80 @@ let configResponseReceived;
 
 const main = async () => {
     try {
-        let deploymentDetails = readArtifact(terraClient.chainId);
-        let primeAccounts = 'N';
-        if (process.env.TERRA_CLIENT === "testing") {
-            primeAccounts = await question('Do you want to preload custom accounts? (y/N) ');
-        }
-        if (primeAccounts === 'Y' || primeAccounts === 'y') {
-            let txHash = await primeAccountsWithFunds();
-            console.log(txHash);
-            await proceedToSetup(deploymentDetails);
-        } else {
-            await proceedToSetup(deploymentDetails);
-        }
+        let deploymentDetails = readArtifact("uni-3");
+        let abc = await question('Do you want to upload and deploy fresh? (y/N)');
+        // let primeAccounts = 'N';
+        // if (process.env.TERRA_CLIENT === "testing") {
+        //     primeAccounts = await question('Do you want to preload custom accounts? (y/N) ');
+        // }
+        // if (primeAccounts === 'Y' || primeAccounts === 'y') {
+        //     let txHash = await primeAccountsWithFunds();
+        //     console.log(txHash);
+        //     await proceedToSetup(deploymentDetails);
+        // } else {
+        //     await proceedToSetup(deploymentDetails);
+        // }
+        processIbc(deploymentDetails)
     } catch (error) {
         console.log(error);
     } finally {
         rl.close();
+    }
+}
+
+async function processIbc(deploymentDetails) {
+    // const x = await question('Do you want to upload and deploy fresh? (y/N)');
+    if (true) {
+        console.log(`terraClient.chainId = ${terraClient.chainId}`);
+        let sleep_time = (process.env.TERRA_CLIENT === "testing") ? 31 : 150;
+        if (!deploymentDetails.ibcTokenCodeId) {
+            let contractId
+            console.log("Uploading IBC contract");
+            console.log(`mint_wallet = ${mint_wallet.wallet_address}`);
+            console.log(JSON.stringify(mint_wallet.wallet_address));
+            const uploadReciept = await storeCode(mint_wallet, IBCContractPath); // Getting the contract id from local terra
+            contractId = uploadReciept.codeId
+            console.log(`IBC Contract ID: ${contractId}`);
+            deploymentDetails.ibcTokenCodeId = contractId;
+    
+            await new Promise(resolve => setTimeout(resolve, sleep_time));
+    
+            // Now instantiate
+            let instantiatMsg = {
+                default_timeout: 20,
+                gov_contract: deploymentDetails.adminWallet,
+                allowlist: []
+            }
+            console.log("Instantiating IBC contract");
+            let contractAddress = await mint_wallet.init(contractId, instantiatMsg)
+            // The order is very imp
+            console.log(`IBC Contract address: ${contractAddress}`);
+            deploymentDetails.ibcContractAddress = contractAddress;
+    
+            writeArtifact(deploymentDetails, terraClient.chainId);
+            await new Promise(resolve => setTimeout(resolve, sleep_time));
+        } else {
+            let response = await queryContract(mint_wallet, deploymentDetails.ibcContractAddress, {
+                list_channels: {}
+            });
+            console.log(JSON.stringify(response));
+
+            response = await queryContract(mint_wallet, deploymentDetails.ibcContractAddress, {
+                port: {}
+            });
+            console.log(JSON.stringify(response));
+
+            response = await queryContract(mint_wallet, deploymentDetails.ibcContractAddress, {
+                config: {}
+            });
+            console.log(JSON.stringify(response));
+
+            response = await queryContract(mint_wallet, deploymentDetails.ibcContractAddress, {
+                admin: {}
+            });
+            console.log(JSON.stringify(response));
+        }
+
     }
 }
 

@@ -7,6 +7,7 @@ Use This command To Up the Local JUNO
 * */
 
 //-------------------------------
+export const IBCContractPath = "../../artifacts/cw20_ics20_fury.wasm"
 export const MintingContractPath = "../../artifacts/cw20_base.wasm"
 export const VnDContractPath = "../../artifacts/vest_n_distribute.wasm"
 export const PairContractPath = "../../artifacts/terraswap_pair.wasm"
