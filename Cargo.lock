@@ -65,14 +65,14 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "club-staking"
-version = "0.9.1"
+version = "0.11.1"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
- "cw-storage-plus 0.9.1",
- "cw0 0.9.1",
- "cw2 0.9.1",
- "cw20 0.9.1",
+ "cw-storage-plus 0.11.1",
+ "cw0 0.11.1",
+ "cw2 0.11.1",
+ "cw20 0.11.1",
  "schemars",
  "serde",
  "thiserror",
@@ -212,11 +212,11 @@ dependencies = [
 
 [[package]]
 name = "cw-controllers"
-version = "0.9.1"
+version = "0.11.1"
 dependencies = [
  "cosmwasm-std",
- "cw-storage-plus 0.9.1",
- "cw0 0.9.1",
+ "cw-storage-plus 0.11.1",
+ "cw0 0.11.1",
  "schemars",
  "serde",
  "thiserror",
@@ -224,7 +224,7 @@ dependencies = [
 
 [[package]]
 name = "cw-storage-plus"
-version = "0.9.1"
+version = "0.11.1"
 dependencies = [
  "cosmwasm-std",
  "schemars",
@@ -268,17 +268,6 @@ dependencies = [
 
 [[package]]
 name = "cw0"
-version = "0.9.1"
-dependencies = [
- "cosmwasm-std",
- "cw-storage-plus 0.9.1",
- "schemars",
- "serde",
- "thiserror",
-]
-
-[[package]]
-name = "cw0"
 version = "0.10.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ae676b6cced78a3d38ad4b01ab4ed66fc78ac191c3c0d6bfd5372cb2efd473b"
@@ -290,8 +279,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "cw0"
+version = "0.11.1"
+dependencies = [
+ "cosmwasm-std",
+ "cw-storage-plus 0.11.1",
+ "schemars",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "cw1"
-version = "0.9.1"
+version = "0.11.1"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -301,21 +301,21 @@ dependencies = [
 
 [[package]]
 name = "cw1155"
-version = "0.9.1"
+version = "0.11.1"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
- "cw0 0.9.1",
+ "cw0 0.11.1",
  "schemars",
  "serde",
 ]
 
 [[package]]
 name = "cw2"
-version = "0.9.1"
+version = "0.11.1"
 dependencies = [
  "cosmwasm-std",
- "cw-storage-plus 0.9.1",
+ "cw-storage-plus 0.11.1",
  "schemars",
  "serde",
 ]
@@ -334,11 +334,11 @@ dependencies = [
 
 [[package]]
 name = "cw20"
-version = "0.9.1"
+version = "0.11.1"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
- "cw0 0.9.1",
+ "cw0 0.11.1",
  "schemars",
  "serde",
 ]
@@ -369,14 +369,14 @@ dependencies = [
 
 [[package]]
 name = "cw20-base"
-version = "0.9.1"
+version = "0.11.1"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
- "cw-storage-plus 0.9.1",
- "cw0 0.9.1",
- "cw2 0.9.1",
- "cw20 0.9.1",
+ "cw-storage-plus 0.11.1",
+ "cw0 0.11.1",
+ "cw2 0.11.1",
+ "cw20 0.11.1",
  "schemars",
  "serde",
  "thiserror",
@@ -400,33 +400,33 @@ dependencies = [
 
 [[package]]
 name = "cw3"
-version = "0.9.1"
+version = "0.11.1"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
- "cw0 0.9.1",
+ "cw0 0.11.1",
  "schemars",
  "serde",
 ]
 
 [[package]]
 name = "cw4"
-version = "0.9.1"
+version = "0.11.1"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
- "cw-storage-plus 0.9.1",
+ "cw-storage-plus 0.11.1",
  "schemars",
  "serde",
 ]
 
 [[package]]
 name = "cw721"
-version = "0.9.1"
+version = "0.11.1"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
- "cw0 0.9.1",
+ "cw0 0.11.1",
  "schemars",
  "serde",
 ]
@@ -518,15 +518,15 @@ checksum = "c8cbd1169bd7b4a0a20d92b9af7a7e0422888bd38a6f5ec29c1fd8c1558a272e"
 
 [[package]]
 name = "gaming-pool"
-version = "0.9.1"
+version = "0.11.1"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
- "cw-storage-plus 0.9.1",
- "cw0 0.9.1",
- "cw2 0.9.1",
- "cw20 0.9.1",
- "cw20-base 0.9.1",
+ "cw-storage-plus 0.11.1",
+ "cw0 0.11.1",
+ "cw2 0.11.1",
+ "cw20 0.11.1",
+ "cw20-base 0.11.1",
  "schemars",
  "serde",
  "terraswap",
@@ -866,7 +866,7 @@ dependencies = [
  "cosmwasm-std",
  "cosmwasm-storage",
  "cw-storage-plus 0.13.2",
- "cw20 0.11.1",
+ "cw20 0.11.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "schemars",
  "serde",
  "terraswap",
@@ -894,7 +894,7 @@ dependencies = [
  "cosmwasm-std",
  "cosmwasm-storage",
  "cw-storage-plus 0.13.2",
- "cw20 0.11.1",
+ "cw20 0.11.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "protobuf",
  "schemars",
  "serde",
@@ -990,13 +990,13 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 
 [[package]]
 name = "vest-n-distribute"
-version = "0.9.1"
+version = "0.11.1"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
- "cw-storage-plus 0.9.1",
- "cw2 0.9.1",
- "cw20 0.9.1",
+ "cw-storage-plus 0.11.1",
+ "cw2 0.11.1",
+ "cw20 0.11.1",
  "schemars",
  "serde",
  "thiserror",
