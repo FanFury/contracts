@@ -36,11 +36,13 @@ async function main() {
             // }
             // const setupAccounts = await question('Do you want to setup staking contracts first? (y/N) ');
             // if (setupAccounts === 'Y' || setupAccounts === 'y') {
-            await proceedToSetup(deploymentDetails);
+            //await proceedToSetup(deploymentDetails);
             // }
             deploymentDetails = readArtifact(terraClient.chainID);
 
-            await performOperationsOnClubStaking(deploymentDetails);
+            await increaseRewardAmount(deploymentDetails);
+
+            //await performOperationsOnClubStaking(deploymentDetails);
         // }
 
     } catch (error) {
@@ -75,11 +77,11 @@ async function proceedToSetup(deploymentDetails) {
     }
     writeArtifact(deploymentDetails, terraClient.chainID);
     
-    let result = await setAstroProxyContractAddress(deploymentDetails);
+    //let result = await setAstroProxyContractAddress(deploymentDetails);
 
-    if (result) {
+    if (true) {
         deploymentDetails = readArtifact(terraClient.chainID);
-        await transferFuryToWallets(deploymentDetails);
+        //await transferFuryToWallets(deploymentDetails);
         await uploadClubStaking(deploymentDetails);
         await instantiateClubStaking(deploymentDetails);
     }
@@ -167,7 +169,7 @@ async function uploadClubStaking(deploymentDetails) {
     if (!deploymentDetails.clubStakingId) {
         console.log("Uploading Club Staking...");
         let contractId = await storeCode(mint_wallet, ClubStakingContractPath); // Getting the contract id from local terra
-        console.log(`Club Staking Contract ID: ${contractId}`);
+        console.log(`Club Staking Contract ID: ${JSON.stringify(contractId)}`);
         deploymentDetails.clubStakingId = contractId.codeId;
        // writeArtifact(deploymentDetails, terraClient.chainID);
     }
@@ -271,6 +273,9 @@ async function performOperationsOnClubStaking(deploymentDetails) {
     
     console.log("Reward activity");
 	await distributeRewards(deploymentDetails);
+
+    await queryBalancesForAddress(deploymentDetails, deploymentDetails.adminWallet, true);
+    /*
 	await showAllClubStakes(deploymentDetails);
 	await showAllClubOwnerships(deploymentDetails);
 	
@@ -291,6 +296,7 @@ async function performOperationsOnClubStaking(deploymentDetails) {
 
     console.log("Release ownership from nitin to ajay")
     await checkReleaseAndBuy(nitin_wallet, ajay_wallet, "ClubB", deploymentDetails)
+    */
 
 }
 
@@ -688,6 +694,29 @@ async function claimRewards(deploymentDetails) {
     console.log("Claim Rewards Platform Fees transaction hash = " + wsfacResponse['transactionHash']);
 }
 
+async function increaseRewardAmount(deploymentDetails) {
+
+    let raResponse = await queryContract(mint_wallet, deploymentDetails.clubStakingAddress, {
+        reward_amount: {}
+    });
+    console.log(`Query reward before increase Response : ${JSON.stringify(raResponse)}` );
+
+    let iraRequest = {  
+        increase_reward_amount: {
+            reward_from: mint_wallet.wallet_address,
+            amount: "100000"
+        }
+    };
+    let iraResponse = await executeContract(mint_wallet, deploymentDetails.clubStakingAddress, iraRequest);
+    console.log(`iraResponse : ${JSON.stringify(iraResponse)}` );
+
+    let raResponse2 = await queryContract(mint_wallet, deploymentDetails.clubStakingAddress, {
+        reward_amount: {}
+    });
+    console.log(`Query reward after increase Response : ${JSON.stringify(raResponse2)}` );
+
+}
+
 async function distributeRewards(deploymentDetails) {
     let iraRequest = {  
         increase_reward_amount: {
@@ -708,6 +737,7 @@ async function distributeRewards(deploymentDetails) {
    //  let iraResponse = await executeContract(mint_wallet, deploymentDetails.furyContractAddress, viaMsg); //changed
 
     let iraResponse = await executeContract(mint_wallet, deploymentDetails.clubStakingAddress, iraRequest);
+    console.log(`iraResponse : ${JSON.stringify(iraResponse)}` )
 
     //ADD DELAY small to check failure of quick withdraw - 30sec
     // await new Promise(resolve => setTimeout(resolve, 30000));

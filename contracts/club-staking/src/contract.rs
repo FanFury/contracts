@@ -1494,7 +1494,8 @@ fn claim_staker_rewards(
         }
         updated_stakes.push(updated_stake);
     }
-    CLUB_STAKING_DETAILS.save(deps.storage, (&club_name.clone(), &staker.clone()), &stakes)?;
+    //CLUB_STAKING_DETAILS.save(deps.storage, (&club_name.clone(), &staker.clone()), &stakes)?;
+    CLUB_STAKING_DETAILS.save(deps.storage, (&club_name.clone(), &staker.clone()), &updated_stakes)?;
 
     if transfer_confirmed == false {
         return Err(ContractError::Std(StdError::GenericErr {
