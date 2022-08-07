@@ -1,6 +1,7 @@
 use cosmwasm_std::{
     BankMsg, Binary, CosmosMsg, Deps, DepsMut, Env, from_binary, MessageInfo, Order,
     Reply, Response, StdError, StdResult, Storage, SubMsg, to_binary, Uint128, WasmMsg,
+    testing::MockStorage, testing::MockApi, testing::MockQuerier, OwnedDeps
 };
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{entry_point, Timestamp};
@@ -379,6 +380,10 @@ fn buy_a_club(
     if info.sender.clone().into_string() == String::from("owner001")
         || info.sender.clone().into_string() == String::from("owner002")
         || info.sender.clone().into_string() == String::from("owner003")
+        || info.sender.clone().into_string() == String::from("user1")
+        || info.sender.clone().into_string() == String::from("user2")
+        || info.sender.clone().into_string() == String::from("user3")
+        || info.sender.clone().into_string() == String::from("user4")
     {
         required_ust_fees = Uint128::zero();
     } else {
@@ -804,7 +809,11 @@ fn stake_on_a_club(
 
     let required_ust_fees: Uint128;
     //To bypass calls from unit tests
-    if info.sender.clone().into_string() == String::from("staker001")
+    if info.sender.clone().into_string() == String::from("user1")
+        || info.sender.clone().into_string() == String::from("user2")
+        || info.sender.clone().into_string() == String::from("user3")
+        || info.sender.clone().into_string() == String::from("user4")
+        || info.sender.clone().into_string() == String::from("staker001")
         || info.sender.clone().into_string() == String::from("staker002")
         || info.sender.clone().into_string() == String::from("staker003")
         || info.sender.clone().into_string() == String::from("staker004")
@@ -4269,4 +4278,362 @@ mod tests {
             club_name3, false, true).unwrap_err();
         assert_eq!(res3, (ContractError::Std(StdError::GenericErr {msg: String::from("Time for Reward not yet arrived")})));
     }
+
+    #[test]
+    fn test_for_reward_distribution() {
+        let mut deps = mock_dependencies();
+        let now = mock_env().block.time; // today
+
+        let instantiate_msg = 
+        InstantiateMsg {
+            admin_address: "admin11111".to_string(),
+            minting_contract_address: "minting_admin11111".to_string(),
+            astro_proxy_address: "astro_proxy_address1111".to_string(),
+            club_fee_collector_wallet: "club_fee_collector_wallet11111".to_string(),
+            //club_reward_next_timestamp: now.minus_seconds(8 * 60 * 60),
+            club_reward_next_timestamp: now.minus_seconds(1),
+            reward_periodicity: 5 * 60 * 60u64,
+            club_price: Uint128::from(1000000u128),
+            bonding_duration: 5 * 60u64,
+            owner_release_locking_duration: 24 * 60 * 60u64,
+            platform_fees_collector_wallet: "platform_fee_collector_wallet_1111".to_string(),
+            platform_fees: Uint128::from(100u128),
+            transaction_fees: Uint128::from(30u128),
+            control_fees: Uint128::from(50u128),
+            max_bonding_limit_per_user: 10u64,
+            usdc_ibc_symbol: "uusd".to_string(),
+        };
+        
+        let adminInfo = mock_info("admin11111", &[]);
+        let mintingContractInfo = mock_info("minting_admin11111", &[]);
+
+        instantiate(
+            deps.as_mut(),
+            mock_env(),
+            adminInfo.clone(),
+            instantiate_msg,
+        )
+            .unwrap();
+
+        let USER1 = "user1";
+        let CL1_OWNER = "user1";    
+        let CLUB1 = "CLUB001";
+
+        let USER2 = "user2";
+        let CL2_OWNER = "user2";    
+        let CLUB2 = "CLUB002";
+
+        let USER3 = "user3";
+        let CL3_OWNER = "user3";    
+        let CLUB3 = "CLUB003";
+
+        let USER4 = "user4";
+        let CL4_OWNER = "user4";    
+        let CLUB4 = "CLUB004";
+
+        let owner1Info = mock_info(USER1, &[coin(1000, "stake")]);
+        buy_a_club(
+            deps.as_mut(),
+            mock_env(),
+            owner1Info.clone(),
+            CL1_OWNER.to_string(),
+            Some(String::default()),
+            CLUB1.to_string(),
+            Uint128::from(1000000u128),
+            false,
+        );
+        let owner2Info = mock_info(USER2, &[coin(1000, "stake")]);
+        buy_a_club(
+            deps.as_mut(),
+            mock_env(),
+            owner2Info.clone(),
+            CL2_OWNER.to_string(),
+            Some(String::default()),
+            CLUB2.to_string(),
+            Uint128::from(1000000u128),
+            false,
+        );
+        let owner3Info = mock_info(USER3, &[coin(1000, "stake")]);
+        buy_a_club(
+            deps.as_mut(),
+            mock_env(),
+            owner3Info.clone(),
+            CL3_OWNER.to_string(),
+            Some(String::default()),
+            CLUB3.to_string(),
+            Uint128::from(1000000u128),
+            false,
+        );
+
+        let owner4Info = mock_info(USER4, &[coin(1000, "stake")]);
+        buy_a_club(
+            deps.as_mut(),
+            mock_env(),
+            owner4Info.clone(),
+            CL4_OWNER.to_string(),
+            Some(String::default()),
+            CLUB4.to_string(),
+            Uint128::from(1000000u128),
+            false,
+        );
+
+        // Staking club1
+
+        let staker1Club1User1Info = mock_info(USER1, &[coin(1000, "stake")]);
+        stake_on_a_club(
+            deps.as_mut(),
+            mock_env(),
+            staker1Club1User1Info.clone(),
+            USER1.to_string(),
+            CLUB1.to_string(),
+            Uint128::from(100u128),
+            false,
+        );
+
+        let staker1Club1User2Info = mock_info(USER2, &[coin(1000, "stake")]);
+        stake_on_a_club(
+            deps.as_mut(),
+            mock_env(),
+            staker1Club1User2Info.clone(),
+            USER2.to_string(),
+            CLUB1.to_string(),
+            Uint128::from(100u128),
+            false,
+        );
+
+        let staker2Club1User3Info = mock_info(USER3, &[coin(1000, "stake")]);
+        stake_on_a_club(
+            deps.as_mut(),
+            mock_env(),
+            staker2Club1User3Info.clone(),
+            USER3.to_string(),
+            CLUB1.to_string(),
+            Uint128::from(100u128),
+            false,
+        );
+
+        let staker3Club1User4Info = mock_info(USER4, &[coin(1000, "stake")]);
+        stake_on_a_club(
+            deps.as_mut(),
+            mock_env(),
+            staker3Club1User4Info.clone(),
+            USER4.to_string(),
+            CLUB1.to_string(),
+            Uint128::from(0u128),
+            false,
+        );
+
+        // Staking club2
+
+        let staker1Club2User1Info = mock_info(USER1, &[coin(1000, "stake")]);
+        stake_on_a_club(
+            deps.as_mut(),
+            mock_env(),
+            staker1Club2User1Info.clone(),
+            USER1.to_string(),
+            CLUB2.to_string(),
+            Uint128::from(80u128),
+            false,
+        );
+
+        let staker1Club2User2Info = mock_info(USER2, &[coin(1000, "stake")]);
+        stake_on_a_club(
+            deps.as_mut(),
+            mock_env(),
+            staker1Club2User2Info.clone(),
+            USER2.to_string(),
+            CLUB2.to_string(),
+            Uint128::from(80u128),
+            false,
+        );
+
+        let staker2Club2User3Info = mock_info(USER3, &[coin(1000, "stake")]);
+        stake_on_a_club(
+            deps.as_mut(),
+            mock_env(),
+            staker2Club2User3Info.clone(),
+            USER3.to_string(),
+            CLUB2.to_string(),
+            Uint128::from(80u128),
+            false,
+        );
+
+        let staker3Club2User4Info = mock_info(USER4, &[coin(1000, "stake")]);
+        stake_on_a_club(
+            deps.as_mut(),
+            mock_env(),
+            staker3Club2User4Info.clone(),
+            USER4.to_string(),
+            CLUB2.to_string(),
+            Uint128::from(0u128),
+            false,
+        );
+
+        // Staking club3
+
+        let staker1Club3User1Info = mock_info(USER1, &[coin(1000, "stake")]);
+        stake_on_a_club(
+            deps.as_mut(),
+            mock_env(),
+            staker1Club3User1Info.clone(),
+            USER1.to_string(),
+            CLUB3.to_string(),
+            Uint128::from(60u128),
+            false,
+        );
+
+        let staker2Club3User2Info = mock_info(USER2, &[coin(1000, "stake")]);
+        stake_on_a_club(
+            deps.as_mut(),
+            mock_env(),
+            staker2Club3User2Info.clone(),
+            USER2.to_string(),
+            CLUB3.to_string(),
+            Uint128::from(60u128),
+            false,
+        );
+
+        let staker2Club3User3Info = mock_info(USER3, &[coin(1000, "stake")]);
+        stake_on_a_club(
+            deps.as_mut(),
+            mock_env(),
+            staker2Club3User3Info.clone(),
+            USER3.to_string(),
+            CLUB3.to_string(),
+            Uint128::from(60u128),
+            false,
+        );
+
+
+        let staker3Club3User4Info = mock_info(USER4, &[coin(1000, "stake")]);
+        stake_on_a_club(
+            deps.as_mut(),
+            mock_env(),
+            staker3Club3User4Info.clone(),
+            USER4.to_string(),
+            CLUB3.to_string(),
+            Uint128::from(0u128),
+            false,
+        );
+        // Staking club4
+        let staker1Club4User1Info = mock_info(USER1, &[coin(1000, "stake")]);
+        stake_on_a_club(
+            deps.as_mut(),
+            mock_env(),
+            staker1Club4User1Info.clone(),
+            USER1.to_string(),
+            CLUB4.to_string(),
+            Uint128::from(500u128),
+            false,
+        );
+
+        // let all_stakes = CLUB_STAKING_DETAILS.may_load(deps.as_mut().storage, (CLUB4, USER2));
+        let staker2Club4User2Info = mock_info(USER2, &[coin(1000, "stake")]);
+        stake_on_a_club(
+            deps.as_mut(),
+            mock_env(),
+            staker2Club4User2Info.clone(),
+            USER2.to_string(),
+            CLUB4.to_string(),
+            Uint128::from(0u128),
+            false,
+        );
+
+        let staker3Club4User3Info = mock_info(USER3, &[coin(1000, "stake")]);
+        stake_on_a_club(
+            deps.as_mut(),
+            mock_env(),
+            staker3Club4User3Info.clone(),
+            USER3.to_string(),
+            CLUB4.to_string(),
+            Uint128::from(0u128),
+            false,
+        );
+
+        
+        let mut user_address_list = Vec::new();
+        user_address_list.push(USER1.to_string());
+        user_address_list.push(USER2.to_string());
+        user_address_list.push(USER3.to_string());
+        user_address_list.push(USER4.to_string());
+        //user_address_list.push(CL1_OWNER.to_string());
+        //user_address_list.push(CL2_OWNER.to_string());
+        //user_address_list.push(CL3_OWNER.to_string());
+        // user_address_list.push(CL4_OWNER.to_string());
+
+        let queryRes0 = query_all_stakes(&mut deps.storage, user_address_list.clone());
+        match queryRes0 {
+            Ok(all_stakes) => {
+                assert_eq!(all_stakes.len(), 16);
+                println!("all stakes : {:?}", all_stakes);
+            }
+            Err(e) => {
+                println!("error parsing header: {:?}", e);
+                assert_eq!(1, 2);
+            }
+        }
+
+        increase_reward_amount(
+            deps.as_mut(),
+            mock_env(),
+            adminInfo.clone(),
+            "reward_from abc".to_string(),
+            Uint128::from(100u128),
+        );
+        println!("stakes before distribution");
+        // let mut stakes = Vec::new();
+        // let all_stakes = CLUB_STAKING_DETAILS.may_load(&mut deps.storage, (CLUB1, USER1)).unwrap();
+        // match all_stakes {
+        //     Some(some_stakes) => {
+        //         stakes = some_stakes;
+        //     }
+        //     None => {}
+        // }
+        // let existing_stakes = stakes.clone();
+
+        calculate_and_distribute_rewards(deps.as_mut(), mock_env(), adminInfo.clone(), user_address_list.clone(), CLUB1.to_string(), true, false);
+        calculate_and_distribute_rewards(deps.as_mut(), mock_env(), adminInfo.clone(), user_address_list.clone(), CLUB2.to_string(), false, false);
+        calculate_and_distribute_rewards(deps.as_mut(), mock_env(), adminInfo.clone(), user_address_list.clone(), CLUB3.to_string(), false, false);
+        calculate_and_distribute_rewards(deps.as_mut(), mock_env(), adminInfo.clone(), user_address_list.clone(), CLUB4.to_string(), false, true);
+
+        check_state(&deps, USER1.to_string(),CLUB1.to_string());
+        check_state(&deps, USER2.to_string(),CLUB1.to_string());
+        check_state(&deps, USER3.to_string(),CLUB1.to_string());
+        check_state(&deps, USER4.to_string(),CLUB1.to_string());
+
+        check_state(&deps, USER1.to_string(),CLUB2.to_string());
+        check_state(&deps, USER2.to_string(),CLUB2.to_string());
+        check_state(&deps, USER3.to_string(),CLUB2.to_string());
+        check_state(&deps, USER4.to_string(),CLUB2.to_string());
+
+        check_state(&deps, USER1.to_string(),CLUB3.to_string());
+        check_state(&deps, USER2.to_string(),CLUB3.to_string());
+        check_state(&deps, USER3.to_string(),CLUB3.to_string());
+        check_state(&deps, USER4.to_string(),CLUB3.to_string());
+
+        check_state(&deps, USER1.to_string(),CLUB4.to_string());
+        check_state(&deps, USER2.to_string(),CLUB4.to_string());
+        check_state(&deps, USER3.to_string(),CLUB4.to_string());
+        check_state(&deps, USER4.to_string(),CLUB4.to_string());
+        assert_eq!("hello".to_string(), "owner001".to_string());
+    }
+
+    fn check_state(
+        deps: &OwnedDeps<MockStorage, MockApi, MockQuerier>,
+        user: String,
+        club: String
+    ){
+        
+        let mut stakes = Vec::new();
+        let all_stakes = CLUB_STAKING_DETAILS.may_load(&deps.storage, (&club.clone(), &user.clone())).unwrap();
+        match all_stakes {
+            Some(some_stakes) => {
+                stakes = some_stakes;
+            }
+            None => {}
+        }
+        println!("User is {:?} club : {:?} , reward amount: {:?} ", user, club, stakes.clone()[0].reward_amount);
+    }
+
+
 }
