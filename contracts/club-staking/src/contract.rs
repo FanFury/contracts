@@ -1,6 +1,6 @@
 use cosmwasm_std::{
     BankMsg, Binary, CosmosMsg, Deps, DepsMut, Env, from_binary, MessageInfo, Order,
-    Reply, Response, StdError, StdResult, Storage, SubMsg, to_binary, Uint128, WasmMsg,
+    Reply, Response, StdError, StdResult, Storage, SubMsg, to_binary, Uint128, Decimal, WasmMsg,
     testing::MockStorage, testing::MockApi, testing::MockQuerier, OwnedDeps
 };
 #[cfg(not(feature = "library"))]
@@ -4386,7 +4386,7 @@ mod tests {
             staker1Club1User1Info.clone(),
             USER1.to_string(),
             CLUB1.to_string(),
-            Uint128::from(100u128),
+            Uint128::from(100000000u128),
             false,
         );
 
@@ -4397,7 +4397,7 @@ mod tests {
             staker1Club1User2Info.clone(),
             USER2.to_string(),
             CLUB1.to_string(),
-            Uint128::from(100u128),
+            Uint128::from(100000000u128),
             false,
         );
 
@@ -4408,7 +4408,7 @@ mod tests {
             staker2Club1User3Info.clone(),
             USER3.to_string(),
             CLUB1.to_string(),
-            Uint128::from(100u128),
+            Uint128::from(100000000u128),
             false,
         );
 
@@ -4432,7 +4432,7 @@ mod tests {
             staker1Club2User1Info.clone(),
             USER1.to_string(),
             CLUB2.to_string(),
-            Uint128::from(80u128),
+            Uint128::from(80000000u128),
             false,
         );
 
@@ -4443,7 +4443,7 @@ mod tests {
             staker1Club2User2Info.clone(),
             USER2.to_string(),
             CLUB2.to_string(),
-            Uint128::from(80u128),
+            Uint128::from(80000000u128),
             false,
         );
 
@@ -4454,7 +4454,7 @@ mod tests {
             staker2Club2User3Info.clone(),
             USER3.to_string(),
             CLUB2.to_string(),
-            Uint128::from(80u128),
+            Uint128::from(80000000u128),
             false,
         );
 
@@ -4478,7 +4478,7 @@ mod tests {
             staker1Club3User1Info.clone(),
             USER1.to_string(),
             CLUB3.to_string(),
-            Uint128::from(60u128),
+            Uint128::from(60000000u128),
             false,
         );
 
@@ -4489,7 +4489,7 @@ mod tests {
             staker2Club3User2Info.clone(),
             USER2.to_string(),
             CLUB3.to_string(),
-            Uint128::from(60u128),
+            Uint128::from(60000000u128),
             false,
         );
 
@@ -4500,7 +4500,7 @@ mod tests {
             staker2Club3User3Info.clone(),
             USER3.to_string(),
             CLUB3.to_string(),
-            Uint128::from(60u128),
+            Uint128::from(60000000u128),
             false,
         );
 
@@ -4523,7 +4523,7 @@ mod tests {
             staker1Club4User1Info.clone(),
             USER1.to_string(),
             CLUB4.to_string(),
-            Uint128::from(500u128),
+            Uint128::from(500000000u128),
             false,
         );
 
@@ -4550,16 +4550,22 @@ mod tests {
             false,
         );
 
+        let staker3Club4User4Info = mock_info(USER4, &[coin(1000, "stake")]);
+        stake_on_a_club(
+            deps.as_mut(),
+            mock_env(),
+            staker3Club4User4Info.clone(),
+            USER4.to_string(),
+            CLUB4.to_string(),
+            Uint128::from(0u128),
+            false,
+        );
         
         let mut user_address_list = Vec::new();
         user_address_list.push(USER1.to_string());
         user_address_list.push(USER2.to_string());
         user_address_list.push(USER3.to_string());
         user_address_list.push(USER4.to_string());
-        //user_address_list.push(CL1_OWNER.to_string());
-        //user_address_list.push(CL2_OWNER.to_string());
-        //user_address_list.push(CL3_OWNER.to_string());
-        // user_address_list.push(CL4_OWNER.to_string());
 
         let queryRes0 = query_all_stakes(&mut deps.storage, user_address_list.clone());
         match queryRes0 {
@@ -4578,51 +4584,48 @@ mod tests {
             mock_env(),
             adminInfo.clone(),
             "reward_from abc".to_string(),
-            Uint128::from(100u128),
+            Uint128::from(100000000u128),
         );
         println!("stakes before distribution");
-        // let mut stakes = Vec::new();
-        // let all_stakes = CLUB_STAKING_DETAILS.may_load(&mut deps.storage, (CLUB1, USER1)).unwrap();
-        // match all_stakes {
-        //     Some(some_stakes) => {
-        //         stakes = some_stakes;
-        //     }
-        //     None => {}
-        // }
-        // let existing_stakes = stakes.clone();
 
         calculate_and_distribute_rewards(deps.as_mut(), mock_env(), adminInfo.clone(), user_address_list.clone(), CLUB1.to_string(), true, false);
         calculate_and_distribute_rewards(deps.as_mut(), mock_env(), adminInfo.clone(), user_address_list.clone(), CLUB2.to_string(), false, false);
         calculate_and_distribute_rewards(deps.as_mut(), mock_env(), adminInfo.clone(), user_address_list.clone(), CLUB3.to_string(), false, false);
         calculate_and_distribute_rewards(deps.as_mut(), mock_env(), adminInfo.clone(), user_address_list.clone(), CLUB4.to_string(), false, true);
 
-        check_state(&deps, USER1.to_string(),CLUB1.to_string());
-        check_state(&deps, USER2.to_string(),CLUB1.to_string());
-        check_state(&deps, USER3.to_string(),CLUB1.to_string());
-        check_state(&deps, USER4.to_string(),CLUB1.to_string());
+        let mut sum_r: Uint128 = Uint128::from(0u128);
+        sum_r+=check_state(&deps, USER1.to_string(),CLUB1.to_string());
+        sum_r+=check_state(&deps, USER2.to_string(),CLUB1.to_string());
+        sum_r+=check_state(&deps, USER3.to_string(),CLUB1.to_string());
+        sum_r+=check_state(&deps, USER4.to_string(),CLUB1.to_string());
 
-        check_state(&deps, USER1.to_string(),CLUB2.to_string());
-        check_state(&deps, USER2.to_string(),CLUB2.to_string());
-        check_state(&deps, USER3.to_string(),CLUB2.to_string());
-        check_state(&deps, USER4.to_string(),CLUB2.to_string());
+        sum_r+=check_state(&deps, USER1.to_string(),CLUB2.to_string());
+        sum_r+=check_state(&deps, USER2.to_string(),CLUB2.to_string());
+        sum_r+=check_state(&deps, USER3.to_string(),CLUB2.to_string());
+        sum_r+=check_state(&deps, USER4.to_string(),CLUB2.to_string());
 
-        check_state(&deps, USER1.to_string(),CLUB3.to_string());
-        check_state(&deps, USER2.to_string(),CLUB3.to_string());
-        check_state(&deps, USER3.to_string(),CLUB3.to_string());
-        check_state(&deps, USER4.to_string(),CLUB3.to_string());
+        sum_r+=check_state(&deps, USER1.to_string(),CLUB3.to_string());
+        sum_r+=check_state(&deps, USER2.to_string(),CLUB3.to_string());
+        sum_r+=check_state(&deps, USER3.to_string(),CLUB3.to_string());
+        sum_r+=check_state(&deps, USER4.to_string(),CLUB3.to_string());
 
-        check_state(&deps, USER1.to_string(),CLUB4.to_string());
-        check_state(&deps, USER2.to_string(),CLUB4.to_string());
-        check_state(&deps, USER3.to_string(),CLUB4.to_string());
-        check_state(&deps, USER4.to_string(),CLUB4.to_string());
-        assert_eq!("hello".to_string(), "owner001".to_string());
+        sum_r+=check_state(&deps, USER1.to_string(),CLUB4.to_string());
+        sum_r+=check_state(&deps, USER2.to_string(),CLUB4.to_string());
+        sum_r+=check_state(&deps, USER3.to_string(),CLUB4.to_string());
+        sum_r+=check_state(&deps, USER4.to_string(),CLUB4.to_string());
+        println!("Reward point sim is {:?}", sum_r);
+
+        let x:Uint128 = Uint128::from(12u128);
+        let y:Decimal = Decimal::from_ratio(x, Uint128::from(7u128));
+        println!("y is: {:?}",y);
+        // assert_eq!("hello".to_string(), "owner001".to_string());
     }
 
     fn check_state(
         deps: &OwnedDeps<MockStorage, MockApi, MockQuerier>,
         user: String,
         club: String
-    ){
+    ) -> Uint128{
         
         let mut stakes = Vec::new();
         let all_stakes = CLUB_STAKING_DETAILS.may_load(&deps.storage, (&club.clone(), &user.clone())).unwrap();
@@ -4633,6 +4636,7 @@ mod tests {
             None => {}
         }
         println!("User is {:?} club : {:?} , reward amount: {:?} ", user, club, stakes.clone()[0].reward_amount);
+        return stakes.clone()[0].reward_amount
     }
 
 
