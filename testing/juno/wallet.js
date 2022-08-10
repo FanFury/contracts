@@ -15,8 +15,8 @@ const debug = false
 
 const chainId = "juno"
 //const lcdUrl = "http://localhost:1317"
-//const endpoint = "http://localhost:26657";
-const endpoint = "https://rpc.uni.juno.deuslabs.fi"
+const endpoint = "http://localhost:26657";
+// const endpoint = "https://rpc.uni.juno.deuslabs.fi"
 
 
 //const chainIdTestNet = "uni-3"
