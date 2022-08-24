@@ -544,32 +544,32 @@ pub fn game_pool_bid_submit(
     }));
 
 
-    let fury_asset_info = Asset {
-        info: AssetInfo::Token {
-            contract_addr: config.clone().minting_contract_address.to_string(),
-        },
-        amount,
-    };
-    let swap_message = AstroPortExecute::Swap {
-        offer_asset: fury_asset_info,
-        belief_price: None,
-        max_spread: max_spread,
-        to: Option::from(env.contract.address.to_string()),
-    };
-    let platform_fees_for_swap = deps.querier.query_wasm_smart(
-        config.clone().astro_proxy_address,
-        &QueryMsgSimulation::QueryPlatformFees {
-            msg: to_binary(&swap_message)?
-        },
-    )?;
-    messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: config.clone().astro_proxy_address.to_string(),
-        msg: to_binary(&swap_message).unwrap(),
-        funds: vec![Coin {
-            denom: config.usdc_ibc_symbol.clone(),
-            amount: platform_fees_for_swap,
-        }],
-    }));
+    // let fury_asset_info = Asset {
+    //     info: AssetInfo::Token {
+    //         contract_addr: config.clone().minting_contract_address.to_string(),
+    //     },
+    //     amount,
+    // };
+    // let swap_message = AstroPortExecute::Swap {
+    //     offer_asset: fury_asset_info,
+    //     belief_price: None,
+    //     max_spread: max_spread,
+    //     to: Option::from(env.contract.address.to_string()),
+    // };
+    // let platform_fees_for_swap = deps.querier.query_wasm_smart(
+    //     config.clone().astro_proxy_address,
+    //     &QueryMsgSimulation::QueryPlatformFees {
+    //         msg: to_binary(&swap_message)?
+    //     },
+    // )?;
+    // messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
+    //     contract_addr: config.clone().astro_proxy_address.to_string(),
+    //     msg: to_binary(&swap_message).unwrap(),
+    //     funds: vec![Coin {
+    //         denom: config.usdc_ibc_symbol.clone(),
+    //         amount: platform_fees_for_swap,
+    //     }],
+    // }));
     return Ok(Response::new()
         .add_attribute("pool_id", pool_id_return.clone())
         .add_messages(messages));
