@@ -295,9 +295,9 @@ mod tests {
     #[test]
     fn test_game_pool_bid_submit_when_pool_team_not_in_range() {
         let mut deps = mock_dependencies();
-        let owner1_info = mock_info("gamer001", &[coin(1000, "stake")]);
+        let owner1_info = mock_info("gamer001", &[coin(1000, "uusd")]);
         let platform_fee = Uint128::from(300000u128);
-
+        println!("Owner info {:?}", owner1_info);
         let transaction_fee = Uint128::from(100000u128);
         let instantiate_msg = InstantiateMsg {
             transaction_fee: transaction_fee,

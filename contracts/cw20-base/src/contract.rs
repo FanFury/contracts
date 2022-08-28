@@ -953,6 +953,7 @@ mod tests {
                 let info = mock_info("creator", &[]);
                 let env = mock_env();
                 let res = instantiate(deps.as_mut(), env, info, instantiate_msg).unwrap();
+                println!("Mess :{:?}", res.messages);
                 assert_eq!(0, res.messages.len());
 
                 assert_eq!(
@@ -1025,6 +1026,7 @@ mod tests {
         let info = mock_info(minter.as_ref(), &[]);
         let env = mock_env();
         let res = execute(deps.as_mut(), env, info, msg).unwrap();
+        println!("Mint 12 {:?}", res);
         assert_eq!(0, res.messages.len());
         assert_eq!(get_balance(deps.as_ref(), genesis), amount);
         assert_eq!(get_balance(deps.as_ref(), winner.clone()), prize);
@@ -1534,6 +1536,7 @@ mod tests {
         let info = mock_info(minter.as_ref(), &[]);
         let env = mock_env();
         let res = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+        println!("mint :{:?}", res);
         assert_eq!(0, res.messages.len());
         assert_eq!(get_balance(deps.as_ref(), genesis), amount);
         assert_eq!(get_balance(deps.as_ref(), winner.clone()), prize);

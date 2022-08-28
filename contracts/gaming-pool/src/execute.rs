@@ -411,10 +411,11 @@ pub fn game_pool_bid_submit(
         }
     }
 
-    if !testing {
+    if testing {
         if info.funds.clone().len() != 1 {
             return Err(ContractError::InvalidNumberOfCoinsSent {});
         }
+        println!("Denom {:?}", info.funds[0].denom.clone());   
         let mut asset: Asset = Asset {
             info: AssetInfo::NativeToken { denom: info.funds[0].denom.clone() },
             amount: info.funds[0].amount,

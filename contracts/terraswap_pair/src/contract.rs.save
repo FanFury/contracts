@@ -36,12 +36,7 @@ pub fn instantiate(
     env: Env,
     _info: MessageInfo,
     msg: InstantiateMsg,
-) -> Result<Response, ContractError> {
-    println!("{:?}",env.contract.address.as_str());
-//    return Err(ContractError::Std(StdError::generic_err(format!(
-  //              "Withdraw Amount requested is more than Claimable {:?}",
-    //            env.contract.address.as_str()
-  //          )))); 
+) -> StdResult<Response> {
     let pair_info: &PairInfoRaw = &PairInfoRaw {
         contract_addr: deps.api.addr_canonicalize(env.contract.address.as_str())?,
         liquidity_token: CanonicalAddr::from(vec![]),
@@ -106,7 +101,7 @@ pub fn execute(
             max_spread,
             to,
         } => {
-         //   check_auth(&deps, &info)?;
+            check_auth(&deps, &info)?;
             // if !offer_asset.is_native_token() {
             //     return Err(ContractError::Unauthorized {});
             // }

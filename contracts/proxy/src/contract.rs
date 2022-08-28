@@ -4,7 +4,7 @@ use cosmwasm_std::{Addr, BankMsg, Binary, Coin,
                    MessageInfo, Reply, ReplyOn, Response,
                    StdError, StdResult, Storage, SubMsg, SubMsgResult,
                    Timestamp, to_binary, Uint128, Uint64, WasmMsg};
-use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
+use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg, TokenInfoResponse};
 
 use terraswap::asset::{Asset, AssetInfo, PairInfo};
 use terraswap::pair::{
@@ -40,13 +40,15 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    println!("Test");
     let mut cfg = Config {
+         
         admin_address: deps.api.addr_validate(&msg.admin_address)?,
         custom_token_address: deps.api.addr_validate(&msg.custom_token_address)?,
         pair_discount_rate: msg.pair_discount_rate,
         pair_bonding_period_in_sec: msg.pair_bonding_period_in_sec,
         pair_fury_reward_wallet: deps.api.addr_validate(
-            &msg.pair_fury_reward_wallet,
+           &msg.pair_fury_reward_wallet,
         )?,
         native_discount_rate: msg.native_discount_rate,
         native_bonding_period_in_sec: msg.native_bonding_period_in_sec,
@@ -67,7 +69,7 @@ pub fn instantiate(
         )?,
         liquidity_token: Addr::unchecked(""),
         platform_fees_collector_wallet: deps.api.addr_validate(
-            &msg.platform_fees_collector_wallet,
+           &msg.platform_fees_collector_wallet,
         )?,
         platform_fees: msg.platform_fees,
         transaction_fees: msg.transaction_fees,
@@ -76,6 +78,7 @@ pub fn instantiate(
         usdc_ibc_symbol: msg.usdc_ibc_symbol,
 
     };
+    println!("Test1");
     if let Some(pool_pair_addr) = msg.pool_pair_address {
         cfg.pool_pair_address = pool_pair_addr;
     }
@@ -1154,15 +1157,19 @@ pub fn swap(
 ) -> Result<Response, ContractError> {
     let config: Config = CONFIG.load(deps.storage)?;
     // Check if the swap_enable_date is passed
-    if config.swap_opening_date.nanos() > env.block.time.nanos() {
+  //  if config.swap_opening_date.nanos() > env.block.time.nanos() {
         //return error
-        return Err(ContractError::Std(StdError::generic_err(format!(
-            "Swap is not enabled yet!!!",
-        ))));
-    }
+    //    return Err(ContractError::Std(StdError::generic_err(format!(
+      //      "Swap is not enabled yet!!!",
+      //  ))));
+ //   }
     // Swap is enabled so proceed
     // Check if platform fees is provided
     let required_ust_fees: Uint128;
+  //  return Err(ContractError::Std(StdError::generic_err(format!(
+    //        "Swap Error!!!",
+      //  )))); 
+    println!("Swap Logs"); 
     required_ust_fees = query_platform_fees(
         deps.as_ref(),
         to_binary(&ExecuteMsg::Swap {
@@ -1172,6 +1179,10 @@ pub fn swap(
             to: Some(to.clone().unwrap().into_string()),
         })?,
     )?;
+    return Err(ContractError::Std(StdError::generic_err(format!(
+           "Swap Error 1!!!",
+       ))));
+    println!("Swap Logs1");
     let mut fees = Uint128::zero();
     for fund in info.funds.clone() {
         if fund.denom == get_symbol(&deps)? {
@@ -1260,6 +1271,9 @@ pub fn swap(
         to_address: config.platform_fees_collector_wallet.into_string(),
         amount: vec![],
     }));
+    return Err(ContractError::Std(StdError::generic_err(format!(
+            "Swap End!!!",
+        ))));
 
     Ok(resp
         .add_attribute("action", "Sending swap message")
@@ -1469,10 +1483,11 @@ fn query_bonding_details(
 
 fn get_ust_equivalent_to_fury(deps: Deps, fury_count: Uint128) -> StdResult<Uint128> {
     let config: Config = CONFIG.load(deps.storage)?;
+    println!("pool pair {:?}",config.pool_pair_address);
     let pool_rsp: PoolResponse = deps
         .querier
         .query_wasm_smart(config.pool_pair_address, &Pool {})?;
-
+    println!("Test UST");
     let mut uust_count = Uint128::zero();
     let mut ufury_count = Uint128::zero();
     for asset in pool_rsp.assets {
@@ -1524,6 +1539,7 @@ pub fn query_platform_fees(deps: Deps, msg: Binary) -> StdResult<Uint128> {
     let platform_fees_percentage;
     let mut fury_amount_provided = Uint128::zero();
     let mut ust_amount_provided = Uint128::zero();
+    println!("Query platform");
     match from_binary(&msg) {
         Ok(ExecuteMsg::HelloSub {}) => {
             return Ok(Uint128::zero());
@@ -1576,6 +1592,7 @@ pub fn query_platform_fees(deps: Deps, msg: Binary) -> StdResult<Uint128> {
                max_spread: _,
                to: _,
            }) => {
+            println!("Swap platform");
             platform_fees_percentage =
                 config.platform_fees + config.transaction_fees + config.swap_fees;
             if offer_asset.info.is_native_token() {
@@ -1584,6 +1601,7 @@ pub fn query_platform_fees(deps: Deps, msg: Binary) -> StdResult<Uint128> {
             if !offer_asset.info.is_native_token() {
                 fury_amount_provided = offer_asset.amount;
             }
+            println!("Swap platform 1"); 
         }
         Ok(ExecuteMsg::RewardClaim {
                receiver: _,
@@ -1596,8 +1614,9 @@ pub fn query_platform_fees(deps: Deps, msg: Binary) -> StdResult<Uint128> {
             return Err(StdError::generic_err(format!("{:?}", err)));
         }
     }
+    println!("Fury");
     let ust_equiv_for_fury = get_ust_equivalent_to_fury(deps, fury_amount_provided)?;
-
+    println!("Fury 1");
     let platform_fee = (ust_equiv_for_fury.checked_add(ust_amount_provided)?)
         .checked_mul(platform_fees_percentage)?
         .checked_div(Uint128::from(HUNDRED_PERCENT))?;
@@ -1610,4 +1629,100 @@ pub fn query_platform_fees(deps: Deps, msg: Binary) -> StdResult<Uint128> {
 
     // let tax_on_pf = pf_asset.compute_tax(&deps.querier)?;
     return Ok(platform_fee);
+}
+
+#[cfg(test)]
+mod tests {
+   use cosmwasm_std::{Addr, coins, CosmosMsg, from_binary, StdError, SubMsg, WasmMsg};
+   use cosmwasm_std::testing::{mock_dependencies, mock_dependencies_with_balance, mock_env, mock_info};
+   use super::*;
+   
+   // this will set up the instantiation for other tests
+    fn do_instantiate(deps: DepsMut, addr: &str, amount: Uint128) -> () {
+        _do_instantiate(deps, addr, amount)
+    }
+
+    // this will set up the instantiation for other tests
+    fn _do_instantiate(
+        mut deps: DepsMut,
+        addr: &str,
+        amount: Uint128,
+    ) -> () {
+        let instantiate_msg = InstantiateMsg {
+            admin_address: "juno1j75mrz3hksdyjuf3h9wtvn9nd47qaw3tks9fpp".to_string(),
+            authorized_liquidity_provider:  "juno1j75mrz3hksdyjuf3h9wtvn9nd47qaw3tks9fpp".to_string(),
+            custom_token_address: "juno17w059ne838lnwz6t0hntuusr72wzfzhk7ml8k7".to_string(),
+            max_bonding_limit_per_user: 100u64, 
+            native_bonding_period_in_sec: 180u64,
+            native_discount_rate: 500u16,
+            native_investment_receive_wallet: "juno1j75mrz3hksdyjuf3h9wtvn9nd47qaw3tks9fpp".to_string(),
+            native_investment_reward_wallet:  "juno1j75mrz3hksdyjuf3h9wtvn9nd47qaw3tks9fpp".to_string(),
+            pair_bonding_period_in_sec: 120u64,
+            pair_discount_rate: 700u16,
+            pair_fury_reward_wallet: "juno1j75mrz3hksdyjuf3h9wtvn9nd47qaw3tks9fpp".to_string(),
+            pair_lp_tokens_holder: "juno1j75mrz3hksdyjuf3h9wtvn9nd47qaw3tks9fpp".to_string(),
+            pool_pair_address: Some("juno1335rlmhujm0gj5e9gh7at9jpqvqckz0mpe4v284ar4lw5mlkryzsxgljzp".to_string()),
+            platform_fees: Uint128::from(100u128),
+            platform_fees_collector_wallet: "juno1j75mrz3hksdyjuf3h9wtvn9nd47qaw3tks9fpp".to_string(),
+            swap_fees: Uint128::from(0u128),
+            swap_opening_date: Uint64::from(1644734115627110528u64),
+            transaction_fees: Uint128::from(30u128),
+            usdc_ibc_symbol: "uusd".to_string()  
+  
+        };
+        println!("Test 01");
+        let info = mock_info("creator", &[]);
+        let env = mock_env();
+        let res = instantiate(deps.branch(), env, info, instantiate_msg).unwrap();
+        println!("Messages {:?}", res.messages);
+        assert_eq!(0, res.messages.len());
+
+      //  let meta = query_token_info(deps.as_ref()).unwrap();
+       /*
+         assert_eq!(
+            meta,
+            TokenInfoResponse {
+             
+                decimals: 3,
+                total_supply: amount,
+            }
+        );
+         */
+      //  assert_eq!(get_balance(deps.as_ref(), addr), amount);
+     //   assert_eq!(query_minter(deps.as_ref()).unwrap(), mint, );
+      //  meta
+    }
+
+    #[test]
+    fn can_execute() {
+        let mut deps = mock_dependencies();
+
+        let genesis = String::from("juno1j75mrz3hksdyjuf3h9wtvn9nd47qaw3tks9fpp");
+        let amount = Decimal::new(Uint128::from(11223344u128));
+        let amount1 = Uint128::new(11223344);
+        let minter = String::from("asmodat");
+        let limit = Uint128::new(511223344);
+        do_instantiate(deps.as_mut(), &genesis, amount1);
+
+        // minter can mint coins to some winner
+       
+        let prize = Uint128::new(222_222_222);
+        let msg = ExecuteMsg::Swap {
+            offer_asset: Asset {
+                 amount: Uint128::from(10000u128),
+                 info: AssetInfo::NativeToken {
+                        denom: "ujunox".to_string(),
+                   },
+            },
+            belief_price: Some(amount.clone()),
+            max_spread: Some(amount.clone()),
+            to: Some(genesis.clone()),
+        };
+
+        let info = mock_info(minter.as_ref(), &[]);
+        let env = mock_env();
+        let res = execute(deps.as_mut(), env, info, msg).unwrap();
+        assert_eq!(0, res.messages.len());
+
+     }
 }
