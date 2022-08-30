@@ -3,7 +3,7 @@ use cosmwasm_std::{Addr, BankMsg, Binary, Coin,
                    DepsMut, entry_point, Env, from_binary,
                    MessageInfo, Reply, ReplyOn, Response,
                    StdError, StdResult, Storage, SubMsg, SubMsgResult,
-                   Timestamp, to_binary, Uint128, Uint64, WasmMsg};
+                   Timestamp, to_binary, Uint128, Uint64, WasmMsg, WasmQuery, QueryRequest, SystemResult, to_vec, Empty};
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg, TokenInfoResponse};
 
 use terraswap::asset::{Asset, AssetInfo, PairInfo};
@@ -14,7 +14,7 @@ use terraswap::pair::{
 use terraswap::pair::ExecuteMsg as PairExecuteMsg;
 use terraswap::pair::QueryMsg::{Pair, Pool, ReverseSimulation, Simulation};
 
-use crate::error::ContractError;
+use crate::error::{ContractError, QueryError, QueryResult};
 use crate::msg::{CW20Custom, ExecuteMsg, InstantiateMsg, ProxyCw20HookMsg, QueryMsg};
 use crate::state::{
     BONDED_REWARDS_DETAILS, BondedRewardsDetails, Config, CONFIG, CONTRACT,
@@ -266,6 +266,9 @@ pub fn execute(
             // if !offer_asset.is_native_token() {
             //     return Err(ContractError::Unauthorized {});
             // }
+         //   return Err(ContractError::Std(StdError::generic_err(format!(
+         //   "Swap Error 12!!!",
+        //  ))));
             let to_addr = if let Some(to_addr) = to {
                 Some(deps.api.addr_validate(&to_addr)?)
             } else {
@@ -1166,9 +1169,9 @@ pub fn swap(
     // Swap is enabled so proceed
     // Check if platform fees is provided
     let required_ust_fees: Uint128;
-  //  return Err(ContractError::Std(StdError::generic_err(format!(
-    //        "Swap Error!!!",
-      //  )))); 
+ //   return Err(ContractError::Std(StdError::generic_err(format!(
+   //         "Swap Error!!!",
+   //     )))); 
     println!("Swap Logs"); 
     required_ust_fees = query_platform_fees(
         deps.as_ref(),
@@ -1481,12 +1484,48 @@ fn query_bonding_details(
     Ok(bonding_details)
 }
 
+fn process_wasm_query(address: Addr, binary: Binary) -> StdResult<Vec<u8>> {
+    to_vec(&QueryRequest::<Empty>::Wasm(WasmQuery::Smart {
+        contract_addr: address.to_string(),
+        msg: binary,
+    }))
+}
+
+fn process_query_result(result: QuerierResult) -> QueryResult {
+    match result {
+        SystemResult::Err(system_err) => Err(QueryError::System(system_err.to_string())),
+        SystemResult::Ok(ContractResult::Err(contract_err)) => {
+            Err(QueryError::Contract(contract_err))
+        }
+        SystemResult::Ok(ContractResult::Ok(value)) => Ok(value),
+    }
+}
+
 fn get_ust_equivalent_to_fury(deps: Deps, fury_count: Uint128) -> StdResult<Uint128> {
     let config: Config = CONFIG.load(deps.storage)?;
+  //   let query = WasmQuery::ContractInfo {
+    //         config.pool_pair_address
+ //   }
+  //  .into();
     println!("pool pair {:?}",config.pool_pair_address);
-    let pool_rsp: PoolResponse = deps
-        .querier
-        .query_wasm_smart(config.pool_pair_address, &Pool {})?;
+     let wasm = &process_wasm_query(Addr(config.pool_pair_address.clone()), to_binary(&Pool {}).unwrap())?;
+     let res = deps.querier.raw_query(wasm);
+      let data  = match process_query_result(res) {
+            Ok(res) => res,
+            Err(err) => return Err(err),
+        };
+
+  //  let pool_rsp1: StdResult<PoolResponse> = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+    //    contract_addr: config.pool_pair_address.clone(),
+    //    msg: to_binary(&Pool {})?,
+  //  }));  
+    println!("Pool Address {:?}", data);
+
+    
+  //  let pool_rsp: PoolResponse = deps.querier.query(&query)?;
+  //  return Err(StdError::generic_err(format!("Pool Address ust {:?}", config.pool_pair_address)));   
+    let pool_rsp: PoolResponse = deps.querier.query_wasm_smart(config.pool_pair_address, &Pool {})?;
+//    return Err(StdError::generic_err(format!("Pool Address resp {:?}", pool_rsp)));   
     println!("Test UST");
     let mut uust_count = Uint128::zero();
     let mut ufury_count = Uint128::zero();
@@ -1509,6 +1548,7 @@ fn get_ust_equivalent_to_fury(deps: Deps, fury_count: Uint128) -> StdResult<Uint
 
 fn get_fury_equivalent_to_ust(deps: Deps, ust_count: Uint128) -> StdResult<Uint128> {
     let config: Config = CONFIG.load(deps.storage)?;
+    return Err(StdError::generic_err(format!("Pool Address {:?}", config.pool_pair_address)));
     let pool_rsp: PoolResponse = deps
         .querier
         .query_wasm_smart(config.pool_pair_address, &Pool {})?;
@@ -1611,11 +1651,13 @@ pub fn query_platform_fees(deps: Deps, msg: Binary) -> StdResult<Uint128> {
             fury_amount_provided = withdrawal_amount;
         }
         Err(err) => {
-            return Err(StdError::generic_err(format!("{:?}", err)));
+            return Err(StdError::generic_err(format!("Swap Error Func{:?}", err)));
         }
     }
     println!("Fury");
+    
     let ust_equiv_for_fury = get_ust_equivalent_to_fury(deps, fury_amount_provided)?;
+  //  return Err(StdError::generic_err("Test Furry"));
     println!("Fury 1");
     let platform_fee = (ust_equiv_for_fury.checked_add(ust_amount_provided)?)
         .checked_mul(platform_fees_percentage)?
@@ -1661,7 +1703,7 @@ mod tests {
             pair_discount_rate: 700u16,
             pair_fury_reward_wallet: "juno1j75mrz3hksdyjuf3h9wtvn9nd47qaw3tks9fpp".to_string(),
             pair_lp_tokens_holder: "juno1j75mrz3hksdyjuf3h9wtvn9nd47qaw3tks9fpp".to_string(),
-            pool_pair_address: Some("juno1335rlmhujm0gj5e9gh7at9jpqvqckz0mpe4v284ar4lw5mlkryzsxgljzp".to_string()),
+            pool_pair_address: Some("juno1g4lg4uqjqmqs026k6hr5le9fkhd3cpthdklxaa4r2nral5ct3uzqgs7v0p".to_string()),   // Some("juno1335rlmhujm0gj5e9gh7at9jpqvqckz0mpe4v284ar4lw5mlkryzsxgljzp".to_string()),
             platform_fees: Uint128::from(100u128),
             platform_fees_collector_wallet: "juno1j75mrz3hksdyjuf3h9wtvn9nd47qaw3tks9fpp".to_string(),
             swap_fees: Uint128::from(0u128),
