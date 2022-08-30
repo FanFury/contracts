@@ -3,7 +3,7 @@ use cosmwasm_std::{Addr, BankMsg, Binary, Coin,
                    DepsMut, entry_point, Env, from_binary,
                    MessageInfo, Reply, ReplyOn, Response,
                    StdError, StdResult, Storage, SubMsg, SubMsgResult,
-                   Timestamp, to_binary, Uint128, Uint64, WasmMsg, WasmQuery, QueryRequest, SystemResult, to_vec, Empty};
+                   Timestamp, to_binary, Uint128, Uint64, WasmMsg, WasmQuery, SystemResult, to_vec, Empty};
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg, TokenInfoResponse};
 
 use terraswap::asset::{Asset, AssetInfo, PairInfo};
@@ -1484,23 +1484,6 @@ fn query_bonding_details(
     Ok(bonding_details)
 }
 
-fn process_wasm_query(address: Addr, binary: Binary) -> StdResult<Vec<u8>> {
-    to_vec(&QueryRequest::<Empty>::Wasm(WasmQuery::Smart {
-        contract_addr: address.to_string(),
-        msg: binary,
-    }))
-}
-
-fn process_query_result(result: QuerierResult) -> QueryResult {
-    match result {
-        SystemResult::Err(system_err) => Err(QueryError::System(system_err.to_string())),
-        SystemResult::Ok(ContractResult::Err(contract_err)) => {
-            Err(QueryError::Contract(contract_err))
-        }
-        SystemResult::Ok(ContractResult::Ok(value)) => Ok(value),
-    }
-}
-
 fn get_ust_equivalent_to_fury(deps: Deps, fury_count: Uint128) -> StdResult<Uint128> {
     let config: Config = CONFIG.load(deps.storage)?;
   //   let query = WasmQuery::ContractInfo {
@@ -1508,12 +1491,7 @@ fn get_ust_equivalent_to_fury(deps: Deps, fury_count: Uint128) -> StdResult<Uint
  //   }
   //  .into();
     println!("pool pair {:?}",config.pool_pair_address);
-     let wasm = &process_wasm_query(Addr(config.pool_pair_address.clone()), to_binary(&Pool {}).unwrap())?;
-     let res = deps.querier.raw_query(wasm);
-      let data  = match process_query_result(res) {
-            Ok(res) => res,
-            Err(err) => return Err(err),
-        };
+     
 
   //  let pool_rsp1: StdResult<PoolResponse> = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
     //    contract_addr: config.pool_pair_address.clone(),
