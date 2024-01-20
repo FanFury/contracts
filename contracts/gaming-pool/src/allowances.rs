@@ -3,7 +3,8 @@ use cosmwasm_std::{
     Storage, Uint128,
 };
 
-use cw20::{AllowanceResponse, Cw20ReceiveMsg, Expiration};
+// Replace cw20 with the appropriate module for native bank token (e.g., fury)
+use fury::Cw20ReceiveMsg; 
 
 use crate::error::ContractError;
 use crate::state::ALLOWANCES;
@@ -123,18 +124,18 @@ pub fn execute_transfer_from(
     // deduct allowance before doing anything else have enough allowance
     deduct_allowance(deps.storage, &owner_addr, &info.sender, &env.block, amount)?;
 
-    // BALANCES.update(
-    //     deps.storage,
-    //     &owner_addr,
-    //     |balance: Option<Uint128>| -> StdResult<_> {
-    //         Ok(balance.unwrap_or_default().checked_sub(amount)?)
-    //     },
-    // )?;
-    // BALANCES.update(
-    //     deps.storage,
-    //     &rcpt_addr,
-    //     |balance: Option<Uint128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
-    // )?;
+    BALANCES.update(
+        deps.storage,
+        &owner_addr,
+        |balance: Option<Uint128>| -> StdResult<_> {
+            Ok(balance.unwrap_or_default().checked_sub(amount)?)
+        },
+    )?;
+    BALANCES.update(
+        deps.storage,
+        &_rcpt_addr,
+        |balance: Option<Uint128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
+    )?;
 
     let res = Response::new().add_attributes(vec![
         attr("action", "transfer_from"),
@@ -158,19 +159,19 @@ pub fn execute_burn_from(
     // deduct allowance before doing anything else have enough allowance
     deduct_allowance(deps.storage, &owner_addr, &info.sender, &env.block, amount)?;
 
-    // // lower balance
-    // BALANCES.update(
-    //     deps.storage,
-    //     &owner_addr,
-    //     |balance: Option<Uint128>| -> StdResult<_> {
-    //         Ok(balance.unwrap_or_default().checked_sub(amount)?)
-    //     },
-    // )?;
-    // // reduce total_supply
-    // TOKEN_INFO.update(deps.storage, |mut meta| -> StdResult<_> {
-    //     meta.total_supply = meta.total_supply.checked_sub(amount)?;
-    //     Ok(meta)
-    // })?;
+    // lower balance
+    BALANCES.update(
+        deps.storage,
+        &owner_addr,
+        |balance: Option<Uint128>| -> StdResult<_> {
+            Ok(balance.unwrap_or_default().checked_sub(amount)?)
+        },
+    )?;
+    // reduce total_supply
+    TOKEN_INFO.update(deps.storage, |mut meta| -> StdResult<_> {
+        meta.total_supply = meta.total_supply.checked_sub(amount)?;
+        Ok(meta)
+    })?;
 
     let res = Response::new().add_attributes(vec![
         attr("action", "burn_from"),
@@ -196,19 +197,19 @@ pub fn execute_send_from(
     // deduct allowance before doing anything else have enough allowance
     deduct_allowance(deps.storage, &owner_addr, &info.sender, &env.block, amount)?;
 
-    // // move the tokens to the contract
-    // BALANCES.update(
-    //     deps.storage,
-    //     &owner_addr,
-    //     |balance: Option<Uint128>| -> StdResult<_> {
-    //         Ok(balance.unwrap_or_default().checked_sub(amount)?)
-    //     },
-    // )?;
-    // BALANCES.update(
-    //     deps.storage,
-    //     &rcpt_addr,
-    //     |balance: Option<Uint128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
-    // )?;
+    // move the tokens to the contract
+    BALANCES.update(
+        deps.storage,
+        &owner_addr,
+        |balance: Option<Uint128>| -> StdResult<_> {
+            Ok(balance.unwrap_or_default().checked_sub(amount)?)
+        },
+    )?;
+    BALANCES.update(
+        deps.storage,
+        &_rcpt_addr,
+        |balance: Option<Uint128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
+    )?;
 
     let attrs = vec![
         attr("action", "send_from"),
@@ -224,7 +225,7 @@ pub fn execute_send_from(
         amount,
         msg,
     }
-        .into_cosmos_msg(contract)?;
+    .into_cosmos_msg(contract)?;
 
     let res = Response::new().add_message(msg).add_attributes(attrs);
     Ok(res)

@@ -25,7 +25,7 @@ use crate::state::{Config, CONFIG, GAME_DETAILS, GAME_RESULT_DUMMY, GameDetails,
 pub const CONTRACT_NAME: &str = "crates.io:gaming-pool";
 pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-pub const DUMMY_WALLET: &str = "juno1ev8q3fml0d79aafd9zgzvxdt7fvmu4ac9czj4u";
+pub const DUMMY_WALLET: &str = "fury1ev8q3fml0d79aafd9zgzvxdt7fvmu4ac9czj4u";
 
 // Initial reward amount to gamer for joining a pool
 pub const INITIAL_REWARD_AMOUNT: u128 = 0u128;
@@ -65,11 +65,9 @@ pub fn instantiate(
 
     let config = Config {
         admin_address: deps.api.addr_validate(&msg.admin_address)?,
-        minting_contract_address: deps.api.addr_validate(&msg.minting_contract_address)?,
         platform_fees_collector_wallet: deps
             .api
             .addr_validate(&msg.platform_fees_collector_wallet)?,
-        astro_proxy_address: deps.api.addr_validate(&msg.astro_proxy_address)?,
         platform_fee: msg.platform_fee,
         transaction_fee: msg.transaction_fee,
         game_id: msg.game_id.clone(),
@@ -78,7 +76,7 @@ pub fn instantiate(
     CONFIG.save(deps.storage, &config)?;
 
     let dummy_wallet = String::from(DUMMY_WALLET);
-    // This address from terra to juno raised errors so since this is a placeholder we remove
+    // This address from terra to fury raised errors so since this is a placeholder we remove
     let main_address = Addr::unchecked(dummy_wallet.clone());
     GAME_RESULT_DUMMY.save(
         deps.storage,
@@ -182,7 +180,6 @@ pub fn check_and_confirm_whitelist_status(
     return Ok(Response::default())
 }
 
-
 // This is the safe way of contract migration
 // We can add expose specific state properties to
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -242,14 +239,13 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     }
 }
 
-
 #[allow(dead_code)]
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let pool_id = msg.id.to_string();
     let current_fury_balance: BalanceResponse = deps.querier.query_wasm_smart(
-        config.clone().minting_contract_address,
+        Addr::unchecked("fury1wkhutw4vef5s7kp9sewvv78xrnsrwczaxj3e0"),  // Replace with the actual bank token address
         &Cw20QueryMsg::Balance {
             address: _env.contract.address.clone().to_string()
         },
@@ -258,7 +254,7 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
     balance_info.balance_post_swap = current_fury_balance.balance;
     let balance_gained = balance_info.balance_post_swap - balance_info.balance_pre_swap;
     // ((Balance gained * 10_000) / Amount In UST Swapped)
-    // (poolcollection * exchange rate)/10_000 at time of use
+    // (poolcollection * exchange rate)/10_000 at the time of use
     balance_info.exchange_rate = balance_gained.checked_mul(Uint128::from(10000u128)).unwrap().checked_div(balance_info.ust_amount_swapped).unwrap();
     SWAP_BALANCE_INFO.save(deps.storage, pool_id.clone(), &balance_info)?;
     return Ok(Response::default()

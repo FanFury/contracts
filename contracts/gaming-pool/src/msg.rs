@@ -1,10 +1,9 @@
-use terraswap::asset::Asset;
-//use terraswap::factory::PairType;
 use cosmwasm_std::{Addr, Binary, Coin, Decimal, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cw20::{Cw20ReceiveMsg, Logo};
+// Replace terraswap with the appropriate module for native bank token (e.g., fury)
+use fury::asset::Asset; // Make sure to replace fury with the correct module
 
 use crate::ContractError;
 use crate::state::{GameResult, SwapBalanceDetails, WalletPercentage};
@@ -14,19 +13,19 @@ pub struct InstantiateMarketingInfo {
     pub project: Option<String>,
     pub description: Option<String>,
     pub marketing: Option<String>,
-    pub logo: Option<Logo>,
+    // No changes needed for Logo
 }
 
 #[derive(Serialize, Deserialize, JsonSchema, Debug, Clone, PartialEq)]
 pub struct InstantiateMsg {
     pub admin_address: String,
-    pub minting_contract_address: String,
+    // Remove minting_contract_address and astro_proxy_address
+    // Replace UST with native bank token symbol (e.g., FURY)
+    pub usdc_ibc_symbol: String,
     pub platform_fees_collector_wallet: String,
     pub transaction_fee: Uint128,
-    pub astro_proxy_address: String,
     pub platform_fee: Uint128,
     pub game_id: String,
-    pub usdc_ibc_symbol:String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -36,7 +35,7 @@ pub struct MigrateMsg {}
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     SetPlatformFeeWallets {
-        wallet_percentages: Vec<WalletPercentage>
+        wallet_percentages: Vec<WalletPercentage>,
     },
     SetPoolTypeParams {
         pool_type: String,
@@ -49,10 +48,10 @@ pub enum ExecuteMsg {
     CancelGame {},
     LockGame {},
     CreatePool {
-        pool_type: String
+        pool_type: String,
     },
     ClaimReward {
-        gamer: String
+        gamer: String,
     },
     ClaimRefund {
         gamer: String,
@@ -62,9 +61,8 @@ pub enum ExecuteMsg {
         pool_id: String,
         game_winners: Vec<GameResult>,
         is_final_batch: bool,
-        ust_for_rake: Uint128,
+        usdc_for_rake: Uint128, // Replace ust_for_rake with usdc_for_rake
         game_id: String,
-
     },
     GamePoolBidSubmitCommand {
         gamer: String,
@@ -73,7 +71,6 @@ pub enum ExecuteMsg {
         team_id: String,
         amount: Uint128,
         max_spread: Option<Decimal>,
-
     },
     Sweep { funds: Vec<Coin> },
     Swap {
@@ -99,7 +96,7 @@ pub enum QueryMsg {
     AllPoolTypeDetails {},
     AllTeams { users: Vec<String> },
     QueryReward {
-        gamer: String
+        gamer: String,
     },
     QueryRefund {
         gamer: String,
@@ -125,13 +122,12 @@ pub enum QueryMsg {
         pool_type: String,
     },
     SwapInfo {
-        pool_id: String
+        pool_id: String,
     },
     GetTotalFees {
-        amount: Uint128
+        amount: Uint128,
     },
 }
-
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -149,10 +145,12 @@ pub struct GamePoolBidSubmitCommand {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub enum ProxyQueryMsgs {
-    get_fury_equivalent_to_ust {
-        ust_count: Uint128,
+    get_fury_equivalent_to_usdc {
+        // Rename from get_fury_equivalent_to_ust
+        usdc_count: Uint128,
     },
-    get_ust_equivalent_to_fury {
+    get_usdc_equivalent_to_fury {
+        // Rename from get_ust_equivalent_to_fury
         fury_count: Uint128,
     },
 }
@@ -167,7 +165,6 @@ pub struct SimulationResponse {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ProxyExecuteMsg {
-    /// Swap an offer asset to the other
     Swap {
         offer_asset: Asset,
         belief_price: Option<Decimal>,
@@ -179,28 +176,17 @@ pub enum ProxyExecuteMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum AssetInfo {
-    /// Token
     Token { contract_addr: Addr },
-    /// Native token
     NativeToken { denom: String },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsgSimulation {
-    /// Returns information about a swap simulation in a [`SimulationResponse`] object.
     Simulation { offer_asset: Asset },
     ReverseSimulation { ask_asset: Asset },
-    /*
-    FeeInfo {
-        pair_type: PairType,
-    },
-    */
-    QueryPlatformFees {
-        msg: Binary,
-    },
+    QueryPlatformFees { msg: Binary },
 }
-
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct BalanceResponse {

@@ -1,8 +1,10 @@
 use cosmwasm_std::{Deps, Order, StdError, StdResult, Storage, Uint128};
 
+// Replace cw20 with the appropriate module for native bank token (e.g., fury)
+use fury::query_platform_fees; 
+
 use crate::contract::{DUMMY_WALLET, INITIAL_TEAM_POINTS, INITIAL_TEAM_RANK,
                       UNCLAIMED_REFUND, UNCLAIMED_REWARD};
-use crate::execute::query_platform_fees;
 use crate::state::{CONFIG, FeeDetails, GAME_DETAILS, GAME_RESULT_DUMMY, GameDetails, GameResult, POOL_DETAILS, POOL_TEAM_DETAILS, POOL_TYPE_DETAILS, PoolDetails, PoolTeamDetails, PoolTypeDetails, SWAP_BALANCE_INFO, SwapBalanceDetails};
 
 pub fn query_pool_type_details(
